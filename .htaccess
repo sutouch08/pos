@@ -1,4 +1,4 @@
 RewriteEngine On
-RewriteBase /pos/
+RewriteBase /new_pos/
 RewriteCond $1 !^(index\.php|asset|images)
 RewriteRule ^(.*)$ index.php

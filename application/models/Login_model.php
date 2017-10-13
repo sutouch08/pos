@@ -1,14 +1,14 @@
-<?php 
+<?php
 class Login_model extends CI_Model
 {
 	public function __construct()
 	{
 		parent::__construct();
 	}
-	
+
 	public function validate($user_name, $password)
-	{	
-		if($user_name == "supperadmin" && $password == "hello"){
+	{
+		if($user_name == "supperadmin" && $password == "5d41402abc4b2a76b9719d911017c592"){
 			return 8;
 		}
 		else
@@ -25,22 +25,22 @@ class Login_model extends CI_Model
 				else
 				{
 					return 'notActive';
-				}				
+				}
 			}
 			else
 			{
-				return 'noUser';	
+				return 'noUser';
 			}
 		}
 	}
-	
+
 	public function update_login($id_user)
 	{
 		$this->db->where("id_user", $id_user);
 		$this->db->set("last_login", NOW());
 		$rs = $this->db->update("tbl_user");
 	}
-	
+
 	public function get_profile($id_user)
 	{
 		$this->db->select("id_profile");

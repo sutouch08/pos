@@ -9,12 +9,12 @@ class Authentication extends CI_Controller
 		$this->load->model("login_model");
 		$this->load->model('admin/employee_model');
 	}
-	
+
 	public function index()
 	{
 		$this->load->view("login");
 	}
-	
+
 	public function validate_credentials()
 	{
 		if( $this->input->post('user_name') && $this->input->post('password') )
@@ -30,12 +30,13 @@ class Authentication extends CI_Controller
 					"user_name"=>"super admin",
 					"id_profile"=> 0
 				);
+				
 				$this->session->set_userdata($data);
 				echo 'success';
 			}
 			else if($rs === 'noUser' OR $rs === 'notActive')
 			{
-				echo $rs;	
+				echo $rs;
 			}
 			else
 			{
@@ -56,13 +57,13 @@ class Authentication extends CI_Controller
 								'expire' 	=> '315360000',
 								'path'   	=> '/'
 								);
-					$this->input->set_cookie($ds);	
+					$this->input->set_cookie($ds);
 				}
 				echo 'success';
 			}
 		}
 	}
-	
+
 	public function logout()
 	{
 		$this->session->unset_userdata("id_user");
@@ -70,9 +71,9 @@ class Authentication extends CI_Controller
 		$this->session->unset_userdata("user_name");
 		$this->session->unset_userdata("id_profile");
 		$this->session->unset_userdata('id_shop');
-		redirect($this->home);	
+		redirect($this->home);
 	}
-	
+
 }
 
 ?>
