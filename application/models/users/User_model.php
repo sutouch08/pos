@@ -141,12 +141,11 @@ class User_model extends CI_Model
 	public function get_list(array $ds = array(), $perpage = 20, $offset = 0)
 	{
 		$this->db
-		->select('u.*, u.name AS display_name, p.name AS profile_name')
-		->select('s.name AS sale_name, t.name AS team_name')
+		->select('u.*, u.name AS display_name, p.name AS group_name')
+		->select('s.name AS sale_name')
 		->from('user AS u')
 		->join('user_group AS p', 'u.group_id = p.id', 'left')
 		->join('sale_person AS s', 'u.sale_id = s.id', 'left')
-		->join('sale_team AS t', 'u.team_id = t.id', 'left')
     ->where('group_id >', 0, FALSE);
 
 		if( ! empty($ds['uname']))
@@ -167,18 +166,6 @@ class User_model extends CI_Model
 		if(isset($ds['sale_id']) && $ds['sale_id'] != 'all')
 		{
 			$this->db->where('u.sale_id', $ds['sale_id']);
-		}
-
-		if(isset($ds['team_id']) && $ds['team_id'] != 'all')
-		{
-			if($ds['team_id'] == "NULL")
-			{
-				$this->db->where('u.team_id IS NULL', NULL, FALSE);
-			}
-			else
-			{
-				$this->db->where('u.team_id', $ds['team_id']);
-			}
 		}
 
 		if(isset($ds['active']) && $ds['active'] != 'all')
@@ -203,7 +190,6 @@ class User_model extends CI_Model
 		->from('user AS u')
 		->join('user_group AS p', 'u.group_id = p.id', 'left')
 		->join('sale_person AS s', 'u.sale_id = s.id', 'left')
-		->join('sale_team AS t', 'u.team_id = t.id', 'left')
     ->where('group_id >', 0, FALSE);
 
 		if( ! empty($ds['uname']))
@@ -226,18 +212,6 @@ class User_model extends CI_Model
 		{
 			$this->db->where('u.sale_id', $ds['sale_id']);
 		}
-
-		if(isset($ds['team_id']) && $ds['team_id'] != 'all')
-		{
-			if($ds['team_id'] == "NULL")
-			{
-				$this->db->where('u.team_id IS NULL', NULL, FALSE);
-			}
-			else
-			{
-				$this->db->where('u.team_id', $ds['team_id']);
-			}
-		}		
 
 		if(isset($ds['active']) && $ds['active'] != 'all')
 		{

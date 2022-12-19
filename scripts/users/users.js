@@ -1,13 +1,29 @@
 var validUname = true;
 var validDname = true;
 var validPm = true;
-var validCust = true;
 var validPwd = true;
 
 
+function closeModal() {
+  $('#user-modal').modal('hide');
+}
+
+function closeResetModal() {
+  $('#pwd-modal').modal('hide');
+}
+
 
 function addNew() {
-  window.location.href = HOME +'add_new';
+  $('#modal-title').text('New User');
+  $('#user_id').val('');
+  $('.err-label').text('');
+  $('.add').val('');
+  $('.has-error').removeClass('has-error');
+  $('#active').prop('checked', true);
+  $('.add').removeAttr('disabled');
+  $('.edit').removeClass('hide');
+  $('#btn-update').addClass('hide');
+  $('#user-modal').modal('show');
 }
 
 
@@ -16,53 +32,149 @@ function goBack() {
   window.location.href = HOME;
 }
 
+
 function getEdit(id) {
-  window.location.href = HOME + 'edit/'+id;
+  load_in();
+
+  $.ajax({
+    url:HOME + 'view_detail',
+    type:'GET',
+    cache:false,
+    data: {
+      'id' : id
+    },
+    success:function(rs) {
+      load_out();
+
+      if(isJson(rs)) {
+        let ds = $.parseJSON(rs);
+        $('#modal-title').text('Edit User');
+        $('#user_id').val(ds.id);
+        $('#uname').val(ds.uname);
+        $('#dname').val(ds.name);
+        $('#emp_id').val(ds.emp_id);
+        $('#sale_id').val(ds.sale_id);
+        $('#group_id').val(ds.group_id);
+
+        if(ds.active == 0) {
+          $('#active').prop('checked', false);
+        }
+        else {
+          $('#active').prop('checked', true);
+        }
+
+        $('.add').removeAttr('disabled');
+        $('.edit').addClass('hide');
+        $('#uname').attr('disabled', 'disabled');
+        $('#btn-update').removeClass('hide');
+
+        $('#user-modal').modal('show');
+      }
+      else {
+        Swal.fire({
+          title:'Error!',
+          text:rs,
+          icon:'error'
+        });
+      }
+    }
+  })
 }
 
 
 function viewDetail(id) {
-	window.location.href = HOME + 'view_detail/'+id;
+  $('#modal-title').text('User Data');
+  $.ajax({
+    url:HOME + 'view_detail',
+    type:'GET',
+    cache:false,
+    data: {
+      'id' : id
+    },
+    success:function(rs) {
+      if(isJson(rs)) {
+        let ds = $.parseJSON(rs);
+        $('#user_id').val(ds.id);
+        $('#uname').val(ds.uname);
+        $('#dname').val(ds.name);
+        $('#emp_id').val(ds.emp_id);
+        $('#sale_id').val(ds.sale_id);
+        $('#group_id').val(ds.group_id);
+
+        if(ds.active == 0) {
+          $('#active').prop('checked', false);
+        }
+        else {
+          $('#active').prop('checked', true);
+        }
+
+        $('.add').attr('disabled', 'disabled');
+        $('.edit').addClass('hide');
+
+        $('#user-modal').modal('show');
+      }
+      else {
+        Swal.fire({
+          title:'Error!',
+          text:rs,
+          icon:'Error'
+        });
+      }
+    }
+  });
 }
 
 
 function getReset(id) {
-  window.location.href = HOME + 'reset_password/'+id;
+
+  $.ajax({
+    url:HOME + 'view_detail',
+    type:'GET',
+    cache:false,
+    data: {
+      'id' : id
+    },
+    success:function(rs) {
+      if(isJson(rs)) {
+        let ds = $.parseJSON(rs);
+        $('#x-id').val(id);
+        $('#x-uname').val(ds.uname);
+        $('#x-dname').val(ds.name);
+        $('#pwd-modal').modal('show');
+      }
+      else {
+        Swal.fire({
+          title : 'Error!',
+          text:rs,
+          icon:'error'
+        });
+      }
+    }
+  });
 }
 
 
 function saveAdd() {
 	validUserName();
 	validDisplayName();
-	validProfile();
-	validCustomer();
+	validUserGroup();
 	validPWD();
 
-	if( !validUname || !validDname || !validCust || !validPm || !validPwd ) {
+	if( !validUname || !validDname || !validPm || !validPwd ) {
 		return false;
 	}
 
-	const uname = $('#uname').val();
-	const dname = $('#dname').val();
-	const sale_id = $('#sale_id').val();
-	const emp_id = $('#emp_id').val();
-	const team_id = $('#team_id').val();
-	const quota_no = $('#quota_no').val();
-	const is_customer = $('#is_customer').val();
-	const customer_code = $('#customer_code').val();
-	const channels = $('#channels').val();
-	const pwd = $('#pwd').val();
-	const profile = $('#profile').val();
-	const active = $('#active').is(':checked') ? 1 : 0;
-	const force_reset = $('#force_reset').is(':checked') ? 1 : 0;
+	let uname = $('#uname').val();
+	let dname = $('#dname').val();
+	let sale_id = $('#sale_id').val();
+	let emp_id = $('#emp_id').val();
+	let team_id = $('#team_id').val();
+	let pwd = $('#pwd').val();
+	let group_id = $('#group_id').val();
+	let active = $('#active').is(':checked') ? 1 : 0;
+	let force_reset = $('#force_reset').is(':checked') ? 1 : 0;
 
-	if(is_customer == 1 && channels == "") {
-		set_error($('#channels'), $('#channels-error'), "Required");
-		return false;
-	}
-	else {
-		clear_error($('#channels'), $('#channels-error'));
-	}
+  $('#user-modal').modal('hide');
 
 	load_in();
 
@@ -75,12 +187,8 @@ function saveAdd() {
 			'dname' : dname,
 			'sale_id' : sale_id,
 			'team_id' : team_id,
-			'quota_no' : quota_no,
-			'is_customer' : is_customer,
-			'customer_code' : customer_code,
-			'channels' : channels,
 			'pwd' : pwd,
-			'profile' : profile,
+			'group_id' : group_id,
 			'active' : active,
 			'force_reset' : force_reset
 		},
@@ -90,31 +198,32 @@ function saveAdd() {
 			rs = $.trim(rs);
 
 			if(rs === 'success') {
-				swal({
+				Swal.fire({
 					title:'Success',
-					type:'success',
+					icon:'success',
+          showConfirmButton:false,
+          width:'500px',
 					timer:1000
 				});
 
-				setTimeout(function() {
-					addNew();
-				}, 1500);
+        setTimeout(function() {
+          window.location.reload();
+        }, 1200);
 			}
 			else {
-				swal({
+				Swal.fire({
 					title:'Error!',
 					text: rs,
-					type:'error'
+					icon:'error'
 				});
 			}
 		},
 		error:function(xhr) {
 			load_out();
-			swal({
+			Swal.fire({
 				title:"Error!",
 				text: xhr.responseText,
-				type:'error',
-				html:true
+				icon:'error'
 			});
 		}
 	});
@@ -124,10 +233,9 @@ function saveAdd() {
 
 function update() {
 	validDisplayName();
-	validProfile();
-	validCustomer();
+	validUserGroup();
 
-	if( !validDname || !validCust || !validPm ) {
+	if( !validDname || !validPm ) {
 		return false;
 	}
 
@@ -136,85 +244,80 @@ function update() {
 	const sale_id = $('#sale_id').val();
 	const emp_id = $('#emp_id').val();
 	const team_id = $('#team_id').val();
-	const quota_no = $('#quota_no').val();
-	const is_customer = $('#is_customer').val();
-	const customer_code = $('#customer_code').val();
-	const channels = $('#channels').val();
-	const profile = $('#profile').val();
+	const group_id = $('#group_id').val();
 	const active = $('#active').is(':checked') ? 1 : 0;
 
-	if(is_customer == 1 && channels == "") {
-		set_error($('#channels'), $('#channels-error'), "Required");
-		return false;
-	}
-	else {
-		clear_error($('#channels'), $('#channels-error'));
-	}
+  closeModal();
 
-	load_in();
+  setTimeout(function() {
+    load_in();
 
-	$.ajax({
-		url:HOME + 'update',
-		type:'POST',
-		cache:false,
-		data:{
-			'id' : id,
-			'dname' : dname,
-			'sale_id' : sale_id,
-			'emp_id' : emp_id,
-			'team_id' : team_id,
-			'quota_no' : quota_no,
-			'is_customer' : is_customer,
-			'customer_code' : customer_code,
-			'channels' : channels,
-			'profile' : profile,
-			'active' : active
-		},
-		success:function(rs) {
-			load_out();
+  	$.ajax({
+  		url:HOME + 'update',
+  		type:'POST',
+  		cache:false,
+  		data:{
+  			'id' : id,
+  			'dname' : dname,
+  			'sale_id' : sale_id,
+  			'emp_id' : emp_id,
+  			'team_id' : team_id,
+  			'group_id' : group_id,
+  			'active' : active
+  		},
+  		success:function(rs) {
+  			load_out();
 
-			rs = $.trim(rs);
+  			rs = $.trim(rs);
 
-			if(rs === 'success') {
-				swal({
-					title:'Success',
-					type:'success',
-					timer:1000
-				});
-			}
-			else {
-				swal({
-					title:'Error!',
-					text: rs,
-					type:'error'
-				});
-			}
-		},
-		error:function(xhr) {
-			load_out();
-			swal({
-				title:"Error!",
-				text: xhr.responseText,
-				type:'error',
-				html:true
-			});
-		}
-	});
+  			if(rs === 'success') {
+  				Swal.fire({
+  					title:'Success',
+  					icon:'success',
+  					timer:1000
+  				});
+
+          setTimeout(function() {
+            window.location.reload();
+          }, 1200);
+  			}
+  			else {
+  				Swal.fire({
+  					title:'Error!',
+  					text: rs,
+  					icon:'error'
+  				});
+  			}
+  		},
+  		error:function(xhr) {
+  			load_out();
+  			Swal.fire({
+  				title:"Error!",
+  				text: xhr.responseText,
+  				icon:'error',
+  				html:true
+  			});
+  		}
+  	});
+  }, 500);
+
 }
 
 
 
 function changePassword()
 {
-	validPWD();
+	validxPWD();
 
 	if( ! validPwd) {
 		return false;
 	}
 
-	const id = $('#user_id').val();
-	const pwd = $('#pwd').val();
-	const force = $('#force_reset').is(':checked') ? 1 : 0;
+	const id = $('#x-id').val();
+	const pwd = $('#x-pwd').val();
+	const force = $('#x-force_reset').is(':checked') ? 1 : 0;
+
+  $('#pwd-modal').modal('hide');
 
 	$.ajax({
 		url:HOME + 'change_pwd',
@@ -227,65 +330,79 @@ function changePassword()
 		},
 		success:function(rs) {
 			rs = $.trim(rs);
-
 			if(rs === 'success') {
-				swal({
-					title:'Success',
-					type:'success',
-					timer:1000
-				});
+        setTimeout(function() {
+          Swal.fire({
+            title:'Success',
+            icon:'success',
+            showConfirmButton:false,
+            timer:1000
+          });
+        }, 200);
 			}
 			else {
-				swal({
-					title:'Error!',
-					text: rs,
-					type:'error'
-				});
+        setTimeout(function() {
+          Swal.fire({
+            title:'Error!',
+            text: rs,
+            icon:'error'
+          });
+        }, 200);
 			}
 		}
 	});
 }
 
-function getDelete(id, uname){
-  swal({
-    title:'Are sure ?',
+
+
+function getDelete(id, uname) {
+  Swal.fire({
+    title:'Are you sure ?',
     text:'ต้องการลบ '+ uname +' หรือไม่ ?',
-    type:'warning',
+    icon:'warning',
     showCancelButton: true,
 		confirmButtonColor: '#FA5858',
 		confirmButtonText: 'ใช่, ฉันต้องการลบ',
 		cancelButtonText: 'ยกเลิก',
-		closeOnConfirm: false
-  },function(){
-		$.ajax({
-			url:HOME + 'delete',
-			type:'POST',
-			cache:false,
-			data: {
-				'id' : id
-			},
-			success:function(rs) {
-				if(rs === 'success') {
-					swal({
-						title:'Deleted',
-						type:'success',
-						timer:1000
-					});
+		closeOnConfirm: true
+  }).then((result) => {
+    if(result.isConfirmed) {
+      $.ajax({
+  			url:HOME + 'delete',
+  			type:'POST',
+  			cache:false,
+  			data: {
+  				'id' : id
+  			},
+  			success:function(rs) {
+  				if(rs === 'success') {
 
-					setTimeout(function() {
-						goBack();
-					}, 1500);
-				}
-				else {
-					swal({
-						title:'Error!',
-						text:rs,
-						type:'error'
-					})
-				}
-			}
-		})
-  })
+            setTimeout(function() {
+              Swal.fire({
+    						title:'Deleted',
+    						icon:'success',
+    						timer:1000
+    					});
+
+    					setTimeout(function() {
+    						goBack();
+    					}, 1500);
+            }, 200);
+
+  				}
+  				else {
+            setTimeout(function() {
+              Swal.fire({
+                title:'Error!',
+                text:rs,
+                icon:'error'
+              });
+            }, 200);
+  				}
+  			}
+  		});
+    }
+  });
 }
 
 
@@ -344,13 +461,50 @@ function validPWD() {
   }
 }
 
+function validxPWD() {
+  var pwd = $('#x-pwd').val();
+  var cmp = $('#x-cm-pwd').val();
+  if(pwd.length > 0) {
+
+		if(!validatePassword(pwd)) {
+			$('#x-pwd-error').text('รหัสผ่านต้องมีความยาว 8 - 20 ตัวอักษร และต้องประกอบด้วย ตัวอักษรภาษาอังกฤษ พิมพ์เล็ก พิมพ์ใหญ่ และตัวเลขอย่างน้อย อย่างละตัว');
+      $('#x-pwd').addClass('has-error');
+			validPwd = false;
+      return false;
+		}
+		else {
+			$('#x-pwd-error').text('');
+			$('#x-pwd').removeClass('has-error');
+			validPwd = true;
+		}
+
+    if(pwd != cmp) {
+      $('#x-cm-pwd-error').text('Password missmatch!');
+      $('#x-cm-pwd').addClass('has-error');
+      validPwd = false;
+			return false;
+    }
+		else {
+      $('#x-cm-pwd-error').text('');
+      $('#x-cm-pwd').removeClass('has-error');
+      validPwd = true;
+    }
+  }
+	else {
+    $('#x-pwd-error').text('Password is required!');
+    $('#x-pwd').addClass('has-error');
+    validPwd = false;
+  }
+}
+
 
 
 
 
 function validUserName() {
-  var uname = $('#uname').val();
-  var id = $('#user_id').val();
+  let uname = $('#uname').val();
+  let id = $('#user_id').val();
+
   if(uname.length > 0) {
 		$.ajax({
 			url:HOME + 'valid_uname',
@@ -362,7 +516,7 @@ function validUserName() {
 			},
 			success:function(rs) {
 				rs = $.trim(rs);
-        if(rs === 'exists'){
+        if(rs === 'exists') {
           $('#uname-error').text('User name already exists!');
           $('#uname').addClass('has-error');
           validUname = false;
@@ -373,7 +527,7 @@ function validUserName() {
           validUname = true;
         }
 			}
-		})
+		});
   }
 	else {
     $('#uname-error').text('User name is required!');
@@ -420,29 +574,12 @@ function validDisplayName() {
 
 
 
-function validCustomer() {
-	const el = $('#customer');
-	const label = $('#customer-error');
-	const is_customer = $('#is_customer').val();
-	const customer_code = $('#customer_code').val();
-
-	if(is_customer == 1 && customer_code.length == 0) {
-		set_error(el, label, "Customer is required!");
-		validCust = false;
-	}
-	else {
-		clear_error(el, label);
-		validCust = true;
-	}
-}
-
-
-function validProfile() {
-	const el = $('#profile');
-	const label = $('#profile-error');
+function validUserGroup() {
+	const el = $('#group_id');
+	const label = $('#group-error');
 
 	if(el.val() == "") {
-		set_error(el, label, "Please select profile");
+		set_error(el, label, "User group is required !");
 		validPm = false;
 	}
 	else {
@@ -462,8 +599,8 @@ $('#uname').focusout(function(){
   validUserName();
 });
 
-$('#profile').focusout(function() {
-	validProfile();
+$('#group_id').focusout(function() {
+	validUserGroup();
 });
 
 $('#pwd').focusout(function(){
@@ -480,45 +617,15 @@ $('#cm-pwd').focusout(function(){
 });
 
 
-
-function getSearch(){
-  $('#searchForm').submit();
-}
-
-
-function toggleCustomer() {
-	let is_customer = $('#is_customer').val();
-
-	if(is_customer == 1) {
-		$('#customer').removeAttr('disabled');
-		$('#channels').removeAttr('disabled');
-		$('#customer').focus();
-	}
-	else {
-		$('#customer').val('');
-		$('#customer_code').val('');
-		$('#channels').val('').attr('disabled', 'disabled');
-		$('#customer').attr('disabled', 'disabled');
-	}
-}
+$('#x-pwd').focusout(function(){
+  validxPWD();
+});
 
 
-$('#customer').autocomplete({
-	source: BASE_URL + "auto_complete/get_customer_code_and_name",
-	autoFocus:true,
-	close:function() {
-		let rs = $(this).val();
-		let ar = rs.split(' | ');
+$('#x-cm-pwd').keyup(function(e){
+  validxPWD();
+});
 
-		if(ar.length === 2) {
-			$(this).val(ar[0]);
-			$('#customer_code').val(ar[0]);
-			$('#customer_name').val(ar[1]);
-		}
-		else {
-			$(this).val('');
-			$('#customer_code').val('');
-			$('#customer_name').val('');
-		}
-	}
-})
+$('#x-cm-pwd').focusout(function(){
+  validxPWD();
+});

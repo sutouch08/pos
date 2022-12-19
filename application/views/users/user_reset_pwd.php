@@ -1,86 +1,56 @@
-<?php $this->load->view('include/header'); ?>
+<div class="modal fade" id="pwd-modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+ <div class="modal-dialog" style="width:500px; max-width:95%; margin-left:auto; margin-right:auto;">
+   <div class="modal-content">
+       <div class="modal-header">
+       <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+       <h4 class="modal-title">Reset Password</h4>
+      </div>
+      <div class="modal-body">
+        <div class="row" style="padding-left:12px; padding-right:12px;">
+          <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12">
+						<label>User name</label>
+						<input type="text" id="x-uname" class="form-control" disabled />
+						<div class="err-label" id="x-uname-error"></div>
+						<input type="hidden" id="x-id" value="" />
+					</div>
+					<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12">
+						<label>Display name</label>
+						<input type="text" id="x-dname" class="form-control" disabled />
+						<div class="err-label" id="x-dname-error"></div>
+					</div>
 
-<script>
-	var USE_STRONG_PWD = <?php echo getConfig('USE_STRONG_PWD'); ?>;
-</script>
+					<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12">
+						<label>New Password</label>
+						<span class="input-icon input-icon-right width-100">
+							<input type="password" id="x-pwd" class="form-control" autofocus required />
+							<i class="ace-icon fa fa-key"></i>
+						</span>
+						<div class="err-label" id="x-pwd-error"></div>
+					</div>
 
+					<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12">
+						<label>Confirm Password</label>
+						<span class="input-icon input-icon-right width-100">
+							<input type="password" id="x-cm-pwd" class="form-control" required />
+							<i class="ace-icon fa fa-key"></i>
+						</span>
+						<div class="err-label" id="x-cm-pwd-error"></div>
+					</div>
 
-<div class="row">
-	<div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
-    <h3 class="title">
-      <?php echo $this->title; ?>
-    </h3>
-  </div>
-	<div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
-		<p class="pull-right top-p">
-			<button type="button" class="btn btn-sm btn-warning" onclick="goBack()"><i class="fa fa-arrow-left"></i> Back</button>
-		</p>
-	</div>
-</div><!-- End Row -->
-<hr class="margin-bottom-30"/>
-<form class="form-horizontal" id="addForm" method="post">
-	<div class="form-group">
-    <label class="col-lg-3 col-md-3 col-sm-3 col-xs-12 control-label">Username</label>
-    <div class="col-lg-3 col-md-3 col-sm-3 col-xs-12">
-			<input type="text" name="uname" id="uname" class="form-control" maxlength="50" value="<?php echo $user->uname; ?>" disabled/>
-    </div>
-		<div class="col-xs-12 col-sm-reset inline red" id="uname-error"></div>
-  </div>
-
-	<div class="form-group">
-    <label class="col-lg-3 col-md-3 col-sm-3 col-xs-12 control-label">Display name</label>
-    <div class="col-lg-3 col-md-3 col-sm-3 col-xs-12">
-			<input type="text" name="dname" id="dname" class="form-control" maxlength="100" value="<?php echo $user->name; ?>" disabled/>
-    </div>
-		<div class="col-xs-12 col-sm-reset inline red" id="dname-error"></div>
-  </div>
-
-
-	<div class="form-group">
-    <label class="col-lg-3 col-md-3 col-sm-3 col-xs-12 control-label">New password</label>
-    <div class="col-lg-3 col-md-3 col-sm-3 col-xs-12">
-			<span class="input-icon input-icon-right width-100">
-        <input type="password" name="pwd" id="pwd" class="form-control" required />
-				<i class="ace-icon fa fa-key"></i>
-			</span>
-    </div>
-    <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 red" id="pwd-error"></div>
-  </div>
-
-	<div class="form-group">
-    <label class="col-lg-3 col-md-3 col-sm-3 col-xs-12 control-label">Confirm password</label>
-    <div class="col-lg-3 col-md-3 col-sm-3 col-xs-12">
-			<span class="input-icon input-icon-right width-100">
-        <input type="password" name="cm-pwd" id="cm-pwd" class="form-control" required />
-				<i class="ace-icon fa fa-key"></i>
-			</span>
-    </div>
-    <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 red" id="cm-pwd-error"></div>
-  </div>
-
-	<div class="form-group">
-    <label class="col-lg-3 col-md-3 col-sm-3 hidden-xs control-label"></label>
-    <div class="col-lg-3 col-md-3 col-sm-3 col-xs-12">
-			<label style="margin-top:7px;">
-				<input type="checkbox" class="ace" id="force_reset" checked />
-				<span class="lbl">&nbsp; Force user to change password</span>
-			</label>
-    </div>
-  </div>
-
-	<div class="divider-hidden"></div>
-
-  <div class="form-group">
-    <label class="col-lg-3 col-md-3 col-sm-3 col-xs-12 control-label"></label>
-    <div class="col-lg-3 col-md-3 col-sm-3 col-xs-12">
-      <p class="pull-right">
-        <button type="button" class="btn btn-sm btn-success btn-100" onclick="changePassword()">Change password</button>
-      </p>
-    </div>
-  </div>
-
-	<input type="hidden" id="user_id" value="<?php echo $user->id; ?>">
-</form>
-
-<script src="<?php echo base_url(); ?>scripts/users/users.js?v=<?php date('Ymd'); ?>"></script>
-<?php $this->load->view('include/footer'); ?>
+					<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 edit">
+						<label class="display-block not-show">force</label>
+						<label style="margin-top:7px; padding-left:10px;">
+							<input type="checkbox" class="ace" id="x-force_reset" checked />
+							<span class="lbl">&nbsp; Force user to change password</span>
+						</label>
+					</div>
+          </div>
+        </div>
+       </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-sm btn-default btn-100" onclick="closeResetModal()">Close</button>
+				<button type="button" class="btn btn-sm btn-success btn-100" onclick="changePassword()">Change Password</button>
+      </div>
+   </div>
+ </div>
+</div>

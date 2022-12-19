@@ -290,7 +290,10 @@ hr.padding-5 {
 	padding-right:5px;
 }
 
-
+.padding-12 {
+  padding-left: 12px;
+  padding-right: 12px;
+}
 
 .padding-10 {
 	padding-left:10px;
@@ -660,6 +663,13 @@ hr.padding-5 {
 	min-height: 34px !important;
 }
 
+
+.err-label {
+  color:red;
+  font-size: 12px;
+  display: inline-block;
+  line-height: 15px;
+}
 
 
 .inline-block{

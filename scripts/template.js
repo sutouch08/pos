@@ -334,7 +334,7 @@ function sort(field){
 
 
 function validCode(input, regex){
-  var regex = regex === undefined ? /[^a-z0-9-_.@]+/gi : regex;
+  var regex = regex === undefined ? /[^a-z0-9.]+/gi : regex;
   input.value = input.value.replace(regex, '');
 }
 

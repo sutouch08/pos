@@ -145,12 +145,12 @@ function select_user($user_id = NULL)
 }
 
 
-function select_profile($group_id = '')
+function select_user_group($group_id = '')
 {
   $ds = '';
   $ci =& get_instance();
-	$ci->load->model('users/profile_model');
-  $qs = $ci->profile_model->get_all();
+	$ci->load->model('users/user_group_model');
+  $qs = $ci->user_group_model->get_all();
   if(!empty($qs))
   {
     foreach($qs as $rs)
@@ -173,17 +173,6 @@ function _can_view_page($can_view)
 }
 
 
-function profile_name_in($text)
-{
-  if($text !== '')
-  {
-    $ci =& get_instance();
-    $ci->db->select('id');
-  }
-}
-
-
-
 
 function user_in($txt)
 {
@@ -201,26 +190,6 @@ function user_in($txt)
   }
 
   return $sc;
-}
-
-
-function select_quota($code = NULL)
-{
-	$sc = '';
-	$ci =& get_instance();
-	$ci->load->model('masters/quota_model');
-
-	$option = $ci->quota_model->get_all_listed();
-
-	if( ! empty($option))
-	{
-		foreach($option as $rs)
-		{
-			$sc .= '<option value="'.$rs->code.'" '.is_selected($rs->code, $code).'>'.$rs->code.'</option>';
-		}
-	}
-
-	return $sc;
 }
 
 

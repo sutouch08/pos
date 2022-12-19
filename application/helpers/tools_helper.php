@@ -259,7 +259,8 @@ function set_error($key, $name = "data")
 		'delete' => "Delete {$name} failed.",
 		'permission' => "You don't have permission to perform this operation.",
 		'required' => "Missing required parameter.",
-		'exists' => "'{$name}' already exists."
+		'exists' => "'{$name}' already exists.",
+		'notfound' => "No data found"
 	);
 
 	$ci =& get_instance();

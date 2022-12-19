@@ -20,8 +20,7 @@ class Users extends PS_Controller{
 		$filter = array(
 			'uname' => get_filter('uname', 'user_uname', ''),
 			'dname' => get_filter('dname', 'user_dname', ''),
-			'sale_id' => get_filter('sale_id', 'user_sale_id', 'all'),
-			'team_id' => get_filter('team_id', 'user_team_id', 'all'),			
+			'sale_id' => get_filter('sale_id', 'user_sale_id', 'all'),			
 			'group_id' => get_filter('group_id', 'user_group_id', 'all'),
 			'active' => get_filter('active', 'user_active', 'all')
 		);
@@ -42,24 +41,6 @@ class Users extends PS_Controller{
   }
 
 
-
-
-
-  public function add_new()
-  {
-		if($this->pm->can_add)
-		{
-			$this->title = "Add user";
-			$this->load->view('users/user_add');
-		}
-		else
-		{
-			$this->permission_deny();
-		}
-  }
-
-
-
 	public function add()
 	{
 		$sc = TRUE;
@@ -70,15 +51,11 @@ class Users extends PS_Controller{
 			{
 				$uname = trim($this->input->post('uname'));
 				$dname = trim($this->input->post('dname'));
-				$sale_id = $this->input->post('sale_id');
+				$sale_id = get_null($this->input->post('sale_id'));
 				$emp_id = get_null($this->input->post('emp_id'));
 				$team_id = get_null($this->input->post('team_id'));
-				$quota_no = get_null(trim($this->input->post('quota_no')));
-				$is_customer = is_true($this->input->post('is_customer'));
-				$customer_code = get_null($this->input->post('customer_code'));
-				$channels = get_null($this->input->post('channels'));
 				$pwd = $this->input->post('pwd');
-				$id_profile = get_null($this->input->post('profile'));
+				$group_id = get_null($this->input->post('group_id'));
 				$active = $this->input->post('active') == 1 ? 1 : 0;
 				$force_reset = $this->input->post('force_reset') == 1 ? 1 : 0;
 
@@ -86,36 +63,24 @@ class Users extends PS_Controller{
 				{
 					if( ! $this->user_model->is_exists_display_name($dname))
 					{
-						if( ! $is_customer OR ! empty($customer_code))
-						{
-							$arr = array(
-								'uname' => $uname,
-								'pwd' => password_hash($pwd, PASSWORD_DEFAULT),
-								'name' => $dname,
-								'uid' => md5($uname),
-								'id_profile' => $id_profile,
-								'active' => $active,
-								'sale_id' => $sale_id,
-								'emp_id' => $emp_id,
-								'team_id' => $team_id,
-								'quota_no' => $quota_no,
-								'is_customer' => $is_customer ? 1 : 0,
-								'customer_code' => $customer_code,
-								'channels' => $channels,
-								'last_pass_change' => date('Y-m-d'),
-								'force_reset' => $force_reset
-							);
+						$arr = array(
+							'uname' => $uname,
+							'pwd' => password_hash($pwd, PASSWORD_DEFAULT),
+							'name' => $dname,
+							'uid' => md5($uname),
+							'group_id' => $group_id,
+							'active' => $active,
+							'sale_id' => $sale_id,
+							'emp_id' => $emp_id,
+							'team_id' => $team_id,
+							'last_pass_change' => date('Y-m-d'),
+							'force_reset' => $force_reset
+						);
 
-							if( ! $this->user_model->add($arr))
-							{
-								$sc = FALSE;
-								set_error('insert', 'user');
-							}
-						}
-						else
+						if( ! $this->user_model->add($arr))
 						{
 							$sc = FALSE;
-							set_error('required', ' : Customer');
+							set_error('insert', 'user');
 						}
 					}
 					else
@@ -190,43 +155,27 @@ class Users extends PS_Controller{
 			{
 				$id = $this->input->post('id');
 				$dname = trim($this->input->post('dname'));
-				$sale_id = $this->input->post('sale_id');
+				$sale_id = get_null($this->input->post('sale_id'));
 				$emp_id = get_null($this->input->post('emp_id'));
 				$team_id = get_null($this->input->post('team_id'));
-				$quota_no = get_null(trim($this->input->post('quota_no')));
-				$is_customer = is_true($this->input->post('is_customer'));
-				$customer_code = get_null($this->input->post('customer_code'));
-				$channels = get_null($this->input->post('channels'));
-				$id_profile = get_null($this->input->post('profile'));
+				$group_id = get_null($this->input->post('group_id'));
 				$active = $this->input->post('active') == 1 ? 1 : 0;
 
 				if( ! $this->user_model->is_exists_display_name($dname, $id))
 				{
-					if( ! $is_customer OR ! empty($customer_code))
-					{
-						$arr = array(
-							'name' => $dname,
-							'id_profile' => $id_profile,
-							'active' => $active,
-							'sale_id' => $sale_id,
-							'emp_id' => $emp_id,
-							'team_id' => $team_id,
-							'quota_no' => $quota_no,
-							'is_customer' => $is_customer ? 1 : 0,
-							'customer_code' => $customer_code,
-							'channels' => $channels
-						);
+					$arr = array(
+						'name' => $dname,
+						'group_id' => $group_id,
+						'active' => $active,
+						'sale_id' => $sale_id,
+						'emp_id' => $emp_id,
+						'team_id' => $team_id
+					);
 
-						if( ! $this->user_model->update($id, $arr))
-						{
-							$sc = FALSE;
-							set_error('update', 'user');
-						}
-					}
-					else
+					if( ! $this->user_model->update($id, $arr))
 					{
 						$sc = FALSE;
-						set_error('required', ' : Customer');
+						set_error('update', 'user');
 					}
 				}
 				else
@@ -253,28 +202,32 @@ class Users extends PS_Controller{
 
 
 
-	public function view_detail($id)
+	public function view_detail()
 	{
-		$user = $this->user_model->get($id);
+		$sc = TRUE;
 
-		if(!empty($user))
+		$id = $this->input->get('id');
+
+		if( ! empty($id))
 		{
 			$user = $this->user_model->get($id);
 
-			if( ! empty($user))
+			if(empty($user))
 			{
-				$ds = array(
-					'user' => $user
-				);
-
-				$this->load->view('users/user_detail', $ds);
-			}
-			else
-			{
-				$this->error_page();
+				$sc = FALSE;
+				set_error('notfound');
 			}
 		}
+		else
+		{
+			$sc = FALSE;
+			set_error('required', ' : user id');
+		}
+
+		$this->_json_response($sc, (array) $user);
 	}
+
+
 
 
 
@@ -350,7 +303,7 @@ class Users extends PS_Controller{
 	{
 		$sc = TRUE;
 
-		if($this->pm->can_edit OR $this->pm->can_add)
+		if($this->pm->can_edit)
 		{
 			$id = $this->input->post('id');
 			$pwd = $this->input->post('pwd');
