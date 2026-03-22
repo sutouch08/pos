@@ -8,6 +8,19 @@ class Profile_model extends CI_Model
     parent::__construct();
   }
 
+  
+  public function get($id)
+  {
+    $rs = $this->db->where('id', $id)->get($this->tb);
+
+    if($rs->num_rows() === 1)
+    {
+      return $rs->row();
+    }
+
+    return NULL;
+  }
+
 
   public function get_name($id)
   {
@@ -22,19 +35,29 @@ class Profile_model extends CI_Model
   }
 
 
-  public function add($name)
+  public function add(array $ds = array())
   {
-    return $this->db->insert($this->tb, array('name' => $name));
+    if( ! empty($ds))
+    {
+      if($this->db->insert($this->tb, $ds))
+      {
+        return $this->db->insert_id();
+      }
+    }
+
+    return FALSE;
   }
 
 
-
-
-  public function update($id, $name)
+  public function update($id, array $ds = array())
   {
-    return $this->db->where('id', $id)->update($this->tb, array('name' => $name));
-  }
+    if( ! empty($ds))
+    {
+      return $this->db->where('id', $id)->update($this->tb, $ds);
+    }
 
+    return FALSE;
+  }
 
 
   public function delete($id)
@@ -43,11 +66,9 @@ class Profile_model extends CI_Model
   }
 
 
-
-
-  public function is_extsts($name, $id = '')
+  public function is_exists($name, $id = NULL)
   {
-    if($id !== '')
+    if( ! empty($id))
     {
       $this->db->where('id !=', $id);
     }
@@ -63,9 +84,6 @@ class Profile_model extends CI_Model
   }
 
 
-
-
-
   public function count_members($id)
   {
     $this->db->select('id');
@@ -75,16 +93,11 @@ class Profile_model extends CI_Model
   }
 
 
-
-
-
   public function get_profile($id)
   {
     $rs = $this->db->where('id', $id)->get($this->tb);
     return $rs->row();
   }
-
-
 
 
   public function get_list(array $ds = array(), $perpage = 20, $offset = 0)

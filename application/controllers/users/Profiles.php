@@ -6,6 +6,7 @@ class Profiles extends PS_Controller
   public $menu_code = 'SCPROF'; //--- Add/Edit Profile
   public $menu_group_code = 'SC'; //--- System security
   public $title = 'Profiles';
+  public $segment = 4;
 
   public function __construct()
   {
@@ -17,142 +18,168 @@ class Profiles extends PS_Controller
 
   public function index()
   {
-    $profileName = get_filter('profileName', 'profileName', '');
-
-    //--- แสดงผลกี่รายการต่อหน้า
-    $perpage = get_filter('set_rows', 'rows', 20);
-    //--- หาก user กำหนดการแสดงผลมามากเกินไป จำกัดไว้แค่ 300
-    if ($perpage > 300)
-    {
-      $perpage = get_filter('rows', 'rows', 300);
-    }
-
-    $segment = 4; //-- url segment
-    $rows = $this->profile_model->count_rows($profileName);
-
-    //--- ส่งตัวแปรเข้าไป 4 ตัว base_url ,  total_row , perpage = 20, segment = 3
-    $init  = pagination_config($this->home . '/index/', $rows, $perpage, $segment);
-
-    $result = $this->profile_model->get_profiles($profileName, $perpage, $this->uri->segment($segment));
-    $data = array();
-
-    if (!empty($result))
-    {
-      foreach ($result as $rs)
-      {
-        $row = new stdClass();
-        $row->id = $rs->id;
-        $row->name = $rs->name;
-        $row->member = $this->profile_model->count_members($rs->id);
-        $data[] = $row;
-      }
-    }
-
-    $ds = array(
-      'profileName' => $profileName,
-      'data' => $data
+    $filter = array(
+      'name' => get_filter('name', 'profile_name', '')
     );
 
-    $this->pagination->initialize($init);
-
-    $this->load->view('users/profile_list', $ds);
-  }
-
-
-  public function add_profile()
-  {
-    $data['pname'] = $this->session->flashdata('profileName');
-    $this->title = 'New profile';
-    $this->load->view('users/profile_add_view', $data);
-  }
-
-
-  public function edit_profile($id)
-  {
-    $data['data'] = $this->profile_model->get_profile($id);
-    $this->title = 'Edit Profile';
-    $this->load->view('users/profile_edit_view', $data);
-  }
-
-
-  public function update_profile()
-  {
-    if ($this->input->post('profile_id'))
+    if($this->input->post('search'))
     {
-      $id = $this->input->post('profile_id');
-      $name = $this->input->post('profileName');
+      redirect($this->home);
+    }
+    else 
+    {
+      $perpage = get_rows();
+      $rows = $this->profile_model->count_rows($filter);
+      $filter['data'] = $this->profile_model->get_list($filter, $perpage, $this->uri->segment($this->segment));
+      $init = pagination_config($this->home.'/index/', $rows, $perpage, $this->segment);
+      $this->pagination->initialize($init);
 
-      if ($this->profile_model->is_extsts($name, $id) === FALSE)
+      if( ! empty($filter['data']))
       {
-        if ($this->profile_model->update($id, $name))
+        foreach($filter['data'] as $rs)
         {
-          set_message('Profile updated');
-        }
-        else
-        {
-          set_error('Update profile not successfull');
+          $rs->member = $this->profile_model->count_members($rs->id);
         }
       }
-      else
-      {
-        set_error("Profile '" . $name . "' already exists please choose another");
-      }
-    }
-    else
-    {
-      set_error('Not found : profile_id');
-    }
 
-    redirect($this->home . '/edit_profile/' . $id);
+      $this->load->view('users/profile_list', $filter);
+    }    
   }
 
 
-  public function new_profile()
+  public function add_new()
   {
-    if ($this->input->post('profileName'))
+    if($this->pm->can_add)
     {
-      $name = $this->input->post('profileName');
-
-      if ($this->profile_model->is_extsts($name) === FALSE)
-      {
-        if ($this->profile_model->add($name))
-        {
-          set_message('Profile created successfully');
-        }
-      }
-      else
-      {
-        set_error('Profile name already exists, please choose another');
-        $this->session->set_flashdata('profileName', $name); //--- ไว้แสดงผลหน้าต่อไป
-      }
+      $this->load->view('users/profile_add');
     }
-    else
+    else 
     {
-      set_error('Invalid profile name');
-    }
-
-    redirect($this->home . '/add_profile');
+      $this->deny_page();
+    }    
   }
 
 
-  public function delete_profile($id)
+
+  public function add()
   {
-    if ($this->profile_model->delete($id))
+    $sc = TRUE;
+    $name = trim($this->input->post('name'));   
+
+    if(empty($name))
     {
-      set_message("Profile has been deleted");
-    }
-    else
-    {
-      set_error("Failed to delete profile");
+      $sc = FALSE;
+      set_error('required');
     }
 
-    redirect($this->home);
+    if($sc === TRUE)
+    {
+      if($this->profile_model->is_exists($name))
+      {
+        $sc = FALSE;
+        set_error('exists', $name);
+      }
+    }
+
+    if($sc === TRUE)
+    {
+      $arr = array('name' => $name);
+
+      if( ! $this->profile_model->add($arr))
+      {
+        $sc = FALSE;
+        set_error('insert');
+      }
+    }
+
+    $this->_response($sc);
   }
 
 
-  public function clear_filter()
+  public function edit($id)
   {
-    clear_filter('profileName');
-    echo 'done';
+    if($this->pm->can_edit)
+    {
+      $ds['ds'] = $this->profile_model->get($id);
+      $this->load->view('users/profile_edit', $ds);
+    }
+    else 
+    {
+      $this->deny_page();
+    }
+  }
+
+
+  public function update()
+  {
+    $sc = TRUE;
+    $id = $this->input->post('id');
+    $name = trim($this->input->post('name'));
+
+    if(empty($id) OR empty($name))
+    {
+      $sc = FALSE;
+      set_error('required');
+    }
+
+    if($sc === TRUE)
+    {
+      if($this->profile_model->is_exists($name, $id))
+      {
+        $sc = FALSE;
+        set_error('exists', $name);
+      }
+    }
+
+    if($sc === TRUE)
+    {
+      $arr = array('name' => $name);
+
+      if( ! $this->profile_model->update($id, $arr))
+      {
+        $sc = FALSE;
+        set_error('update');
+      }
+    }
+
+    $this->_response($sc);
+  }
+
+
+  public function delete()
+  {
+    $sc = TRUE;
+    $id = $this->input->post('id');
+
+    if( ! $this->pm->can_delete)
+    {
+      $sc = FALSE;
+      set_error('permission');
+    }
+
+    if($sc === TRUE)
+    {
+      if($this->profile_model->count_members($id) > 0)
+      {
+        $sc = FALSE;
+        $this->error = "Delete failed : This profile has active members. Please remove them before delete it.";
+      }
+    }
+
+    if($sc === TRUE)
+    {
+      if( ! $this->profile_model->delete($id))
+      {
+        $sc = FALSE;
+        set_error('delete');
+      }
+    }
+
+    $this->_response($sc);
+  }
+
+   public function clear_filter()
+  {    
+    return clear_filter(['profile_name']);
   }
 }

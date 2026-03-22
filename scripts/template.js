@@ -96,6 +96,16 @@ const loadOut = () => {
 };
 
 
+const load_in = (text = '') => {
+  return loadIn(text);
+}
+
+
+const load_out = () => {
+  return loadOut();
+}
+
+
 const createDateValidator = (defaultLocale = "th-TH") => {
   const localeFormats = {
     "th-TH": ["DD", "MM", "YYYY"],

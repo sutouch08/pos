@@ -4,11 +4,11 @@ $menu_sub_group_code = isset($this->menu_sub_group_code) ? $this->menu_sub_group
 ?>
 
 <div class="sidebar-shortcuts" id="sidebar-shortcuts">
-	<div class="sidebar-shortcuts-large" id="sidebar-shortcuts-large">
-		<button class="btn btn-purple" onclick="go_to('view_stock')" title="สต็อกคงเหลือ"><i class="ace-icon fa fa-tags"></i></button>
-		<button class="btn btn-info" onclick="go_to('orders/orders')" title="ออเดอร์"><i class="ace-icon fa fa-shopping-basket"></i></button>
-		<button class="btn btn-warning" onclick="go_to('find_stock')" title="สต็อกคงเหลือ"><i class="ace-icon fa fa-laptop"></i></button>
-		<button class="btn btn-danger" onclick="go_to('setting/configs')" title="ตั้งค่า"><i class="ace-icon fa fa-cogs"></i></button>
+	<div class="sidebar-shortcuts-large" id="sidebar-shortcuts-large">		
+		<a href="<?php echo base_url(); ?>orders/order_pos" class="btn btn-purple" title="สต็อกคงเหลือ"><i class="ace-icon fa fa-tags"></i></a>		
+		<a href="<?php echo base_url(); ?>orders/orders" class="btn btn-info" title="ออเดอร์"><i class="ace-icon fa fa-shopping-basket"></i></a>		
+		<a href="<?php echo base_url(); ?>find_stock" class="btn btn-warning" title="สต็อกคงเหลือ"><i class="ace-icon fa fa-laptop"></i></a>
+		<a href="<?php echo base_url(); ?>setting/configs" class="btn btn-danger" title="ตั้งค่า"><i class="ace-icon fa fa-cogs"></i></a>
 	</div>
 	<div class="sidebar-shortcuts-mini" id="sidebar-shortcuts-mini">
 		<span class="btn btn-success"></span>

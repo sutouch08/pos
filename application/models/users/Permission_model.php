@@ -16,6 +16,17 @@ class Permission_model extends CI_Model
   }
 
 
+  public function add_batch(array $ds = array())
+  {
+    if( ! empty($ds))
+    {
+      return $this->db->insert_batch('permission', $ds);
+    }
+
+    return FALSE;
+  }
+
+
   public function get_permission($menu, $id_profile)
   {
     if($id_profile == -987654321)
@@ -51,10 +62,9 @@ class Permission_model extends CI_Model
 
 
 
-  public function drop_profile_permission($id)
+  public function drop_permission($id)
   {
-    $this->db->where('id_profile', $id);
-    return $this->db->delete('permission');
+    return $this->db->where('id_profile', $id)->delete('permission');    
   }
 
 }

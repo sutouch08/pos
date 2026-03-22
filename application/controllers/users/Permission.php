@@ -1,177 +1,203 @@
 <?php
-defined('BASEPATH') OR exit('No direct script access allowed');
+defined('BASEPATH') or exit('No direct script access allowed');
 
-class Permission extends PS_Controller{
+class Permission extends PS_Controller
+{
 	public $menu_code = 'SCPERM'; //--- Add/Edit Profile
 	public $menu_group_code = 'SC'; //--- System security
 	public $title = 'Permission';
-  public $permission = FALSE;
+	public $permission = FALSE;
+	public $segment = 4;
 
-  public function __construct()
-  {
-    parent::__construct();
-    //--- If any right to add, edit, or delete mean granted
-    if($this->pm->can_add OR $this->pm->can_edit OR $this->pm->can_delete)
-    {
-      $this->permission = TRUE;
-    }
+	public function __construct()
+	{
+		parent::__construct();
+		//--- If any right to add, edit, or delete mean granted
+		if ($this->pm->can_add or $this->pm->can_edit or $this->pm->can_delete)
+		{
+			$this->permission = TRUE;
+		}
 
-    $this->home = base_url().'users/permission';
-    $this->load->model('users/profile_model');
-    $this->load->model('users/permission_model');
-		$this->load->model('menu');
-  }
+		$this->home = base_url() . 'users/permission';
+		$this->load->model('users/profile_model');
+		$this->load->model('users/permission_model');
+		$this->load->model('menu_model');
+	}
 
 
-
-  public function index()
-  {
+	public function index()
+	{
 		$filter = array(
-			'name' => get_filter('name', 'profileNam', ''),
+			'name' => get_filter('name', 'profileName', ''),
 			'menu' => get_filter('menu', 'menux', 'all'),
 			'permission' => get_filter('permission', 'permission', 'all')
 		);
 
-
-		//--- แสดงผลกี่รายการต่อหน้า
-		$perpage = get_filter('set_rows', 'rows', 20);
-		//--- หาก user กำหนดการแสดงผลมามากเกินไป จำกัดไว้แค่ 300
-		if($perpage > 300)
+		if ($this->input->post('search'))
 		{
-			$perpage = get_filter('rows', 'rows', 300);
+			redirect($this->home);
 		}
-
-		$segment = 4; //-- url segment
-		$rows = $this->profile_model->count_rows($filter);
-
-		//--- ส่งตัวแปรเข้าไป 4 ตัว base_url ,  total_row , perpage = 20, segment = 3
-		$init	= pagination_config($this->home.'/index/', $rows, $perpage, $segment);
-
-		$result = $this->profile_model->get_list($filter, $perpage, $this->uri->segment($segment));
-
-    $data = array();
-
-    if(!empty($result))
-    {
-      foreach($result as $rs)
-      {
-				$rs->member = $this->profile_model->count_members($rs->id);
-      }
-    }
-
-		$filter['data'] = $result;
-
-		$this->pagination->initialize($init);
-
-    $this->load->view('users/permission_view', $filter);
-  }
-
-
-
-  public function edit_permission($id)
-  {
-    $this->load->model('menu');
-    $profile = $this->profile_model->get_profile($id);
-    $this->title = 'กำหนดสิทธิ์ - '.$profile->name;
-    $data['data'] = $profile;
-    $data['menus'] = array();
-    $groups = $this->menu->get_menu_groups();
-    if(!empty($groups))
-    {
-      foreach($groups as $group)
-      {
-				if($group->pm)
-				{
-					$ds = array(
-						'group_code' => $group->code,
-						'group_name' => $group->name,
-						'menu' => ''
-					);
-
-					$menus = $this->menu->get_menus_by_group($group->code);
-
-					if(!empty($menus))
-					{
-						$item = array();
-						foreach($menus as $menu)
-						{
-							if($menu->valid)
-							{
-								$arr = array(
-									'menu_code' => $menu->code,
-									'menu_name' => $menu->name,
-									'permission' => $this->permission_model->get_permission($menu->code, $id)
-								);
-								array_push($item, $arr);
-							}
-
-						}
-
-						$ds['menu'] = $item;
-					}
-
-					array_push($data['menus'], $ds);
-				}
-      }
-    }
-
-    $this->load->view('users/permission_edit_view', $data);
-  }
-
-
-
-
-
-
-	public function save_profile_permission()
-	{
-		if($this->input->post('id_profile'))
+		else
 		{
-			$id_profile = $this->input->post('id_profile');
-			$menu = $this->input->post('menu');
-			$view = $this->input->post('view');
-			$add = $this->input->post('add');
-			$edit = $this->input->post('edit');
-			$delete = $this->input->post('delete');
-			$approve = $this->input->post('approve');
+			$perpage = get_rows();			
+			$rows = $this->profile_model->count_rows($filter);
+			$filter['data'] = $this->profile_model->get_list($filter, $perpage, $this->uri->segment($this->segment));			
+			$init	= pagination_config($this->home . '/index/', $rows, $perpage, $this->segment);		
+			$this->pagination->initialize($init);
 
-			$this->permission_model->drop_profile_permission($id_profile);
-
-			if(!empty($menu))
+			if (!empty($filter['data']))
 			{
-				foreach($menu as $code)
+				foreach ($filter['data'] as $rs)
 				{
-					$pm = array(
-						'menu' => $code,
-						'uid' => NULL,
-						'id_profile' => $id_profile,
-						'can_view' => isset($view[$code]) ? 1 : 0,
-						'can_add' => isset($add[$code]) ? 1 : 0,
-						'can_edit' => isset($edit[$code]) ? 1 : 0,
-						'can_delete' => isset($delete[$code]) ? 1 : 0,
-						'can_approve' => isset($approve[$code]) ? 1 : 0
-					);
-
-					$this->permission_model->add($pm);
+					$rs->member = $this->profile_model->count_members($rs->id);
 				}
-			}
+			}	
 
-			set_message('Done!');
-			redirect($this->home.'/edit_permission/'.$id_profile);
+			$this->load->view('users/permission_list', $filter);
 		}
 	}
 
 
+	public function edit($id)
+	{
+		if($this->pm->can_add OR $this->pm->can_edit)
+		{
+			$profile = $this->profile_model->get($id);
+			
+			if( ! empty($profile))
+			{
+				$this->title = "Manage Permission  - {$profile->name}";
+				$data['profile'] = $profile;
+				$data['menus'] = [];
+				$groups = $this->menu_model->get_menu_groups();
+
+				if( ! empty($groups))
+				{
+					foreach($groups as $group)
+					{
+						if($group->pm)
+						{
+							$c = 0; //-- นับจำนวนเมนู
+
+							$ds = array(
+								'group_code' => $group->code,
+								'group_name' => $group->name,
+								'menu' => []
+							);
+
+							$menus = $this->menu_model->get_menus_by_group($group->code);
+
+							if( ! empty($menus))
+							{
+								foreach($menus as $menu)
+								{
+									if($menu->valid)
+									{
+										$ds['menu'][] = array(
+											'menu_code' => $menu->code,
+											'menu_name' => $menu->name,
+											'permission' => $this->permission_model->get_permission($menu->code, $id)
+										);
+
+										$c++;
+									}
+								}
+							}
+
+							if($c > 0)
+							{
+								//--- ถ้า มี active menu ในกลุ่ม เพิ่มเช้ารายการกำหนดสิทธิ์ ถ้าไม่มีไม่ต้องกำหนดสิทธิ์
+								$data['menus'][] = $ds;
+							}
+						}
+					}
+				}
+
+				$this->load->view('users/permission_edit', $data);
+			}
+			else 
+			{
+				$this->page_error();
+			}
+		}
+		else 
+		{
+			$this->deny_page();
+		}
+	}
+
+
+	public function set_permission()
+	{
+		$sc = TRUE;
+		$ds = json_decode($this->input->post('data'));
+
+		if( ! empty($ds) && ! empty($ds->id))
+		{
+			if( ! empty($ds->menus))
+			{
+				$batches = [];
+
+				foreach($ds->menus as $rs)
+				{
+					$batches[] = array(
+						'id_profile' => $ds->id,
+						'menu' => $rs->menu,
+						'can_view' => $rs->view,
+						'can_add' => $rs->add,
+						'can_edit' => $rs->edit,
+						'can_delete' => $rs->delete,
+						'can_approve' => $rs->approve
+					);
+				}
+
+				$this->db->trans_begin();
+
+				if( ! $this->permission_model->drop_permission($ds->id))
+				{
+					$sc = FALSE;
+					$this->error = "Update failed : Cannot delete prevoius permission";
+				}
+
+				if($sc === TRUE)
+				{
+					if( ! $this->permission_model->add_batch($batches))
+					{
+						$sc = FALSE;
+						set_error('insert');
+					}
+				}
+
+				if($sc === TRUE)
+				{
+					$this->db->trans_commit();
+				}
+				else 
+				{
+					$this->db->trans_rollback();
+				}
+			}
+			else 
+			{
+				$sc = FALSE;
+				set_error('notfound');
+			}
+		}
+		else 
+		{
+			$sc = FALSE;
+			set_error('required');
+		}
+
+		$this->_response($sc);
+	}
 
 
 
-
-  public function clear_filter()
-  {
+	public function clear_filter()
+	{
 		$filter = array('profileName', 'menux', 'permission');
-    clear_filter($filter);
-    echo 'done';
-  }
-
+		clear_filter($filter);
+		echo 'done';
+	}
 } //-- end class
-  ?>

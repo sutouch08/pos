@@ -12,11 +12,11 @@
 	</div>
 </div><!-- End Row -->
 <hr class="padding-5" />
-<form id="searchForm" method="post" action="<?php echo current_url(); ?>">
+<form id="search-form" method="post" action="<?php echo current_url(); ?>">
 	<div class="row">
 		<div class="col-lg-3 col-md-4 col-sm-4 col-xs-6 padding-5">
 			<label>Name</label>
-			<input type="text" class="width-100" name="profileName" id="profileName" value="<?php echo $profileName; ?>" />
+			<input type="text" class="width-100" name="name" value="<?php echo $name; ?>" />
 		</div>
 
 		<div class="col-lg-1 col-md-1-harf col-sm-1-harf col-xs-3 padding-5">
@@ -28,8 +28,9 @@
 			<button type="button" class="btn btn-xs btn-warning btn-block" onclick="clearFilter()"><i class="fa fa-retweet"></i> Reset</button>
 		</div>
 	</div>
-	<hr class="margin-top-15 padding-5">
+	<input type="hidden" name="search" value="1" />
 </form>
+<hr class="margin-top-15 padding-5">
 <?php echo $this->pagination->create_links(); ?>
 
 <div class="row">
@@ -45,9 +46,9 @@
 			</thead>
 			<tbody>
 				<?php if (!empty($data)) : ?>
-					<?php $no = $this->uri->segment(4) + 1; ?>
+					<?php $no = $this->uri->segment($this->segment) + 1; ?>
 					<?php foreach ($data as $rs) : ?>
-						<tr class="font-size-11">
+						<tr id="row-<?php echo $rs->id; ?>">
 							<td class="middle">
 								<?php if ($this->pm->can_edit && $rs->id > 0) : ?>
 									<button type="button" class="btn btn-minier btn-warning" onclick="edit(<?php echo $rs->id; ?>)">
@@ -60,7 +61,7 @@
 									</button>
 								<?php endif; ?>
 							</td>
-							<td class="middle text-center"><?php echo $no; ?></td>
+							<td class="middle text-center no"><?php echo $no; ?></td>
 							<td class="middle"><?php echo $rs->name; ?></td>
 							<td class="middle text-center"><?php echo number($rs->member); ?></td>
 						</tr>

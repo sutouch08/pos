@@ -92,7 +92,7 @@
               <td class="middle text-center no"><?php echo $no; ?></td>
               <td class="middle"><?php echo $rs->uname; ?></td>
               <td class="middle"><?php echo $rs->dname; ?></td>
-              <td class="middle"><?php echo $rs->pname; ?></td>
+              <td class="middle"><?php echo ($rs->id_profile == -987654321 ? 'Super admin' : $rs->pname); ?></td>
               <td class="middle text-center"><?php echo thai_date($rs->date_add, FALSE, '/'); ?></td>
               <td class="middle text-center"><?php echo is_active($rs->active); ?>
 
