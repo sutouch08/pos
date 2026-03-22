@@ -2114,22 +2114,21 @@ input[type=number]::-webkit-outer-spin-button {
 
 .tableFixHead {
 	table-layout: fixed;
-	min-width: 100%;
-	/*margin-top:-1px;
-  margin-left:-1px;
-  margin-right:0px;*/
+	min-width: 100%;	
 	margin-bottom: 0;
 }
 
-.tableFixHead thead th {
+.tableFixHead > thead > tr > th {
 	position: sticky;
 	top: -1px;
 	background-color: #f2f2f2;
-	font-size: 12px;
+	font-size: 11px;
+	padding: 3px;
 }
 
-.tableFixHead tr>td {
-	padding: 3px !important;
+.tableFixHead > tbody > tr > td {
+	font-size:11px;
+	padding: 3px;
 }
 
 .fix-header {

@@ -17,8 +17,7 @@ function validatePassword(input)
 	return true;
 }
 
-function checkPassword() {
-	const uname = $('#uname').val();
+function checkPassword() {	
 	const current = $('#cu-pwd');
 	const newPass = $('#pwd');
 	const conPass = $('#cm-pwd');

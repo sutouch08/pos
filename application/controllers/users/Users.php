@@ -12,6 +12,7 @@ class Users extends PS_Controller{
     parent::__construct();
     $this->home = base_url().'users/users';
 		$this->load->helper('profile');
+		$this->load->helper('saleman');
   }
 
 
@@ -41,8 +42,7 @@ class Users extends PS_Controller{
 
 	
 	public function add_new()
-  {		
-		$this->load->helper('saleman');
+  {				
     $this->load->view('users/user_add');
   }
 
@@ -103,127 +103,164 @@ class Users extends PS_Controller{
 		echo json_encode($arr);
 	}
 
+	
+	public function edit($id)
+	{		
+		$ds['user'] = $this->user_model->get_by_id($id);
+		$this->load->view('users/user_edit', $ds);
+	}
 
-	public function edit_user($id)
+
+	public function update()
 	{
-		$this->load->helper('profile');
-		$this->load->helper('saleman');
-		$ds['data'] = $this->user_model->get_user($id);
-		$this->load->view('users/user_edit_view', $ds);
+		$sc = TRUE;
+		$ds = json_decode(file_get_contents('php://input'));
+
+		if (! empty($ds) && ! empty($ds->id) && ! empty($ds->uname) && ! empty($ds->dname))
+		{
+			if ($this->user_model->is_exists_uname($ds->uname, $ds->id))
+			{
+				$sc = FALSE;
+				$this->error = "{$ds->uname} already exists !";
+			}
+
+			if ($sc === TRUE)
+			{
+				if ($this->user_model->is_exists_dname($ds->dname, $ds->id))
+				{
+					$sc = FALSE;
+					$this->error = "{$ds->dname} already exists !";
+				}
+			}
+
+			if ($sc === TRUE)
+			{
+				$arr = array(
+					'uname' => $ds->uname,
+					'name' => $ds->dname,
+					'id_profile' => get_null($ds->id_profile),
+					'sale_id' => get_null($ds->sale_id),
+					'active' => $ds->active
+				);
+
+				if (! $this->user_model->update($ds->id, $arr))
+				{
+					$sc = FALSE;
+					set_error('update');
+				}
+			}
+		}
+		else
+		{
+			$sc = FALSE;
+			set_error('required');
+		}
+
+		$arr = array(
+			'status' => $sc === TRUE ? 'success' : 'failed',
+			'message' => $sc === TRUE ? 'success' : $this->error
+		);
+
+		echo json_encode($arr);
 	}
 
 
 	public function reset_password($id)
 	{
 			$this->title = 'Reset Password';
-			$data['data'] = $this->user_model->get_user($id);
-			$this->load->view('users/user_reset_pwd_view', $data);
+			$data['user'] = $this->user_model->get_by_id($id);
+			$this->load->view('users/user_reset_pwd', $data);
 	}
-
 
 
 	public function change_password()
 	{
-		if($this->input->post('user_id'))
-		{
-			$id = $this->input->post('user_id');
-			$pwd = password_hash($this->input->post('pwd'), PASSWORD_DEFAULT);
-			$user = $this->user_model->change_password($id, $pwd);
+		$sc = TRUE;
+		$ds = json_decode(file_get_contents('php://input'));
 
-			if($user === TRUE)
+		if( ! empty($ds) && ! empty($ds->id) && $ds->pwd != '')
+		{
+			$user = $this->user_model->get_by_id($ds->id);
+
+			if( ! empty($user))
 			{
 				$arr = array(
-					'last_pass_change' => date('Y-m-d')
+					'pwd' => $pwd = password_hash($ds->pwd, PASSWORD_DEFAULT),
+					'force_reset' => $ds->force,
+					'last_pass_change' => now()
 				);
-				//--- update last pass change
-				$this->user_model->update_user($user->id, $arr);
-				$this->session->set_flashdata('success', 'Password changed');
-			}
-			else
-			{
-				$this->session->set_flashdata('error', 'Change password not successfull, please try again');
-			}
-		}
-
-		redirect($this->home);
-	}
-
-
-
-	public function delete_user($id)
-	{
-		$sc = TRUE;
-		$user = $this->user_model->get_user($id);
-		if(!empty($user))
-		{
-			if(!$this->user_model->has_transection($user->uname))
-			{
-				if(!$this->user_model->delete_user($id))
+				
+				if( ! $this->user_model->update($ds->id, $arr))
 				{
 					$sc = FALSE;
-					$this->error = "Delete user failed";
+					$this->error = "Update password failed";
 				}
 			}
-			else
+			else 
 			{
 				$sc = FALSE;
-				$this->error = "ไม่สามารถลบ user ได้ เนื่องจากมี transection ในระบบแล้ว";
+				set_error('notfound');
 			}
 		}
-		else
+		else 
 		{
 			$sc = FALSE;
-			$this->error = "ไม่พบ User ที่ต้องการลบ";
+			set_error('required');
 		}
 
-		echo $sc === TRUE ? 'success' : $this->error;
+		$this->_response($sc);
 	}
 
 
-
-	public function update_user()
+	public function delete_user()
 	{
 		$sc = TRUE;
-		if($this->input->post('user_id'))
-		{
-			$id = $this->input->post('user_id');
-			$uname = $this->input->post('uname');
-			$dname = $this->input->post('dname');
-			$id_profile = $this->input->post('profile') === '' ? NULL : $this->input->post('profile');
-			$sale_id = $this->input->post('sale_id') === '' ? NULL : $this->input->post('sale_id');
-			$status = $this->input->post('status');
-			$is_viewer = $this->input->post('is_viewer');
+		$id = $this->input->post('id');
+		$user = NULL;
 
-			$data = array(
-				'uname' => $uname,
-				'name' => $dname,
-				'id_profile' => $id_profile,
-				'sale_id' => $sale_id,
-				'active' => $status,
-				'is_viewer' => $is_viewer
-			);
-
-			$rs = $this->user_model->update_user($id, $data);
-			if($rs === FALSE)
-			{
-				$this->session->set_flashdata('error', 'Update user not successfully');
-			}
-			else
-			{
-				$this->session->set_flashdata('success', 'User updated');
-			}
-		}
-		else
+		if(empty($id))
 		{
-			$this->session->set_flashdata('error','Update fail : data not found');
+			$sc = FALSE;
+			set_error('required');
 		}
 
-		redirect($this->home.'/edit_user/'.$id);
+		if ($sc === TRUE && ! $this->pm->can_delete)
+		{
+			$sc = FALSE;
+			set_error('permission');
+		}
 
+		if($sc === TRUE)
+		{
+			$user = $this->user_model->get_by_id($id);
+
+			if(empty($user))
+			{
+				$sc = FALSE;
+				set_error('notfound');
+			}			
+		}
+
+		if($sc === TRUE && ! empty($user))
+		{
+			if($this->user_model->has_transection($user->uname))
+			{
+				$sc = FALSE;
+				set_error('transection');
+			}
+		}
+		
+		if($sc === TRUE)
+		{
+			if( ! $this->user_model->delete($id))
+			{
+				$sc = FALSE;
+				set_error('delete');
+			}
+		}
+
+		$this->_response($sc);		
 	}
-
-
-
 
 
 	public function valid_dname()
@@ -263,26 +300,79 @@ class Users extends PS_Controller{
 	}
 
 
-
-
-	//--- Activeate suspend user by id;
-	public function active_user($id)
+	public function get_permission($id)
 	{
-		$rs = $this->user_model->active_user($id);
-		echo $rs === TRUE ? 'success' : json_encode($rs);
-	}
+		$sc = TRUE;
+		$this->load->model('users/permission_model');
 
+		$ds = [];
 
+		$user = $this->user_model->get_by_id($id);
 
+		if( ! empty($user))
+		{
+			$ds['header'] = "Permission : \"{$user->uname}\"";
+			$ds['group'] = [];
 
+			$groups = $this->menu_model->get_active_menu_groups();
 
+			if( ! empty($groups))
+			{
+				foreach ($groups as $gp)
+				{
+					if ($gp->pm)
+					{
+						$menuGroup = array(
+							'group_code' => $gp->code,
+							'group_name' => $gp->name,
+							'menu' => ''
+						);
 
-	//--- Suspend activated user by id
-	public function disactive_user($id)
-	{
-		$rs = $this->user_model->disactive_user($id);
+						$menus = $this->menu_model->get_menus_by_group($gp->code);
 
-		echo $rs === TRUE ? 'success' : $rs;
+						if (! empty($menus))
+						{
+							$item = array();
+
+							foreach ($menus as $menu)
+							{
+								if ($menu->valid)
+								{
+									$pm = $this->permission_model->get_permission($menu->code, $user->id_profile);
+
+									$item[] = array(
+										'menu_code' => $menu->code,
+										'menu_name' => $menu->name,
+										'cv' => $pm->can_view ? 1 : 0,
+										'ca' => $pm->can_add ? 1 : 0,
+										'ce' => $pm->can_edit ? 1 : 0,
+										'cd' => $pm->can_delete ? 1 : 0,
+										'cp' => $pm->can_approve ? 1 : 0
+									);									
+								}
+							}
+
+							$menuGroup['menu'] = $item;
+						}
+
+						$ds['group'][] = $menuGroup;						
+					}
+				}
+			}
+		}
+		else 
+		{
+			$sc = FALSE;
+			set_error('notfound');
+		}
+
+		$arr = array(
+			'status' => $sc === TRUE ? 'success' : 'failed',
+			'message' => $sc === TRUE ? 'success' : $this->error,
+			'data' => $sc === TRUE ? $ds : NULL
+		);
+
+		echo json_encode($arr);
 	}
 
 
@@ -292,14 +382,14 @@ class Users extends PS_Controller{
 		$sc = TRUE;
 		$ds = array();
 
-		$user = $this->user_model->get_user($id);
+		$user = $this->user_model->get_by_id($id);
 
 		if( ! empty($user))
 		{
 			$ds['header'] = "Permission : \"{$user->uname}\"";
 			$ds['group'] = array();
 
-			$groups = $this->menu->get_active_menu_groups();
+			$groups = $this->menu_model->get_active_menu_groups();
 
 			if( ! empty($groups))
 			{
@@ -313,7 +403,7 @@ class Users extends PS_Controller{
 							'menu' => ''
 						);
 
-						$menus = $this->menu->get_menus_by_group($gp->code);
+						$menus = $this->menu_model->get_menus_by_group($gp->code);
 
 						if( ! empty($menus))
 						{
@@ -367,7 +457,7 @@ class Users extends PS_Controller{
 		$token = $this->input->post('token');
 		$id = $this->input->post('user_id');
 
-		$user = $this->user_model->get_user($id);
+		$user = $this->user_model->get_by_id($id);
 		$uname = empty($user) ? 'no data' : $user->uname;
 
     //--- load excel library
@@ -402,7 +492,7 @@ class Users extends PS_Controller{
 			$row = 4;
 
 
-			$groups = $this->menu->get_active_menu_groups();
+			$groups = $this->menu_model->get_active_menu_groups();
 
 			if( ! empty($groups))
 			{
@@ -427,7 +517,7 @@ class Users extends PS_Controller{
 
 						$row++;
 
-						$menus = $this->menu->get_menus_by_group($gp->code);
+						$menus = $this->menu_model->get_menus_by_group($gp->code);
 
 						if( ! empty($menus))
 						{
@@ -479,7 +569,7 @@ class Users extends PS_Controller{
 
 		$ds = array();
 
-		$groups = $this->menu->get_active_menu_groups();
+		$groups = $this->menu_model->get_active_menu_groups();
 
 		if( ! empty($groups))
 		{
@@ -492,7 +582,7 @@ class Users extends PS_Controller{
 						'menus' => NULL
 					);
 
-					$menus = $this->menu->get_menus_by_group($group->code);
+					$menus = $this->menu_model->get_menus_by_group($group->code);
 
 					if( ! empty($menus))
 					{

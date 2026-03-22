@@ -267,12 +267,6 @@ class User_model extends CI_Model
   }
 
 
-  public function change_password($id, $pwd)
-  {
-    return $this->db->set('pwd', $pwd)->where('id', $id)->update($this->tb);
-  }
-
-
   public function verify_uid($uid)
   {
     $count = $this->db->where('uid', $uid)->where('active', 1)->count_all_results($this->tb);
@@ -294,7 +288,7 @@ class User_model extends CI_Model
 
 	public function has_transection($uname)
 	{
-		
+		//return TRUE;
 		return FALSE;
 	}
 

@@ -9,23 +9,20 @@ window.addEventListener('load', () => {
 });
 
 
-document.querySelectorAll('.search').forEach(el => {
-  el.addEventListener('keyup', (e) => {
-    if (e.key === 'Enter') {
-      getSearch();
-    }
-  });
+$('.search').keyup(function(e) {
+  if(e.key === 'Enter') {
+    getSearch();
+  }
 });
 
 
-document.querySelectorAll('.filter').forEach(el => {
-  el.addEventListener('change', () => {
-    getSearch();
-  });
+$('.filter').change(function() {
+  getSearch();
 });
 
 
 const inputRows = document.getElementById('set-rows');
+
 if(inputRows) {
   inputRows.addEventListener('keyup', (e) => {
     if(e.key === 'Enter') {
@@ -463,7 +460,7 @@ const numberOnly = (input) => {
 
 
 const closeModal = (modalName) => {
-  $('#' + modalName).modal('hide');
+  $(`#${modalName}`).modal('hide');
 };
 
 

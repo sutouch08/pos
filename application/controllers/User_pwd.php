@@ -109,23 +109,18 @@ class User_pwd extends PS_Controller
 		if(!empty($user))
 		{
 			if(password_verify($pwd, $user->pwd))
-			{
-				//--- change password
-				$password = password_hash($new_pwd, PASSWORD_DEFAULT);
+			{				
+				$arr = array(
+					'pwd' => password_hash($new_pwd, PASSWORD_DEFAULT),
+					'force_reset' => 0,
+					'last_pass_change' => now()
+				);
 
-				if(!$this->user_model->change_password($user->id, $password))
+				if(!$this->user_model->update($user->id, $arr))
 				{
 					$sc = FALSE;
 					$this->error = "เปลี่ยนรหัสผ่านไม่สำเร็จ";
-				}
-				else
-				{
-					$arr = array(
-						'last_pass_change' => date('Y-m-d')
-					);
-					//--- update last pass change
-					$this->user_model->update_user($user->id, $arr);
-				}
+				}				
 			}
 			else
 			{
@@ -143,27 +138,28 @@ class User_pwd extends PS_Controller
 	}
 
 
-
-
   public function change_skey()
   {
     $sc = TRUE;
     $uid = trim($this->input->post('uid'));
-    $user = $this->user_model->get_user_by_uid($uid);
-    if(!empty($user))
+    $user = $this->user_model->get_by_uid($uid);
+
+    if( ! empty($user))
     {
       $skey = trim($this->input->post('skey'));
       $skey = md5($skey);
-      $is_exists = $this->user_model->is_skey_exists($skey, $uid);
-      if($is_exists)
+     
+      if($this->user_model->is_skey_exists($skey, $uid))
       {
         $sc = FALSE;
         $this->error = "ไม่สามารถใช้รหัสนี้ได้กรุณากำหนดรหัสอื่น";
       }
-      else
+
+      if($sc === TRUE)
       {
         $arr = array('skey' => $skey);
-        if(! $this->user_model->update_user($user->id, $arr))
+
+        if(! $this->user_model->update($user->id, $arr))
         {
           $sc = FALSE;
           $this->error = "เปลี่ยนรหัสลับไม่สำเร็จ";
@@ -176,8 +172,7 @@ class User_pwd extends PS_Controller
       $this->error = "ไม่พบ user หรือ user ไม่ถูกต้อง";
     }
 
-    echo $sc === TRUE ? 'success' : $this->error;
-
+    $this->_response($sc);
   }
 
 }

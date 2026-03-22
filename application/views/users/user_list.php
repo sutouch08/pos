@@ -3,14 +3,14 @@
   <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 padding-5 padding-top-5">
     <h4 class="title"><?php echo $this->title; ?></h4>
   </div>
-  <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 padding-5 text-right">    
+  <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 padding-5 text-right">
     <?php if ($this->pm->can_add) : ?>
       <button type="button" class="btn btn-white btn-success top-btn" onclick="addNew()"><i class="fa fa-plus"></i> Add New</button>
     <?php endif; ?>
   </div>
 </div><!-- End Row -->
 <hr class="padding-5" />
-<form id="searchForm" method="post" action="<?php echo current_url(); ?>">
+<form id="search-form" method="post" action="<?php echo current_url(); ?>">
   <div class="row">
     <div class="col-lg-2 col-md-2 col-sm-2 col-xs-4 padding-5">
       <label>User name</label>
@@ -22,12 +22,12 @@
       <input type="text" class="form-control input-sm" name="dname" value="<?php echo $dname; ?>" />
     </div>
 
-    <div class="col-lg-2 col-md-3 col-sm-3 col-xs-4 padding-5">
+    <div class="col-lg-3 col-md-3 col-sm-3 col-xs-4 padding-5">
       <label>Profile</label>
       <select class="form-control input-sm filter" name="profile" id="profile">
         <option value="all">ทั้งหมด</option>
         <?php echo select_profile($profile); ?>
-      </select>      
+      </select>
     </div>
 
     <div class="col-lg-1-harf col-md-1-harf col-sm-1-harf col-xs-4 padding-5">
@@ -56,7 +56,7 @@
 
 <div class="row">
   <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 padding-5 table-responsive">
-    <table class="table table-bordered" style="min-width:1100px;">
+    <table class="table table-bordered tableFixHead" style="min-width:1100px;">
       <thead>
         <tr class="font-size-11">
           <th class="fix-width-120 middle"></th>
@@ -75,7 +75,7 @@
           <?php foreach ($data as $rs) : ?>
             <?php $active = $rs->active == 1 ? '' : 'hide'; ?>
             <?php $disActive = $rs->active == 0 ? '' : 'hide'; ?>
-            <tr class="font-size-11">
+            <tr id="row-<?php echo $rs->id; ?>">
               <td class="middle">
                 <button type="button" class="btn btn-minier btn-purple" onclick="getPermission(<?php echo $rs->id; ?>)" style="padding-left:7px; padding-right:7px;">
                   <i class="fa fa-lock"></i>
@@ -83,13 +83,13 @@
 
                 <?php if (($this->pm->can_edit && $rs->id_profile >= 0) or $this->_SuperAdmin) : ?>
                   <button type="button" class="btn btn-minier btn-info" onclick="getReset(<?php echo $rs->id; ?>)"><i class="fa fa-key"></i></button>
-                  <button type="button" class="btn btn-minier btn-warning" onclick="getEdit(<?php echo $rs->id; ?>)"><i class="fa fa-pencil"></i></button>
+                  <button type="button" class="btn btn-minier btn-warning" onclick="edit(<?php echo $rs->id; ?>)"><i class="fa fa-pencil"></i></button>
                 <?php endif; ?>
                 <?php if (($this->pm->can_delete && $rs->id_profile > 0) or $this->_SuperAdmin) : ?>
                   <button type="button" class="btn btn-minier btn-danger" onclick="getDelete(<?php echo $rs->id; ?>, '<?php echo $rs->uname; ?>')"><i class="fa fa-trash"></i></button>
                 <?php endif; ?>
               </td>
-              <td class="middle text-center"><?php echo $no; ?></td>
+              <td class="middle text-center no"><?php echo $no; ?></td>
               <td class="middle"><?php echo $rs->uname; ?></td>
               <td class="middle"><?php echo $rs->dname; ?></td>
               <td class="middle"><?php echo $rs->pname; ?></td>
@@ -115,7 +115,7 @@
         <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
         <h4 class="modal-title" id="permission-text">Permission</h4>
         <form id="permission-form" method="post" action="<?php echo $this->home; ?>/export_permission/">
-          <input type="hidden" id="user_id" name="user_id" value="" />
+          <input type="hidden" id="user-id" name="user_id" value="" />
           <input type="hidden" id="token" name="token" value="" />
         </form>
       </div>
@@ -130,33 +130,14 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-sm btn-success" onclick="doExport()"><i class="fa fa-download"></i> Export to excel</button>
-        <button type="button" class="btn btn-sm btn-default" onclick="CloseModal()">Close</button>
+        <button type="button" class="btn btn-sm btn-default" onclick="closeModal('permission-modal')">Close</button>
       </div>
     </div>
   </div>
 </div>
 
-<div class="modal fade" id="all-permission-modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-  <div class="modal-dialog" style="max-width:95%; margin-left:auto; margin-right:auto;">
-    <div class="modal-content">
-      <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-        <h4 class="modal-title" id="permission-text">Permission</h4>
-        <form id="all-permission-form" method="post" action="<?php echo $this->home; ?>/export_all_permission/">
-          <input type="hidden" id="all" name="all" value="0" />
-          <input type="hidden" id="all-token" name="alltoken" value="" />
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-sm btn-success" onclick="exportAll(1)"><i class="fa fa-download"></i> All Users</button>
-        <button type="button" class="btn btn-sm btn-success" onclick="exportAll(0)"><i class="fa fa-download"></i> Active Users</button>
-        <button type="button" class="btn btn-sm btn-default" onclick="CloseModalAll()">Close</button>
-      </div>
-    </div>
-  </div>
-</div>
 
-<script id="permission-template" type="text/x-handlebarsTemplate">
+<template id="template" type="text/html">
   {{#each group}}
     <tr class="font-size-14" style="background-color:#428bca73;">
       <td class="fix-width-250 middle">{{group_name}}</td>
@@ -177,7 +158,7 @@
       </tr>
     {{/each}}
   {{/each}}
-</script>
+</template>
 
 <script>
   $('#profile').select2();

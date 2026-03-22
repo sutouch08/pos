@@ -15,7 +15,7 @@
   <div class="form-group">
     <label class="col-lg-4-harf col-md-4-harf col-sm-4-harf col-xs-12 control-label no-padding-right">User name</label>
     <div class="col-lg-3 col-md-3 col-sm-3 col-xs-12">
-      <input type="text" id="uname" class="form-control input-sm" autocomplete="off" autofocus />
+      <input type="text" id="uname" class="form-control input-sm" autocomplete="off" value="<?php echo $user->uname; ?>" disabled />
     </div>
     <div class="help-block col-xs-12 col-sm-reset inline red" id="uname-error"></div>
   </div>
@@ -23,7 +23,7 @@
   <div class="form-group">
     <label class="col-lg-4-harf col-md-4-harf col-sm-4-harf col-xs-12 control-label no-padding-right">Display name</label>
     <div class="col-lg-3 col-md-3 col-sm-3 col-xs-12">
-      <input type="text" id="dname" class="form-control input-sm" autocomplete="off" />
+      <input type="text" id="dname" class="form-control input-sm" autocomplete="off" value="<?php echo $user->name; ?>" disabled />
     </div>
     <div class="help-block col-xs-12 col-sm-reset inline red" id="dname-error"></div>
   </div>
@@ -31,7 +31,7 @@
   <div class="form-group">
     <label class="col-lg-4-harf col-md-4-harf col-sm-4-harf col-xs-12 control-label no-padding-right">New password</label>
     <div class="col-lg-3 col-md-3 col-sm-3 col-xs-12">
-      <input type="password" id="pwd" class="form-control input-sm" autocomplete="off" />
+      <input type="password" id="pwd" class="form-control input-sm" autocomplete="off" autofocus />
     </div>
     <div class="help-block col-xs-12 col-sm-reset inline red" id="pwd-error"></div>
   </div>
@@ -45,67 +45,34 @@
   </div>
 
   <div class="form-group">
-    <label class="col-lg-4-harf col-md-4-harf col-sm-4-harf col-xs-12 control-label no-padding-right">Profile</label>
+    <label class="col-lg-4-harf col-md-4-harf col-sm-4-harf col-xs-12 control-label no-padding-right"></label>
     <div class="col-lg-3 col-md-3 col-sm-3 col-xs-12">
-      <select class="form-control input-sm" id="profile" autocomplete="off">
-        <option value="">Please, select profile</option>
-        <?php echo select_profile(); ?>
-      </select>
-    </div>
-    <div class="help-block col-xs-12 col-sm-reset inline red" id="profile-error"></div>
+      <label>
+        <input type="checkbox" class="ace" id="force-reset" value="1" checked />
+        <span class="lbl">&nbsp; &nbsp; User must change after login</span>
+      </label>      
+    </div>    
   </div>
 
-  <div class="form-group">
-    <label class="col-lg-4-harf col-md-4-harf col-sm-4-harf col-xs-12 control-label no-padding-right">พนักงานขาย</label>
-    <div class="col-lg-3 col-md-3 col-sm-3 col-xs-12">
-      <select class="form-control input-sm" id="sale-id" autocomplete="off">
-        <option value="">ไม่ระบุ</option>
-        <?php echo select_saleman(); ?>
-      </select>
-    </div>
-    <div class="help-block col-xs-12 col-sm-reset inline">
-      &nbsp;
-    </div>
-  </div>
-
-  <div class="form-group">
-    <label class="col-lg-4-harf col-md-4-harf col-sm-4-harf col-xs-12 control-label no-padding-right">Status</label>
-    <div class="col-lg-3 col-md-3 col-sm-3-harf col-xs-12">
-      <div class="radio">
-        <label>
-          <input type="radio" class="ace" name="status" value="1" checked />
-          <span class="lbl padding-5"> Active</span>
-        </label>
-        <label>
-          <input type="radio" class="ace" name="status" value="0" />
-          <span class="lbl"> Suspend</span>
-        </label>
-      </div>
-    </div>
-    <div class="help-block col-xs-12 col-sm-reset inline red"></div>
-  </div>
-
+  <div class="divider-hidden"></div>
+  <div class="divider-hidden"></div>
   <div class="divider-hidden"></div>
 
   <div class="form-group">
     <label class="col-lg-4-harf col-md-4-harf col-sm-4-harf col-xs-12 control-label no-padding-right"></label>
     <div class="col-lg-3 col-md-3 col-sm-3 col-xs-12">
-        <button type="button" class="btn btn-sm btn-success btn-block visible-xs" onclick="add()"><i class="fa fa-save"></i> Save</button>
       <p class="pull-right">
-        <button type="button" class="btn btn-sm btn-success hidden-xs" onclick="add()"><i class="fa fa-save"></i> Save</button>
+        <button type="button" class="btn btn-sm btn-success" onclick="changePassword()"><i class="fa fa-save"></i> Change Password</button>
       </p>
     </div>
     <div class="help-block col-xs-12 col-sm-reset inline">
       &nbsp;
     </div>
   </div>
-  <input type="hidden" id="user-id" value="0" />
+  <input type="hidden" id="user-id" value="<?php echo $user->id; ?>" />
 </form>
 
-<script>
-  $('#profile').select2();
-  $('#sale-id').select2();
-</script>
-<script src="<?php echo base_url(); ?>scripts/users/users.js?v=<?php echo date('Ymd'); ?>"></script>
-<script src="<?php echo base_url(); ?>scripts/users/user_add.js?v=<?php echo date('Ymd'); ?>"></script>
+<script src="<?php echo base_url(); ?>scripts/users/users.js?v=<?php date('Ymd'); ?>"></script>
+<script src="<?php echo base_url(); ?>scripts/users/user_add.js?v=<?php date('Ymd'); ?>"></script>
+
 <?php $this->load->view('include/footer'); ?>

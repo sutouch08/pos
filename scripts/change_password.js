@@ -1,4 +1,3 @@
-var HOME = BASE_URL + 'change_password/';
 
 function validatePassword(input)
 {
@@ -13,7 +12,6 @@ function validatePassword(input)
 		return false;
 	}
 }
-
 
 
 function checkPassword() {
@@ -58,18 +56,20 @@ function checkPassword() {
 		newPass.removeClass('has-error');
 		pasErr.addClass('hide');
 	}
-
+	
 	//--- check complexity
-	if(!validatePassword(newPass.val())) {
-		newPass.addClass('has-error');
-		pasErr.text('รหัสผ่านต้องมีความยาว 8 - 20 ตัวอักษร และต้องประกอบด้วย ตัวอักษรภาษาอังกฤษ พิมพ์เล็ก พิมพ์ใหญ่ และตัวเลขอย่างน้อย อย่างละตัว');
-		pasErr.removeClass('hide');
-		newPass.focus();
-		return false;
-	}
-	else {
-		newPass.removeClass('has-error');
-		pasErr.addClass('hide');
+	if(USE_STRONG_PWD) {
+		if(!validatePassword(newPass.val())) {
+			newPass.addClass('has-error');
+			pasErr.text('รหัสผ่านต้องมีความยาว 8 - 20 ตัวอักษร และต้องประกอบด้วย ตัวอักษรภาษาอังกฤษ พิมพ์เล็ก พิมพ์ใหญ่ และตัวเลขอย่างน้อย อย่างละตัว');
+			pasErr.removeClass('hide');
+			newPass.focus();
+			return false;
+		}
+		else {
+			newPass.removeClass('has-error');
+			pasErr.addClass('hide');
+		}
 	}
 
 
@@ -86,7 +86,7 @@ function checkPassword() {
 	}
 
 	$.ajax({
-		url:HOME + 'check_current_password',
+		url:`${HOME}check_current_password`,
 		type:"POST",
 		cache:false,
 		data: {
@@ -96,7 +96,7 @@ function checkPassword() {
 		success:function(rs) {
 			if(rs === 'valid') {
 				$.ajax({
-					url:HOME + 'change',
+					url:`${HOME}change`,
 					type:'POST',
 					cache:false,
 					data:{

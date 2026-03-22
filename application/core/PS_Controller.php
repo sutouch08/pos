@@ -21,16 +21,49 @@ class PS_Controller extends CI_Controller
 
 		$this->_user = $this->user_model->get_by_uid($uid);		
 		$this->_SuperAdmin = $this->_user->id_profile == -987654321 ? TRUE : FALSE;
-		$this->close_system   = getConfig('CLOSE_SYSTEM'); //--- ปิดระบบทั้งหมดหรือไม่
+		$this->close_system = getConfig('CLOSE_SYSTEM'); //--- ปิดระบบทั้งหมดหรือไม่
 
     if($this->close_system == 1 && $this->_SuperAdmin === FALSE)
     {
       redirect(base_url().'setting/maintenance');
-    }		
+    }
+
+    if (! $this->_SuperAdmin && $this->is_expire_password($this->_user->last_pass_change))
+    {
+      redirect(base_url() . 'change_password/e');
+    }
+
+    if ($this->_user->force_reset)
+    {
+      redirect(base_url() . 'change_password/f');
+    }
 
     //--- get permission for user
-    $this->pm = get_permission($this->menu_code, $uid, get_cookie('id_profile'));      
+    $this->pm = get_permission($this->menu_code, $uid, $this->_user->id_profile);      
   }
+
+
+  public function is_expire_password($last_pass_change)
+  {
+    $today = date('Y-m-d');
+
+    $last_change = empty($last_pass_change) ? date('2021-01-01') : $last_pass_change;
+
+    $expire_days = intval(getConfig('USER_PASSWORD_AGE'));
+
+    if ($expire_days != 0)
+    {
+      $expire_date = date('Y-m-d', strtotime("+{$expire_days} days", strtotime($last_change)));
+
+      if ($today > $expire_date)
+      {
+        return TRUE;
+      }
+    }
+
+    return FALSE;
+  }
+
 
   public function _response($sc = TRUE)
   {
