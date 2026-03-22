@@ -7,19 +7,19 @@ public $current_page	= 1;
 public $page_width 	= 200;
 public $page_height	= 282;
 public $content_width	= 190;
-public $row				= 20;
+public $row = 20;
 public $header_rows = 4;
 public $sub_total_row	= 2;
-public $footer_row		= 4;
-public $ex_row			= 0;
-public $total_row		= 16;
-public $row_height 	= 10;
-public $font_size 		= 14;
-public $title				= "";
-public $title_size 		= "h4";
+public $footer_row = 4;
+public $ex_row = 0;
+public $total_row = 16;
+public $row_height = 10;
+public $font_size = 14;
+public $title = "";
+public $title_size = "h4";
 public $content_border = 2;
-public $pattern			= array();
-public $footer			= true;
+public $pattern = array();
+public $footer = true;
 public $custom_header = '';
 
 public $header_row	= array();
@@ -31,9 +31,6 @@ public function __construct()
 {
 	return true;
 }
-
-
-
 
 
 public function config(array $data)
@@ -53,8 +50,6 @@ public function config(array $data)
 }
 
 
-
-
 public function doc_header($pageTitle = 'print pages')
 {
 	$header = "";
@@ -66,20 +61,10 @@ public function doc_header($pageTitle = 'print pages')
 	$header .= "	<link rel='icon' href='".base_url()."assets/img/favicon.ico' type='image/x-icon' />";
 	$header .= "	<title>". $pageTitle ."</title>";
 	$header .= "	<link href='".base_url()."assets/css/bootstrap.css' rel='stylesheet' />";
-	$header .= "	<link rel='stylesheet' href='".base_url()."assets/css/font-awesome.css' />";
 	$header .= "	<link href='".base_url()."assets/css/template.css' rel='stylesheet' />";
-	$header .= '<link rel="preconnect" href="https://fonts.googleapis.com">';
-	$header .= '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>';
-	$header .= '<link href="https://fonts.googleapis.com/css2?family=Sarabun:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800&display=swap" rel="stylesheet">';
 	$header .= "	<script src='".base_url()."assets/js/jquery.min.js'></script>";
 	$header .= "	<script src='".base_url()."assets/js/bootstrap.min.js'></script> ";
-	$header .= "	<style> ";
-	$header .= " 		body { font-family:'Sarabun', sans-serif;} ";
-	$header .= "		.page_layout{ border: solid 1px #AAA; border-radius:5px; 	} ";
-	$header .= "		@media print{ 	.page_layout{ border: none; } } ";
-	$header .= " 		.table > tbody > tr > td { border-top:0px; border-left:solid 1px #555555;} ";
-	$header .= "		.table > tbody > tr > td:last-child { border-right:solid 1px #555555;} ";
-	$header .= "	</style>";
+	$header .= "	<style> .page_layout{ border: solid 1px #AAA; border-radius:5px; 	} @media print{ 	.page_layout{ border: none; } } 	</style>";
 	$header .= "	</head>";
 	$header .= "	<body>";
 	$header .= "	<div class='modal fade' id='xloader' tabindex='-1' role='dialog' aria-labelledby='myModalLabel' aria-hidden='true' data-backdrop='static'>";
@@ -93,15 +78,11 @@ public function doc_header($pageTitle = 'print pages')
 	$header .= "	<div style='width:100%;  text-align:center; margin-top:15px; font-size:12px;'><span><strong>Loading....</strong></span></div>";
 	$header .= "	</div></div></div></div></div> "; // modal fade;
 	$header .= "	<div class='hidden-print' style='margin-top:10px; padding-bottom:10px; padding-right:5mm; width:200mm; margin-left:auto; margin-right:auto; text-align:right'>";
-	
-	$header .= "	<button class='btn btn-primary' onclick='print()'><i class='fa fa-print'></i> &nbsp; พิมพ์</button>";
+	$header .= "	<button class='btn btn-primary' onclick='print()'><i class='fa fa-print'></i>&nbspพิมพ์</button>";
 	$header .= "	</div><div style='width:100%'>";
 
 	return $header;
 }
-
-
-
 
 
 public function add_title($title)
@@ -110,18 +91,10 @@ public function add_title($title)
 }
 
 
-
-
-
-
 public function set_pattern($pattern) //// กำหนดรูปแบบ CSS ให้กับ td
 {
 	$this->pattern = $pattern;
 }
-
-
-
-
 
 
 public function print_sub_total(array $data)
@@ -141,16 +114,10 @@ public function print_sub_total(array $data)
 }
 
 
-
-
-
 public function add_subheader($sub_header)
 {
 	$this->sub_header = $this->thead($sub_header);
 }
-
-
-
 
 
 public function thead(array $dataset)
@@ -170,16 +137,10 @@ public function thead(array $dataset)
 }
 
 
-
-
-
 public function doc_footer()
 {
 	return "</div></body></html>";
 }
-
-
-
 
 
 public function add_header(array $data)
@@ -196,10 +157,6 @@ public function add_header(array $data)
 	$this->header_rows = ceil($count/2);
 	return true;
 }
-
-
-
-
 
 
 public function print_header()
@@ -232,13 +189,10 @@ public function print_header()
 }
 
 
-
 public function add_custom_header($html)
 {
 	$this->custom_header = $html;
 }
-
-
 
 
 public function print_custom_header()
@@ -251,11 +205,6 @@ public function print_custom_header()
 }
 
 
-
-
-
-
-
 public function add_content($data)
 {
 	$content = "<div style='width:".$this->content_width."mm; margin:auto; margin-bottom:2mm; border:solid 2px #ccc; border-radius: 10px;' >";
@@ -265,11 +214,6 @@ public function add_content($data)
 }
 
 
-
-
-
-
-
 public function page_start()
 {
 	$page_break = "page-break-after:always;";
@@ -277,22 +221,14 @@ public function page_start()
 	{
 		$page_break = "";
 	}
-	return "<div class='page_layout' style='width:".$this->page_width."mm; padding-top:0mm; height:".$this->page_height."mm; margin:auto; ".$page_break."'>"; //// page start
+	return "<div class='page_layout' style='width:".$this->page_width."mm; padding-top:5mm; height:".$this->page_height."mm; margin:auto; ".$page_break."'>"; //// page start
 }
-
-
-
-
 
 
 public function page_end()
 {
 	return "</div><div class='hidden-print' style='height: 5mm; width:".$this->page_width."'></div>";
 }
-
-
-
-
 
 
 public function top_page()
@@ -311,30 +247,18 @@ public function top_page()
 }
 
 
-
-
-
-
 public function content_start()
 {
 	$height = ($this->row + $this->sub_total_row+1) * $this->row_height+2;
-	$border = $this->content_border == 0 ? '' : "border:solid 0px #555555;";
-	return  "<div style='width:".$this->content_width."mm; height:".$height."mm; margin:auto; margin-bottom:2mm; margin-top:2mm; ".$border." border-radius: 0px;'>";
+	$border = $this->content_border == 0 ? '' : "border:solid 2px #ccc;";
+	return  "<div style='width:".$this->content_width."mm; height:".$height."mm; margin:auto; margin-bottom:2mm; ".$border." border-radius: 10px;'>";
 }
-
-
-
-
-
 
 
 public function content_end()
 {
 	return "</div>";
 }
-
-
-
 
 
 public function print_row($data)
@@ -359,25 +283,16 @@ public function print_row($data)
 }
 
 
-
-
 public function table_start()
 {
 	return $this->sub_header;
 }
 
 
-
-
-
 public function table_end()
 {
 	return "</table>";
 }
-
-
-
-
 
 
 public function set_footer(array $data)
@@ -411,17 +326,11 @@ public function set_footer(array $data)
 }
 
 
-
-
-
 public function print_barcode($barcode, $css = "")
 {
 	if($css == ""){ $css = "width: 100px;"; }
 	return "<img src='".base_url()."assets/barcode/barcode.php?text=".$barcode."' style='".$css."' />";
 }
-
-
-
 
 
 }//// end class

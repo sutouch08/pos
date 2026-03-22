@@ -6,7 +6,6 @@ class Permission extends PS_Controller{
 	public $menu_group_code = 'SC'; //--- System security
 	public $title = 'Permission';
   public $permission = FALSE;
-	public $segment = 4;
 
   public function __construct()
   {
@@ -20,6 +19,7 @@ class Permission extends PS_Controller{
     $this->home = base_url().'users/permission';
     $this->load->model('users/profile_model');
     $this->load->model('users/permission_model');
+		$this->load->model('menu');
   }
 
 
@@ -27,400 +27,150 @@ class Permission extends PS_Controller{
   public function index()
   {
 		$filter = array(
-			'name' => get_filter('name', 'profile_name', '')
+			'name' => get_filter('name', 'profileNam', ''),
+			'menu' => get_filter('menu', 'menux', 'all'),
+			'permission' => get_filter('permission', 'permission', 'all')
 		);
 
-		//--- แสดงผลกี่รายการต่อหน้า
-		$perpage = get_rows();
 
+		//--- แสดงผลกี่รายการต่อหน้า
+		$perpage = get_filter('set_rows', 'rows', 20);
+		//--- หาก user กำหนดการแสดงผลมามากเกินไป จำกัดไว้แค่ 300
+		if($perpage > 300)
+		{
+			$perpage = get_filter('rows', 'rows', 300);
+		}
+
+		$segment = 4; //-- url segment
 		$rows = $this->profile_model->count_rows($filter);
 
 		//--- ส่งตัวแปรเข้าไป 4 ตัว base_url ,  total_row , perpage = 20, segment = 3
-		$init	= pagination_config($this->home.'/index/', $rows, $perpage, $this->segment);
+		$init	= pagination_config($this->home.'/index/', $rows, $perpage, $segment);
 
-		$list = $this->profile_model->get_list($filter, $perpage, $this->uri->segment($this->segment));
+		$result = $this->profile_model->get_list($filter, $perpage, $this->uri->segment($segment));
 
-    if(!empty($list))
+    $data = array();
+
+    if(!empty($result))
     {
-      foreach($list as $rs)
+      foreach($result as $rs)
       {
-        $rs->member = $this->profile_model->count_members($rs->id);
+				$rs->member = $this->profile_model->count_members($rs->id);
       }
     }
 
-    $filter['data'] = $list;
+		$filter['data'] = $result;
 
 		$this->pagination->initialize($init);
 
-    $this->load->view('users/permission_list', $filter);
+    $this->load->view('users/permission_view', $filter);
   }
 
-
-
-	public function add_new()
-	{
-		if($this->pm->can_add)
-		{
-			$this->load->view('users/profile_add');
-		}
-		else
-		{
-			$this->permission_deny();
-		}
-	}
-
-
-
-	public function add_profile()
-	{
-		$sc = TRUE;
-
-		if($this->pm->can_add)
-		{
-			$name = trim($this->input->post('name'));
-
-			if( ! empty($name))
-			{
-				if( ! $this->profile_model->is_exists($name))
-				{
-					if( ! $this->profile_model->add($name))
-					{
-						$sc = FALSE;
-						set_error('insert');
-					}
-				}
-				else
-				{
-					$sc = FALSE;
-					set_error('exists', $name);
-				}
-			}
-			else
-			{
-				$sc = FALSE;
-				set_error('required', ' : profile name');
-			}
-		}
-		else
-		{
-			$sc = FALSE;
-			set_error('permission');
-		}
-
-		$this->_response($sc);
-	}
-
-
-
-	public function edit_profile($id)
-	{
-		if($this->pm->can_edit)
-		{
-			$ds = $this->profile_model->get($id);
-
-			if( ! empty($ds))
-			{
-				$this->load->view('users/profile_edit', $ds);
-			}
-			else
-			{
-				$this->page_error();
-			}
-		}
-		else
-		{
-			$this->permission_deny();
-		}
-	}
-
-
-
-	public function update_profile()
-	{
-		$sc = TRUE;
-
-		if($this->pm->can_edit)
-		{
-			$id = $this->input->post('id');
-			$name = trim($this->input->post('name'));
-
-			if( ! empty($name) && ! empty($id))
-			{
-				if( ! $this->profile_model->is_exists($name, $id))
-				{
-					if( ! $this->profile_model->update($id, $name))
-					{
-						$sc = FALSE;
-						set_error('update');
-					}
-				}
-				else
-				{
-					$sc = FALSE;
-					set_error('exists', $name);
-				}
-			}
-			else
-			{
-				$sc = FALSE;
-				set_error('required', ' : form data');
-			}
-		}
-		else
-		{
-			$sc = FALSE;
-			set_error('permission');
-		}
-
-		$this->_response($sc);
-	}
 
 
   public function edit_permission($id)
   {
-		if($this->pm->can_add OR $this->pm->can_edit)
-		{
-			$data['data'] = $this->profile_model->get($id);
-			$data['menus'] = array();
-
-			$groups = $this->menu->get_active_menu_groups();
-
-	    if(!empty($groups))
-	    {
-	      foreach($groups as $group)
-	      {
-	        $ds = array(
-	          'group_code' => $group->code,
-	          'group_name' => $group->name,
-	          'menu' => ''
-	        );
-
-	        $menus = $this->menu->get_menus_by_group($group->code);
-
-	        if(!empty($menus))
-	        {
-	          $item = array();
-	          foreach($menus as $menu)
-	          {
-							if($menu->valid)
-							{
-								$arr = array(
-		              'menu_code' => $menu->code,
-		              'menu_name' => $menu->name,
-		              'permission' => $this->permission_model->get_permission($menu->code, $id)
-		            );
-		            array_push($item, $arr);
-							}
-
-	          }
-
-	          $ds['menu'] = $item;
-	        }
-
-	        array_push($data['menus'], $ds);
-	      }
-	    }
-
-			$this->load->view('users/permission_edit', $data);
-		}
-		else
-		{
-			$this->permission_deny();
-		}
-  }
-
-
-
-	public function view_permission($id)
-  {
-		if($this->pm->can_view)
-		{
-			$data['data'] = $this->profile_model->get($id);
-			$data['menus'] = array();
-
-			$groups = $this->menu->get_active_menu_groups();
-
-	    if(!empty($groups))
-	    {
-	      foreach($groups as $group)
-	      {
-	        $ds = array(
-	          'group_code' => $group->code,
-	          'group_name' => $group->name,
-	          'menu' => ''
-	        );
-
-	        $menus = $this->menu->get_menus_by_group($group->code);
-
-	        if(!empty($menus))
-	        {
-	          $item = array();
-	          foreach($menus as $menu)
-	          {
-							if($menu->valid)
-							{
-								$arr = array(
-		              'menu_code' => $menu->code,
-		              'menu_name' => $menu->name,
-		              'permission' => $this->permission_model->get_permission($menu->code, $id)
-		            );
-		            array_push($item, $arr);
-							}
-
-	          }
-
-	          $ds['menu'] = $item;
-	        }
-
-	        array_push($data['menus'], $ds);
-	      }
-	    }
-
-			$this->load->view('users/permission_detail', $data);
-		}
-		else
-		{
-			$this->deny_page();
-		}
-  }
-
-
-
-
-	public function update_permission()
-	{
-		$sc = TRUE;
-
-		if($this->pm->can_add OR $this->pm->can_edit)
-		{
-			if($this->input->post('data') && $this->input->post('id'))
-			{
-				$id = $this->input->post('id');
-				$data = json_decode($this->input->post('data'));
-
-				if(!empty($data))
+    $this->load->model('menu');
+    $profile = $this->profile_model->get_profile($id);
+    $this->title = 'กำหนดสิทธิ์ - '.$profile->name;
+    $data['data'] = $profile;
+    $data['menus'] = array();
+    $groups = $this->menu->get_menu_groups();
+    if(!empty($groups))
+    {
+      foreach($groups as $group)
+      {
+				if($group->pm)
 				{
-					$this->db->trans_begin();
+					$ds = array(
+						'group_code' => $group->code,
+						'group_name' => $group->name,
+						'menu' => ''
+					);
 
-					if($this->permission_model->drop_profile_permission($id))
+					$menus = $this->menu->get_menus_by_group($group->code);
+
+					if(!empty($menus))
 					{
-						foreach($data as $rs)
+						$item = array();
+						foreach($menus as $menu)
 						{
-							if($sc === FALSE)
+							if($menu->valid)
 							{
-								break;
+								$arr = array(
+									'menu_code' => $menu->code,
+									'menu_name' => $menu->name,
+									'permission' => $this->permission_model->get_permission($menu->code, $id)
+								);
+								array_push($item, $arr);
 							}
 
-							$arr =array(
-								'id_profile' => $id,
-								'menu' => $rs->menu,
-								'can_view' => $rs->view,
-								'can_add' => $rs->add,
-								'can_edit' => $rs->edit,
-								'can_delete' => $rs->delete
-							);
-
-							if( ! $this->permission_model->add($arr))
-							{
-								$sc = FALSE;
-								set_error("insert");
-							}
 						}
-					}
-					else
-					{
-						$sc = FALSE;
-						set_error("delete", "Current Permission");
+
+						$ds['menu'] = $item;
 					}
 
-					if($sc === TRUE)
-					{
-						$this->db->trans_commit();
-					}
-					else
-					{
-						$this->db->trans_rollback();
-					}
+					array_push($data['menus'], $ds);
 				}
-				else
-				{
-					$sc = FALSE;
-					set_error('required', ' : Form data');
-				}
-			}
-			else
-			{
-				$sc = FALSE;
-				set_error('required', ' : Form data');
-			}
-		}
-		else
-		{
-			$sc = FALSE;
-			set_error('permission');
-		}
+      }
+    }
 
-		$this->_response($sc);
-	}
+    $this->load->view('users/permission_edit_view', $data);
+  }
 
 
 
 
-	public function delete_profile()
+
+
+	public function save_profile_permission()
 	{
-		$sc = TRUE;
-
-		if($this->pm->can_edit)
+		if($this->input->post('id_profile'))
 		{
-			$id = $this->input->post('id');
+			$id_profile = $this->input->post('id_profile');
+			$menu = $this->input->post('menu');
+			$view = $this->input->post('view');
+			$add = $this->input->post('add');
+			$edit = $this->input->post('edit');
+			$delete = $this->input->post('delete');
+			$approve = $this->input->post('approve');
 
-			if( ! empty($id))
+			$this->permission_model->drop_profile_permission($id_profile);
+
+			if(!empty($menu))
 			{
-				$this->db->trans_begin();
+				foreach($menu as $code)
+				{
+					$pm = array(
+						'menu' => $code,
+						'uid' => NULL,
+						'id_profile' => $id_profile,
+						'can_view' => isset($view[$code]) ? 1 : 0,
+						'can_add' => isset($add[$code]) ? 1 : 0,
+						'can_edit' => isset($edit[$code]) ? 1 : 0,
+						'can_delete' => isset($delete[$code]) ? 1 : 0,
+						'can_approve' => isset($approve[$code]) ? 1 : 0
+					);
 
-				if($this->profile_model->delete($id))
-				{
-					if( ! $this->permission_model->drop_profile_permission($id))
-					{
-						$sc = FALSE;
-						set_error('delete', 'permission');
-					}
-				}
-				else
-				{
-					$sc = FALSE;
-					set_error('delete', 'profile');
-				}
-
-				if($sc === TRUE)
-				{
-					$this->db->trans_commit();
-				}
-				else
-				{
-					$this->db->trans_rollback();
+					$this->permission_model->add($pm);
 				}
 			}
-			else
-			{
-				$sc = FALSE;
-				set_error('required', ' : id');
-			}
-		}
-		else
-		{
-			$sc = FALSE;
-			set_error('permission');
-		}
 
-		$this->_response($sc);
+			set_message('Done!');
+			redirect($this->home.'/edit_permission/'.$id_profile);
+		}
 	}
+
+
+
 
 
 
   public function clear_filter()
   {
-    return clear_filter(array('profile_name'));    
+		$filter = array('profileName', 'menux', 'permission');
+    clear_filter($filter);
+    echo 'done';
   }
 
 } //-- end class

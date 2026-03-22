@@ -1,10 +1,11 @@
 // JavaScript Document
 var calback;
+
 function validate_credentials(){
 	var s_key = $("#s_key").val();
 	var menu 	= $("#validateTab").val();
 	var field = $("#validateField").val();
-	if( s_key.length != 0 ){
+	if( s_key.length != 0 ) {
 		$.ajax({
 			url:BASE_URL + 'users/validate_credentials/get_permission',
 			type:"GET",

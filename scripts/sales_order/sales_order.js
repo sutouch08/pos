@@ -1,327 +1,228 @@
-function addNew(){
-  window.location.href = HOME + 'add_new';
+var HOME = BASE_URL + 'orders/sales_order/';
+
+function goBack() {
+  window.location.href = HOME
 }
 
 
-
-function goBack(){
-  window.location.href = HOME;
+function leave(){
+	swal({
+		title: 'ออกจากหน้านี้',
+    text:'การเปลี่ยนแปลงจะไม่ถูกบันทึก ต้องการออกจากหน้านี้หรือไม่ ?',
+		type: 'warning',
+    html:true,
+		showCancelButton: true,
+		cancelButtonText: 'No',
+		confirmButtonText: 'Yes',
+		closeOnConfirm: false
+	}, function(){
+		goBack();
+	});
 }
 
 
-
-function edit(code){
-  load_in();
-  window.location.href = HOME + 'edit/' + code;
-}
-
-function goEdit(code){
-  load_in();
-  window.location.href = HOME + 'edit/' + code;
+function addNew() {
+  window.location.href = HOME + 'add_new'
 }
 
 
-function viewDetail(code){
+function edit(code) {
+  window.location.href = HOME + 'edit/'+code;
+}
+
+
+function viewDetail(code) {
   window.location.href = HOME + 'view_detail/'+code;
 }
 
+function printOrder(code) {
+	var center = ($(document).width() - 800) /2;
+  var target = HOME + 'print_sales_order/'+code;
+  window.open(target, "_blank", "width=800, height=900, left="+center+", scrollbars=yes");
+}
 
-function cancleOrder(code){
+function getSearch() {
+  $('#searchForm').submit()
+}
+
+function clearFilter() {
+  $.get(HOME + 'clear_filter', function() { goBack() })
+}
+
+
+$('#fromDate').datepicker({
+  dateFormat:'dd-mm-yy',
+  onClose:function(sd) {
+    $('#toDate').datepicker('option', 'minDate', sd)
+  }
+})
+
+$('#toDate').datepicker({
+  dateFormat:'dd-mm-yy',
+  onClose:function(sd) {
+    $('#fromDate').datepicker('option', 'maxDate', sd)
+  }
+})
+
+$('#dueFromDate').datepicker({
+  dateFormat:'dd-mm-yy',
+  onClose:function(sd) {
+    $('#dueToDate').datepicker('option', 'minDate', sd)
+  }
+})
+
+$('#dueToDate').datepicker({
+  dateFormat:'dd-mm-yy',
+  onClose:function(sd) {
+    $('#dueFromDate').datepicker('option', 'maxDate', sd)
+  }
+})
+
+$('#date_add').datepicker({
+  dateFormat:'dd-mm-yy',
+  onClose:function(sd) {
+    $('#due_date').datepicker('option', 'minDate', sd)
+  }
+});
+
+$('#due_date').datepicker({
+  dateFormat:'dd-mm-yy',
+  minDate: new Date()
+});
+
+
+function goDelete(code){
 	swal({
 		title: "คุณแน่ใจ ?",
-		text: "ต้องการยกเลิกออเดอร์หรือไม่ ?",
+		text: "ต้องการยกเลิก '"+code+"' หรือไม่ ?",
 		type: "warning",
 		showCancelButton: true,
 		confirmButtonColor: "#DD6B55",
-		confirmButtonText: 'ใช่, ฉันต้องการยกเลิก',
+		confirmButtonText: 'ใช่, ฉันต้องการ',
 		cancelButtonText: 'ไม่ใช่',
 		closeOnConfirm: true
-		},
-		function(){
-			load_in();
-			$.ajax({
-				url:HOME + 'cancle_order',
-				type:'POST',
-				cache:false,
-				data:{
-					'code' : code
-				},
-				success:function(rs) {
-					load_out();
+		}, function(){
+			$('#cancle-code').val(code);
+			$('#cancle-reason').val('').removeClass('has-error');
 
-					if(rs == 'success') {
-						setTimeout(function(rs) {
-							swal({
-								title:'Success',
-								type:'success',
-								timer:1000
-							});
-
-							setTimeout(function() {
-								window.location.reload();
-							}, 1200);
-						}, 500);
-					}
-					else {
-						setTimeout(function() {
-							swal({
-								title:'Error!',
-								type:'error',
-								text:rs
-							});
-						}, 500);
-					}
-				}
-			});
+			cancle_order(code);
 	});
 }
 
 
 
+function cancle_order(code)
+{
+	var reason = $.trim($('#cancle-reason').val());
 
-function toggleOnlyMe() {
-	let option = parseDefault(parseInt($('#onlyMe').val()), 0);
-
-	if(option == 1) {
-		$('#onlyMe').val(0);
+	if(reason.length < 10)
+	{
+		$('#cancle-modal').modal('show');
+		return false;
 	}
-	else {
-		$('#onlyMe').val(1);
-	}
 
-	getSearch();
-}
+	load_in();
 
+	$.ajax({
+		url: HOME + 'cancle_order',
+		type:"POST",
+		cache:"false",
+		data:{
+			"code" : code,
+			"reason" : reason
+		},
+		success: function(rs){
+			load_out();
 
+			var rs = $.trim(rs);
+			if( rs == 'success' ){
+				swal({
+					title: 'Cancled',
+					type: 'success',
+					timer: 1000
+				});
 
-function doApprove(code) {
-
-  $.ajax({
-    url:HOME + 'approve',
-    type:'POST',
-    cache:false,
-    data:{
-      'code' : code
-    },
-    success:function(rs) {
-      var rs = $.trim(rs);
-      if(rs === 'success') {
-        swal({
-          title:'Success',
-          type:'success',
-          timer:1000
-        });
-
-        setTimeout(function(){
-          window.location.reload();
-        }, 1200);
-      }
-      else {
-        swal({
-          title:'Error',
-          text:rs,
-          type:'error'
-        })
-      }
-    }
-  })
-}
-
-
-
-function doReject(code) {
-
-  $.ajax({
-    url:HOME + 'reject',
-    type:'POST',
-    cache:false,
-    data:{
-      'code' : code
-    },
-    success:function(rs) {
-      var rs = $.trim(rs);
-      if(rs === 'success') {
-        swal({
-          title:'Success',
-          type:'success',
-          timer:1000
-        });
-
-        setTimeout(function(){
-          window.location.reload();
-        }, 1200);
-      }
-      else {
-        swal({
-          title:'Error',
-          text:rs,
-          type:'error'
-        })
-      }
-    }
-  })
-}
-
-
-function cancleSap(code) {
-	swal({
-    title:'ยกเลิกเอกสารบน SAP',
-    text:'คุณต้องการยกเลิกเอกสารนี้บน SAP หรือไม่ ?',
-    type:'warning',
-    showCancelButton:true,
-		confirmButtonColor: "#DD6B55",
-    cancelButtonText:'ไม่ใช่',
-    confirmButtonText:'ใช่ ต้องการยกเลิก',
-		closeOnConfirm:false
-  },
-  function(){
-		load_in();
-		$.ajax({
-			url:HOME + 'cancle_sap_order',
-			type:'POST',
-			cache:false,
-			data: {
-				'code' : code
-			},
-			success:function(rs) {
-				load_out();
-				if(rs == 'success') {
-					swal({
-						title:'Success',
-						type:'success',
-						timer:1000
-					});
-
-					setTimeout(function() {
-						window.location.reload();
-					}, 1200);
-				}
-				else {
-					swal({
-						title:'Error!',
-						text:rs,
-						type:'error'
-					});
-				}
-			}
-		});
-  });
-}
-
-
-
-function sendToSap(code) {
-
-  load_in();
-
-  $.ajax({
-    url:HOME + 'send_to_sap',
-    type:'POST',
-    cache:false,
-    data:{
-      'code' : code
-    },
-    success:function(rs) {
-      load_out();
-      var rs = $.trim(rs);
-      if(rs === 'success') {
-        swal({
-          title:'Success',
-          type:'success',
-          timer:1000
-        });
-
-				setTimeout(function() {
+				setTimeout(function(){
 					window.location.reload();
 				}, 1200);
-      }
-      else {
-        swal({
-          title:'Error!',
-          text:rs,
-          type:'error'
-        })
-      }
-    }
-  })
-}
 
-
-
-
-function leave(){
-  swal({
-    title:'คุณแน่ใจ ?',
-    text:'รายการทั้งหมดจะไม่ถูกบันทึก ต้องการออกหรือไม่ ?',
-    type:'warning',
-    showCancelButton:true,
-    cancelButtonText:'ไม่ใช่',
-    confirmButtonText:'ออกจากหน้านี้',
-  },
-  function(){
-    goBack();
-  });
-}
-
-
-
-function showMessage(code) {
-	$.ajax({
-		url:HOME + 'get_order_message',
-		type:'GET',
-		cache:false,
-		data:{
-			'code' : code
-		},
-		success:function(rs) {
-			if(isJson(rs)) {
-				let ds = $.parseJSON(rs);
-				let source = $('#failed-template').html();
-				let output = $('#failed-table');
-
-				render(source, ds, output);
-
-				$('#failedModal').modal('show');
-			}
-			else {
-				swal({
-					title:'Error!',
-					text:rs,
-					type:'error'
-				})
+			}else{
+				swal("Error !", rs, "error");
 			}
 		}
-	})
+	});
+}
+
+
+function doCancle() {
+	let code = $('#cancle-code').val();
+	let reason = $.trim($('#cancle-reason').val());
+
+	if( reason.length < 10) {
+		$('#cancle-reason').addClass('has-error').focus();
+		return false;
+	}
+
+	$('#cancle-modal').modal('hide');
+
+	return cancle_order(code);
 }
 
 
 
-$("#fromDate").datepicker({
-	dateFormat: 'dd-mm-yy',
-	onClose: function(ds){
-		$("#toDate").datepicker("option", "minDate", ds);
-	}
+$('#cancle-modal').on('shown.bs.modal', function() {
+	$('#cancle-reason').focus();
 });
 
-$("#toDate").datepicker({
-	dateFormat: 'dd-mm-yy',
-	onClose: function(ds){
-		$("#fromDate").datepicker("option", "maxDate", ds);
-	}
-});
 
-$('#DocDate').datepicker({
-  dateFormat:'dd-mm-yy',
-  onClose:function(ds) {
-    $('#ShipDate').datepicker("option", "minDate", ds);
+function setColorbox()
+{
+	var colorbox_params = {
+				rel: 'colorbox',
+				reposition: true,
+				scalePhotos: true,
+				scrolling: false,
+				previous: '<i class="fa fa-arrow-left"></i>',
+				next: '<i class="fa fa-arrow-right"></i>',
+				close: 'X',
+				current: '{current} of {total}',
+				maxWidth: '800px',
+				maxHeight: '800px',
+				opacity:0.5,
+				speed: 500,
+				onComplete: function(){
+					$.colorbox.resize();
+				}
+		}
+
+	$('[data-rel="colorbox"]').colorbox(colorbox_params);
+}
+
+
+
+function toggleState(state){
+  var current = $('#state_'+state).val();
+  if(current == 'Y'){
+    $('#state_'+state).val('N');
+    $('#btn-state-'+state).removeClass('btn-info');
+  }else{
+    $('#state_'+state).val('Y');
+    $('#btn-state-'+state).addClass('btn-info');
   }
-});
 
-$('#ShipDate').datepicker({
-  dateFormat:'dd-mm-yy'
-});
+  getSearch();
+}
 
 
-$('#TextDate').datepicker({
-  dateFormat:'dd-mm-yy'
-});
+function toggleOnlyMe(){
+  var current = $('#onlyMe').val();
+  if(current == ''){
+    $('#onlyMe').val(1);
+    $('#btn-only-me').addClass('btn-info');
+  }else{
+    $('#onlyMe').val('');
+    $('#btn-only-me').removeClass('btn-info');
+  }
+
+  getSearch();
+}

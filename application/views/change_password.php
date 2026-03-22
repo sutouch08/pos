@@ -6,7 +6,6 @@
 		<title>Login Page - <?php echo getConfig('COMPANY_NAME'); ?></title>
 		<meta name="description" content="User login page" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-		<link rel="shortcut icon" href="<?php echo base_url(); ?>assets/img/favicon.png">
 
 		<link rel="stylesheet" href="<?php echo base_url(); ?>assets/css/bootstrap.css" />
 		<link rel="stylesheet" href="<?php echo base_url(); ?>assets/css/font-awesome.css" />
@@ -22,8 +21,6 @@
 		<script src="<?php echo base_url(); ?>assets/js/jquery.min.js"></script>
 		<script>
 			var BASE_URL = "<?php echo base_url(); ?>";
-			var HOME = "<?php echo $this->home; ?>/";
-			var USE_STRONG_PWD = <?php echo getConfig('USE_STRONG_PWD'); ?>;
 		</script>
 	</head>
 
@@ -36,7 +33,7 @@
 							<div class="center">
 								<h1>
 									<span class="orange"><?php echo getConfig('COMPANY_NAME'); ?></span>
-									<span class="white" id="id-text2">Web Sales</span>
+									<span class="white" id="id-text2">Application</span>
 								</h1>
 								<h4 class="blue" id="id-company-text">&copy; <?php echo getConfig('COMPANY_FULL_NAME');?></h4>
 							</div>
@@ -48,14 +45,14 @@
 									<div class="widget-body">
 										<div class="widget-main">
 											<h4 class="header blue lighter bigger text-center" style="border:none;">
-												<?php echo empty($message) ? "" : $message; ?>
+												รหัสผ่านหมดอายุ คุณต้องเปลี่ยนรหัสผ่านเพื่อเริ่มใช้งานใหม่
 											</h4>
 
 											<div class="space-6"></div>
 
 											<form method="post" action="">
 												<fieldset>
-													<input type="hidden" id="uname" value="<?php echo $data->uname; ?>"/>
+													<input type="hidden" name="uname" id="uname" value="<?php echo $data->uname; ?>"/>
 
 													<label class="block clearfix">
 														<span class="block input-icon input-icon-right">
@@ -81,7 +78,7 @@
 													</label>
 
 													<label class="block clearfix">
-														<span style="font-size:12px; color:red; text-align:center;" id="error-label"></span>
+														<span class="hide" style="font-size:12px; color:red" id="password-error">รหัสไม่ตรงกัน</span>
 													</label>
 													<div class="space"></div>
 

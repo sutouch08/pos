@@ -1,7 +1,8 @@
 <?php
 class User_model extends CI_Model
 {
-	private $tb = "user";
+  private $tb = "user";
+  private $superadmin = -987654321;
 
   public function __construct()
   {
@@ -9,259 +10,223 @@ class User_model extends CI_Model
   }
 
 
-
-  public function add(array $data = array())
+  public function get_all($all = TRUE)
   {
-    if(!empty($data))
+    $this->db
+    ->select('u.*')
+    ->select('p.name AS profile_name')
+    ->from('user AS u')
+    ->join('profile AS p', 'u.id_profile = p.id', 'left');
+
+    if( ! $all)
     {
-      return $this->db->insert($this->tb, $data);
+      $this->db->where('active', 1);
     }
 
-    return FALSE;
-  }
+    $rs = $this->db->order_by('u.uname', 'ASC')->get();
 
-
-
-
-  public function update($id, array $ds = array())
-  {
-    if(!empty($ds))
+    if($rs->num_rows() > 0)
     {
-      return $this->db->where('id', $id)->update($this->tb, $ds);
+      return $rs->result();
     }
 
-    return FALSE;
+    return NULL;
   }
 
 
-
-  public function delete($id)
+  public function add(array $ds = array())
   {
-    return $this->db->where('id', $id)->delete($this->tb);
-  }
-
-
-
-  public function get($id)
-  {
-		$this->db
-		->select('u.*, u.name AS display_name, p.name AS group_name')
-		->select('s.name AS sale_name, t.name AS team_name')
-		->from('user AS u')
-		->join('user_group AS p', 'u.group_id = p.id', 'left')
-		->join('sale_person AS s', 'u.sale_id = s.id', 'left')
-		->join('sale_team AS t', 'u.team_id = t.id', 'left');
-
-    $rs = $this->db->where('u.id', $id)->get();
-
-    if($rs->num_rows() === 1)
+    if( ! empty($ds))
     {
-      return $rs->row();
-    }
-
-    return FALSE;
-  }
-
-
-  public function get_user_by_uid($uid)
-  {
-    $rs = $this->db->where('uid', $uid)->get($this->tb);
-    if($rs->num_rows() === 1)
-    {
-      return $rs->row();
-    }
-
-    return FALSE;
-  }
-
-
-  public function get_by_uname($uname)
-  {
-		$this->db
-		->select('u.*, u.name AS display_name, p.name AS group_name')
-		->select('s.name AS sale_name, t.name AS team_name')
-		->from('user AS u')
-		->join('user_group AS p', 'u.group_id = p.id', 'left')
-		->join('sale_person AS s', 'u.sale_id = s.id', 'left')
-		->join('sale_team AS t', 'u.team_id = t.id', 'left');
-
-    $rs = $this->db->where('u.uname', $uname)->get();
-
-    if($rs->num_rows() === 1)
-    {
-      return $rs->row();
-    }
-
-    return FALSE;
-  }
-
-
-
-  public function get_name($uname)
-  {
-    $rs = $this->db->where('uname', $uname)->get($this->tb);
-    if($rs->num_rows() == 1)
-    {
-      return $rs->row()->name;
-    }
-
-    return "";
-  }
-
-
-
-	public function get_all()
-	{
-		$rs = $this->db->where('id >', 0, FALSE)->get($this->tb);
-
-		if($rs->num_rows() > 0)
-		{
-			return $rs->result();
-		}
-
-		return NULL;
-	}
-
-
-	public function get_all_active()
-	{
-		$rs = $this->db->where('id >', 0, FALSE)->where('active', 1)->get($this->tb);
-
-		if($rs->num_rows() > 0)
-		{
-			return $rs->result();
-		}
-
-		return NULL;
-	}
-
-
-
-
-	public function get_list(array $ds = array(), $perpage = 20, $offset = 0)
-	{
-		$this->db
-		->select('u.*, u.name AS display_name, p.name AS group_name')
-		->select('s.name AS sale_name')
-		->from('user AS u')
-		->join('user_group AS p', 'u.group_id = p.id', 'left')
-		->join('sale_person AS s', 'u.sale_id = s.id', 'left')
-    ->where('group_id >', 0, FALSE);
-
-		if( ! empty($ds['uname']))
-		{
-			$this->db->like('u.uname', $ds['uname']);
-		}
-
-		if( ! empty($ds['dname']))
-		{
-			$this->db->like('u.name', $ds['dname']);
-		}
-
-		if(isset($ds['group_id']) && $ds['group_id'] != 'all')
-		{
-			$this->db->where('u.group_id', $ds['group_id']);
-		}
-
-		if(isset($ds['sale_id']) && $ds['sale_id'] != 'all')
-		{
-			$this->db->where('u.sale_id', $ds['sale_id']);
-		}
-
-		if(isset($ds['active']) && $ds['active'] != 'all')
-		{
-			$this->db->where('u.active', $ds['active']);
-		}
-
-		$rs = $this->db->order_by('u.id', 'DESC')->limit($perpage, $offset)->get();
-
-		if($rs->num_rows() > 0)
-		{
-			return $rs->result();
-		}
-	}
-
-
-
-
-  public function count_rows(array $ds = array())
-  {
-		$this->db
-		->from('user AS u')
-		->join('user_group AS p', 'u.group_id = p.id', 'left')
-		->join('sale_person AS s', 'u.sale_id = s.id', 'left')
-    ->where('group_id >', 0, FALSE);
-
-		if( ! empty($ds['uname']))
-		{
-			$this->db->like('u.uname', $ds['uname']);
-		}
-
-		if( ! empty($ds['dname']))
-		{
-			$this->db->like('u.name', $ds['dname']);
-		}
-
-
-		if(isset($ds['group_id']) && $ds['group_id'] != 'all')
-		{
-			$this->db->where('u.group_id', $ds['group_id']);
-		}
-
-		if(isset($ds['sale_id']) && $ds['sale_id'] != 'all')
-		{
-			$this->db->where('u.sale_id', $ds['sale_id']);
-		}
-
-		if(isset($ds['active']) && $ds['active'] != 'all')
-		{
-			$this->db->where('u.active', $ds['active']);
-		}
-
-    return $this->db->count_all_results();
-  }
-
-
-
-  public function get_permission($menu, $group_id)
-  {
-    if(!empty($menu))
-    {
-      $rs = $this->db->where('code', $menu)->get('menu');
-
-      if($rs->num_rows() === 1)
+      if($this->db->insert($this->tb, $ds))
       {
-        if($rs->row()->valid == 1)
-        {
-          $pm = $this->db
-					->where('menu', $menu)
-					->where('group_id', $group_id)
-					->get('permission');
-
-					if($pm->num_rows() === 1)
-					{
-						return $pm->row();
-					}
-
-					return FALSE;
-        }
-        else
-        {
-          $ds = new stdClass();
-          $ds->can_view = 1;
-          $ds->can_add = 1;
-          $ds->can_edit = 1;
-          $ds->can_delete = 1;
-          $ds->can_approve = 1;
-          return $ds;
-        }
+        return $this->db->insert_id();
       }
     }
 
     return FALSE;
   }
+  
+
+  public function update($id, array $ds = array())
+  {
+    if( ! empty($ds))
+    {
+      return $this->db->where('id', $id)->update($this->tb, $ds);     
+    }
+
+    return FALSE;
+  }
 
 
+  public function delete($id)
+  {
+    return $this->db->where('id', $id)->delete($this->tb);    
+  }
+
+
+  public function get_by_id($id)
+  {
+    $rs = $this->db->where('id', $id)->get($this->tb);
+
+    if($rs->num_rows() === 1)
+    {
+      return $rs->row();
+    }
+
+    return NULL;
+  }
+
+
+  public function get_by_uid($uid)
+  {
+    $rs = $this->db->where('uid', $uid)->get($this->tb);
+
+    if($rs->num_rows() === 1)
+    {
+      return $rs->row();
+    }
+
+    return NULL;
+  }
+
+
+  public function get($uname)
+  {
+    $rs = $this->db->where('uname', $uname)->get($this->tb);
+
+    if($rs->num_rows() === 1)
+    {
+      return $rs->row();
+    }
+
+    return NULL;
+  }
+
+
+  public function get_name($uname)
+  {
+    $rs = $this->db->where('uname', $uname)->get($this->tb);
+
+    if($rs->num_rows() == 1)
+    {
+      return $rs->row()->name;
+    }
+
+    return NULL;
+  }
+
+
+  public function get_list(array $ds = array(), $perpage = 20, $offset = 0)
+  {
+		$this->db
+		->select('user.*, user.name AS dname, profile.name AS pname')
+		->from($this->tb)
+		->join('profile', 'user.id_profile = profile.id', 'left');
+
+		if( ! empty($ds['uname']))
+		{
+			$this->db->like('user.uname', $ds['uname']);
+		}
+
+		if( ! empty($ds['dname']))
+		{
+			$this->db->like('user.name', $ds['dname']);
+		}
+
+		if(isset($ds['profile']) && $ds['profile'] != 'all')
+		{
+      $this->db->where('profile.id', $ds['profile']);			
+		}
+
+    if(isset($ds['status']) && $ds['status'] != "" && $ds['status'] != 'all')
+    {
+      $this->db->where('user.active', $ds['status']);
+    }
+
+		$rs = $this->db->order_by('user.name', 'ASC')->limit($perpage, $offset)->get();
+
+		if($rs->num_rows() > 0)
+		{
+			return $rs->result();
+		}
+
+    return NULL;
+  }
+
+
+  public function count_rows(array $ds = array())
+  {		
+		if( ! empty($ds['uname']))
+		{
+			$this->db->like('uname', $ds['uname']);
+		}
+
+		if(!empty($ds['dname']))
+		{
+			$this->db->like('name', $ds['dname']);
+		}
+
+    if (isset($ds['profile']) && $ds['profile'] != 'all')
+    {
+      $this->db->where('id_profile', $ds['profile']);
+    }
+
+    if(isset($ds['status']) && $ds['status'] != "" && $ds['status'] != 'all')
+    {
+      $this->db->where('active', $ds['status']);
+    }
+
+    return $this->db->count_all_results($this->tb);
+  }
+
+
+  public function get_permission($menu_code, $id_profile)
+  {
+    if(empty($menu_code))
+    {
+      return FALSE;
+    }
+    
+    $this->load->model('menu_model');
+
+    $menu = $this->menu_model->get($menu_code);
+
+    if( ! empty($menu))
+    {
+      $ds = FALSE;
+
+      if($menu->valid OR $id_profile == $this->superadmin)
+      {
+        $ds = (object) array(
+          'can_view' => 1,
+          'can_add' => 1,
+          'can_edit' => 1,
+          'can_delete' => 1,
+          'can_approve' => 1
+        );
+      }
+      else 
+      {
+        $ds = $this->get_profile_permission($menu_code, $id_profile);
+      }
+
+      return $ds;
+    }
+
+    return FALSE;
+  }
+
+
+  private function get_profile_permission($menu, $id_profile)
+  {
+    $rs = $this->db
+    ->where('menu', $menu)
+    ->where('id_profile', $id_profile)
+    ->get('permission');
+
+    return $rs->num_rows() == 1 ? $rs->row() : NULL;
+  }
 
 
   public function is_exists_uname($uname, $id = NULL)
@@ -271,68 +236,68 @@ class User_model extends CI_Model
       $this->db->where('id !=', $id);
     }
 
-    $rs = $this->db->where('uname', $uname)->count_all_results($this->tb);
-
-    if($rs > 0)
-    {
-      return TRUE;
-    }
-
-    return FALSE;
+    $count = $this->db->where('uname', $uname)->count_all_results($this->tb);
+    return $count > 0 ? TRUE : FALSE;    
   }
 
 
-
-  public function is_exists_display_name($dname, $id = NULL)
+  public function is_exists_dname($dname, $id = NULL)
   {
     if( ! empty($id))
     {
       $this->db->where('id !=', $id);
     }
 
-    $rs = $this->db->where('name', $dname)->count_all_results($this->tb);
-
-    if($rs > 0)
-    {
-      return TRUE;
-    }
-
-    return FALSE;
+    $count = $this->db->where('name', $dname)->count_all_results($this->tb);
+    return $count > 0 ? TRUE : FALSE;    
   }
 
+
+  public function is_skey_exists($skey, $uid)
+  {
+    $count = $this->db->where('skey', $skey)->where('uid !=', $uid)->count_all_results($this->tb);
+    return $count > 0 ? TRUE : FALSE;
+  }
 
 
   public function get_user_credentials($uname)
   {
-    $this->db->where('uname', $uname);
-    $rs = $this->db->get($this->tb);
-    return $rs->row();
+    $rs = $this->db->where('uname', $uname)->get($this->tb);    
+    return $rs->num_rows() === 1 ? $rs->row() : NULL;
   }
 
+
+  public function change_password($id, $pwd)
+  {
+    return $this->db->set('pwd', $pwd)->where('id', $id)->update($this->tb);
+  }
 
 
   public function verify_uid($uid)
   {
-    $this->db->select('uid');
-    $this->db->where('uid', $uid);
-    $this->db->where('active', 1);
-    $rs = $this->db->get($this->tb);
-
-    return $rs->num_rows() === 1 ? TRUE : FALSE;
+    $count = $this->db->where('uid', $uid)->where('active', 1)->count_all_results($this->tb);
+    return $count === 1 ? TRUE : FALSE;
   }
 
 
+  public function get_user_credentials_by_skey($skey)
+  {
+    if( ! empty($skey))
+    {
+      $rs = $this->db->where('skey', $skey)->get($this->tb);
+      return $rs->num_rows() === 1 ? $rs->row() : NULL;     
+    }
 
-	public function has_transection($id)
+    return NULL;
+  }
+
+
+	public function has_transection($uname)
 	{
-		$so = $this->db->where('user_id', $id)->or_where('upd_user_id', $id)->count_all_results('orders');
-		$sq = $this->db->where('user_id', $id)->or_where('upd_user_id', $id)->count_all_results('quotation');
-		$apv = $this->db->where('user_id', $id)->count_all_results('approver');
-
-		$total = $so + $sq + $apv;
-
-		return $total > 0 ? TRUE : FALSE;
+		
+		return FALSE;
 	}
+
 
 } //---- End class
 

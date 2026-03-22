@@ -1,54 +1,44 @@
 <?php
 function thai_date($date, $time = FALSE, $sp = '-')
 {
-  if($date !== NULL)
+  $sp = $sp === '' ? '-' : $sp;
+  $format = $time === TRUE ? 'd'.$sp.'m'.$sp.'Y'.' H:i:s' : 'd'.$sp.'m'.$sp.'Y';
+  if(empty($date))
   {
-    $sp = $sp === '' ? '-' : $sp;
-    $format = $time === TRUE ? 'd'.$sp.'m'.$sp.'Y'.' H:i:s' : 'd'.$sp.'m'.$sp.'Y';
-    if(empty($date))
-    {
-      $date = date('d-m-Y');
-    }
-
-    return date($format, strtotime($date));
+    $date = date('d-m-Y');
   }
 
-  return NULL;
+  return date($format, strtotime($date));
 }
 
 
 
 function thai_short_text_date($date, $time = FALSE)
 {
-  if($date !== NULL)
-  {
-    $Y 	= date('Y', strtotime($date));
-    $m 	= date('m', strtotime($date));
-    $d 	= date('d', strtotime($date));
+	$Y 	= date('Y', strtotime($date));
+	$m 	= date('m', strtotime($date));
+	$d 	= date('d', strtotime($date));
 
-    $Y 	= $Y < 2200 ? $Y+543 : $Y+0;  //----- เปลี่ยน ค.ศ. เป็น พ.ศ. ---//
-    $t 		= date('H:i', strtotime($date));
+	$Y 	= $Y < 2200 ? $Y+543 : $Y+0;  //----- เปลี่ยน ค.ศ. เป็น พ.ศ. ---//
+	$t 		= date('H:i', strtotime($date));
 
-    switch( $m )
-    {
-      case "01": $m 	= "ม.ค."; break;
-      case "02": $m 	= "ก.พ."; break;
-      case "03": $m 	= "มี.ค."; break;
-      case "04": $m 	= "เม.ย."; break;
-      case "05": $m 	= "พ.ค."; break;
-      case "06": $m	 = "มิ.ย."; break;
-      case "07": $m 	= "ก.ค."; break;
-      case "08": $m 	= "ส.ค."; break;
-      case "09": $m 	= "ก.ย."; break;
-      case "10": $m 	= "ต.ค."; break;
-      case "11": $m 	= "พ.ย."; break;
-      case "12": $m 	= "ธ.ค."; break;
-    }
-    $newDate 	= $time === TRUE ? $d.' '.$m.' '.$Y.' '.$t : $d.' '.$m.' '.$Y;
-    return $newDate;
-  }
-
-  return NULL;
+	switch( $m )
+	{
+		case "01": $m 	= "ม.ค."; break;
+		case "02": $m 	= "ก.พ."; break;
+		case "03": $m 	= "มี.ค."; break;
+		case "04": $m 	= "เม.ย."; break;
+		case "05": $m 	= "พ.ค."; break;
+		case "06": $m	 = "มิ.ย."; break;
+		case "07": $m 	= "ก.ค."; break;
+		case "08": $m 	= "ส.ค."; break;
+		case "09": $m 	= "ก.ย."; break;
+		case "10": $m 	= "ต.ค."; break;
+		case "11": $m 	= "พ.ย."; break;
+		case "12": $m 	= "ธ.ค."; break;
+	}
+	$newDate 	= $time === TRUE ? $d.' '.$m.' '.$Y.' '.$t : $d.' '.$m.' '.$Y;
+	return $newDate;
 }
 
 
@@ -72,6 +62,24 @@ function db_date($date, $time = FALSE, $sp = '-')
   {
     $date = date('Y-m-d');
   }
+
+  if($time === TRUE)
+  {
+    $c_time = date('H:i:s', strtotime($date));
+    $c_time = ($c_time === '00:00:00') ? date('H:i:s') : $c_time;
+    $date = date('Y-m-d', strtotime($date));
+    return $date .' '.$c_time;
+  }
+
+
+  return date('Y-m-d', strtotime($date));
+}
+
+
+
+function sap_date($date="", $time = FALSE)
+{
+  //$date = empty($date) ? date('Y-m-d H:i:s') : $date;
 
   if($time === TRUE)
   {
@@ -110,6 +118,21 @@ function to_date($date = '')
   {
     return date('Y-m-d 23:59:59', strtotime($date));
   }
+}
+
+
+function date_to_array($date1, $date2, $format = 'Y-m-d' )
+{
+  $dates = array();
+  $current = strtotime($date1);
+  $date2 = strtotime($date2);
+  $stepVal = '+1 day';
+  while( $current <= $date2 ) {
+    $dates[] = date($format, $current);
+    $current = strtotime($stepVal, $current);
+  }
+
+  return $dates;
 }
 
 
@@ -179,5 +202,94 @@ function selectTime($time='')
 		$sc .= '<option value="'.$hrs.'" '.is_selected($time, $hrs).'>'.$hrs.'</option>';
 	}
 	return $sc;
+}
+
+function is_valid_date($date)
+{
+  //--- check date is valid format Y-m-d
+  $Y = intval(date('Y', strtotime($date)));
+  $M = intval(date('m', strtotime($date)));
+  $D = intval(date('d', strtotime($date)));
+
+  if($Y > 2500 OR $Y < 2000)
+  {
+    return FALSE;
+  }
+
+  if($M < 1 OR $M > 12)
+  {
+    return FALSE;
+  }
+
+  if($M == 2 && ($D > 29 OR $D < 1))
+  {
+    return FALSE;
+  }
+
+  if($M == 1 OR $M == 3 OR $M == 5 OR $M == 7 OR $M == 8 OR $M == 10 OR $M == 12)
+  {
+    if($D > 31 OR $D < 1)
+    {
+      return FALSE;
+    }
+  }
+  else
+  {
+    if($D > 30 OR $D < 1)
+    {
+      return FALSE;
+    }
+  }
+
+  return TRUE;
+}
+
+function convert_date($date)
+{
+  if(empty($date))
+  {
+    return date('Y-m-d');
+  }
+
+  $date = str_replace('/', '-', $date);
+  $date = str_replace('.', '-', $date);
+  $arr = explode(' ', $date);
+  $date = $arr[0];
+  $date = explode('-', $date);
+
+  $d1 = $date[0];
+  $d2 = $date[1];
+  $d3 = $date[2];
+
+  $Y = $d1;
+  $M = $d2;
+  $D = $d3;
+
+  if(strlen($d1) === 4)
+  {
+    $Y = $d1;
+    $M = $d2;
+    $D = $d3;
+
+    if($d2 > 12)
+    {
+      $M = $d3;
+      $D = $d2;
+    }
+  }
+  else if(strlen($d3) === 4)
+  {
+    $Y = $d3;
+    $M = $d2;
+    $D = $d1;
+
+    if($d2 > 12)
+    {
+      $M = $d1;
+      $D = $d2;
+    }
+  }
+
+  return date('Y-m-d', strtotime("$Y-$M-$D"));
 }
  ?>

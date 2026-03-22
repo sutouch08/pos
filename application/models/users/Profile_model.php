@@ -1,13 +1,25 @@
 <?php
 class Profile_model extends CI_Model
 {
-	private $tb = "profile";
+  private $tb = "profile";
 
   public function __construct()
   {
     parent::__construct();
   }
 
+
+  public function get_name($id)
+  {
+    $rs = $this->db->where('id', $id)->get($this->tb);
+
+    if($rs->num_rows() === 1)
+    {
+      return $rs->row()->name;
+    }
+
+    return NULL;
+  }
 
 
   public function add($name)
@@ -33,16 +45,21 @@ class Profile_model extends CI_Model
 
 
 
-  public function is_exists($name, $id = NULL)
+  public function is_extsts($name, $id = '')
   {
-    if( ! empty($id))
+    if($id !== '')
     {
       $this->db->where('id !=', $id);
     }
 
-    $rs = $this->db->where('name', $name)->count_all_results($this->tb);
+    $rs = $this->db->where('name', $name)->get($this->tb);
 
-    return $rs > 0 ? TRUE : FALSE;
+    if($rs->num_rows() > 0)
+    {
+      return TRUE;
+    }
+
+    return FALSE;
   }
 
 
@@ -51,20 +68,20 @@ class Profile_model extends CI_Model
 
   public function count_members($id)
   {
-		return $this->db->where('id_profile', $id)->count_all_results('user');
+    $this->db->select('id');
+    $this->db->where('id_profile', $id);
+    $rs = $this->db->get('user');
+    return $rs->num_rows();
   }
 
 
-  public function get($id)
+
+
+
+  public function get_profile($id)
   {
     $rs = $this->db->where('id', $id)->get($this->tb);
-
-		if($rs->num_rows() === 1)
-		{
-			return $rs->row();
-		}
-
-		return NULL;
+    return $rs->row();
   }
 
 
@@ -72,50 +89,136 @@ class Profile_model extends CI_Model
 
   public function get_list(array $ds = array(), $perpage = 20, $offset = 0)
   {
-		$this->db->where('id >', 0, FALSE);
+    $this->db
+    ->distinct()
+    ->select('p.*')
+    ->from('profile AS p')
+    ->join('permission AS pm', 'pm.id_profile = p.id', 'left')
+    ->join('menu AS m', 'pm.menu = m.code', 'left')
+    ->where('p.id >', 0)
+    ->where('p.name IS NOT NULL', NULL, FALSE);
 
-    if( ! empty($ds['name']))
+
+    if(!empty($ds['name']))
     {
-      $this->db->like('name', $ds['name']);
+      $this->db->like('p.name', $ds['name']);
     }
 
-    $rs = $this->db->limit($perpage, $offset)->get($this->tb);
+    if(!empty($ds['menu']) && $ds['menu'] != 'all')
+    {
+      $this->db->where_in('pm.menu', $ds['menu']);
+    }
 
-		if($rs->num_rows() > 0)
-		{
-			return $rs->result();
-		}
+    if(!empty($ds['permission']) && $ds['permission'] != 'all')
+    {
+      if($ds['permission'] == 'view')
+      {
+        $this->db->where('pm.can_view', 1);
+      }
+
+      if($ds['permission'] == 'add')
+      {
+        $this->db->where('pm.can_add', 1);
+      }
+
+      if($ds['permission'] == 'edit')
+      {
+        $this->db->where('pm.can_edit', 1);
+      }
+
+      if($ds['permission'] == 'delete')
+      {
+        $this->db->where('pm.can_delete', 1);
+      }
+
+      if($ds['permission'] == 'approve')
+      {
+        $this->db->where('pm.can_approve', 1);
+      }
+    }
+
+    $rs = $this->db->limit($perpage, $offset)->get();
+
+    if($rs->num_rows() > 0)
+    {
+      return $rs->result();
+    }
 
     return NULL;
   }
 
 
 
-  public function count_rows(array $ds = array())
+  public function get_profiles($name = '', $perpage = 0, $offset = 0)
   {
-
-    $this->db->where('id >', 0, FALSE);
-
-    if( ! empty($ds['name']))
+    if($name != '')
     {
-      $this->db->like('name', $ds['name']);
+      $this->db->like('name', $name);
     }
 
-  	return $this->db->count_all_results($this->tb);
+    if($perpage > 0)
+    {
+      $offset = $offset === NULL ? 0 : $offset;
+      $this->db->limit($perpage, $offset);
+    }
+
+    $rs = $this->db->get($this->tb);
+    return $rs->result();
   }
 
 
-	public function get_all()
-	{
-		$rs = $this->db->where('id >', 0)->get($this->tb);
+  public function count_rows($ds = array())
+  {
+    $this->db
+    ->distinct()
+    ->select('p.*')
+    ->from('profile AS p')
+    ->join('permission AS pm', 'pm.id_profile = p.id', 'left')
+    ->join('menu AS m', 'pm.menu = m.code', 'left')
+    ->where('p.id >', 0)
+    ->where('p.name IS NOT NULL', NULL, FALSE);
 
-		if($rs->num_rows() > 0)
-		{
-			return $rs->result();
-		}
+    if(!empty($ds['name']))
+    {
+      $this->db->like('p.name', $ds['name']);
+    }
 
-		return NULL;
-	}
+    if(!empty($ds['menu']) && $ds['menu'] != 'all')
+    {
+      $this->db->where_in('pm.menu', $ds['menu']);
+    }
+
+    if(!empty($ds['permission']) && $ds['permission'] != 'all')
+    {
+      if($ds['permission'] == 'view')
+      {
+        $this->db->where('pm.can_view', 1);
+      }
+
+      if($ds['permission'] == 'add')
+      {
+        $this->db->where('pm.can_add', 1);
+      }
+
+      if($ds['permission'] == 'edit')
+      {
+        $this->db->where('pm.can_edit', 1);
+      }
+
+      if($ds['permission'] == 'delete')
+      {
+        $this->db->where('pm.can_delete', 1);
+      }
+
+      if($ds['permission'] == 'approve')
+      {
+        $this->db->where('pm.can_approve', 1);
+      }
+    }
+
+    return $this->db->count_all_results();
+  }
+
 
 } //--- End class
 

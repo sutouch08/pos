@@ -29,7 +29,7 @@ $config['image_path'] = 'images/';
 $config['upload_path'] = 'upload/';
 $config['image_file_path'] = $_SERVER['DOCUMENT_ROOT'] ."/{$doc_folder}/images/";
 $config['upload_file_path'] = $_SERVER['DOCUMENT_ROOT']."/{$doc_folder}/upload/";
-
+$config['consign_file_path'] = $_SERVER['DOCUMENT_ROOT']."/{$doc_folder}/upload/consign/";
 /*
 |--------------------------------------------------------------------------
 | Index File
@@ -141,7 +141,7 @@ $config['subclass_prefix'] = 'PS_';
 | Note: This will NOT disable or override the CodeIgniter-specific
 |	autoloading (application/config/autoload.php)
 */
-$config['composer_autoload'] = 'vendor/autoload.php';
+$config['composer_autoload'] = FALSE;
 
 /*
 |--------------------------------------------------------------------------
@@ -526,4 +526,3 @@ $config['rewrite_short_tags'] = FALSE;
 | Array:		array('10.0.1.200', '192.168.5.0/24')
 */
 $config['proxy_ips'] = '';
-?>

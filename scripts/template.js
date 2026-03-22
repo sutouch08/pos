@@ -1,357 +1,626 @@
+window.addEventListener('load', () => {
+  let uuid = getUid();
 
-//--- save side bar layout to cookie
-function toggle_layout(){
-	var sidebar_layout = getCookie('sidebar_layout');
-	if(sidebar_layout == 'menu-min'){
-		setCookie('sidebar_layout', '', 90);
-	}else{
-		setCookie('sidebar_layout', 'menu-min', 90);
-	}
+  if(uuid == "" || uuid == null || uuid == undefined) {
+    uuid = generateUID();
+
+		localStorage.setItem('webPosUid', uuid);
+  }
+});
+
+
+document.querySelectorAll('.search').forEach(el => {
+  el.addEventListener('keyup', (e) => {
+    if (e.key === 'Enter') {
+      getSearch();
+    }
+  });
+});
+
+
+document.querySelectorAll('.filter').forEach(el => {
+  el.addEventListener('change', () => {
+    getSearch();
+  });
+});
+
+
+const inputRows = document.getElementById('set-rows');
+if(inputRows) {
+  inputRows.addEventListener('keyup', (e) => {
+    if(e.key === 'Enter') {
+      setRows();
+    }
+  });
+}
+
+const generateUID = (length = 15) => {
+  const array = new Uint8Array(length);
+  crypto.getRandomValues(array);
+  return Array.from(array, v => v.toString(36)).join('');
+};
+
+
+const getUid = () => {
+	return localStorage.getItem('webPosUid');
 }
 
 
-
-function load_in(){
-	//var x = ($(document).innerWidth()/2)-50;
-	$("#loader").css("display","block");
-	$('#loader-backdrop').css('display', 'block');
-	//$("#loader").css("left",x);
-	$("#loader").animate({opacity:0.8},300);
+const goBack = () => {
+	window.location.href = HOME;
 }
 
 
-
-function load_out(){
-	$("#loader").animate({
-		opacity:0
-	},300,
-	function() {
-		$("#loader").css("display","none");
-		$('#loader-backdrop').css('display', 'none');
-	});
+const getSearch = () => {
+	$('#search-form').submit();
 }
 
 
+const clearFilter = () => {
+  fetch(`${HOME}clear_filter`)
+    .then(() => {
+      goBack();
+    })
+    .catch(err => console.error(err));
+};
 
 
-function set_error(el, label, message){
-	el.addClass('has-error');
-	label.text(message);
+const toggleLayout = () => {
+  const sidebarLayout = getCookie('sidebar_layout');
+  const newValue = sidebarLayout === 'menu-min' ? '' : 'menu-min';
+  setCookie('sidebar_layout', newValue, 90);
+};
+
+
+const loadIn = (text = '') => {
+  const loader = document.getElementById('loader');
+  const backdrop = document.getElementById('loader-backdrop');
+  const loaderText = document.querySelector('.loader-text');
+
+  loaderText.textContent = text;
+
+  loader.classList.add('show');
+  backdrop.classList.add('show');
+};
+
+
+const loadOut = () => {
+  const loader = document.getElementById('loader');
+  const backdrop = document.getElementById('loader-backdrop');
+
+  loader.classList.remove('show');
+  backdrop.classList.remove('show');
+
+  const onTransitionEnd = () => {
+    loader.removeEventListener('transitionend', onTransitionEnd);
+  };
+
+  loader.addEventListener('transitionend', onTransitionEnd, { once: true });
+};
+
+
+const createDateValidator = (defaultLocale = "th-TH") => {
+  const localeFormats = {
+    "th-TH": ["DD", "MM", "YYYY"],
+    "en-GB": ["DD", "MM", "YYYY"],
+    "en-US": ["MM", "DD", "YYYY"],
+    "ja-JP": ["YYYY", "MM", "DD"],
+    "iso":   ["YYYY", "MM", "DD"]
+  };
+
+  const getFormat = (locale) => localeFormats[locale] || localeFormats[defaultLocale];
+
+  const isValidDate = (input, locale = defaultLocale) => {
+    if (!input) return false;
+
+    const separators = ["/", "-", ".", " "];
+    const sep = separators.find(s => input.includes(s));
+    if (!sep) return false;
+
+    const parts = input.split(sep);
+    const format = getFormat(locale);
+    if (parts.length !== 3) return false;
+
+    const map = {};
+    format.forEach((key, i) => map[key] = Number(parts[i]));
+
+    const day = map["DD"];
+    const month = map["MM"];
+    const year = map["YYYY"];
+
+    if (!day || !month || !year) return false;
+    if (month < 1 || month > 12) return false;
+    if (day < 1 || day > 31) return false;
+    if ([4, 6, 9, 11].includes(month) && day === 31) return false;
+
+    if (month === 2) {
+      const leap = (year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0));
+      if (day > 29 || (day === 29 && !leap)) return false;
+    }
+
+    return true;
+  };
+
+  return { isValidDate };
+};
+
+
+const isDate = (date, local) => {
+	const validator = createDateValidator(local);
+	return validator.isValidDate(date, local);
 }
 
 
-function clear_error(el, label){
-	el.removeClass('has-error');
-	label.text('');
-}
+const removeCommas = (str) => String(str).split(',').join('');
 
 
+const addCommas = (number) => {
+  const str = typeof number === 'number' ? number.toString() : number;
+  const [intPart, decimalPart] = str.split('.');
 
-function isDate(txtDate){
-	 var currVal = txtDate;
-	 if(currVal == '')
-	    return false;
-	  //Declare Regex
-	  var rxDatePattern = /^(\d{1,2})(\/|-)(\d{1,2})(\/|-)(\d{4})$/;
-	  var dtArray = currVal.match(rxDatePattern); // is format OK?
-	  if (dtArray == null){
-		     return false;
-	  }
-	  //Checks for mm/dd/yyyy format.
-	  dtDay= dtArray[1];
-	  dtMonth = dtArray[3];
-	  dtYear = dtArray[5];
-	  if (dtMonth < 1 || dtMonth > 12){
-	      return false;
-	  }else if (dtDay < 1 || dtDay> 31){
-	      return false;
-	  }else if ((dtMonth==4 || dtMonth==6 || dtMonth==9 || dtMonth==11) && dtDay ==31){
-	      return false;
-	  }else if (dtMonth == 2){
-	     var isleap = (dtYear % 4 == 0 && (dtYear % 100 != 0 || dtYear % 400 == 0));
-	     if (dtDay> 29 || (dtDay ==29 && !isleap)){
-	          return false;
-		 }
-	  }
-	  return true;
-	}
+  const insertCommas = (digits) => {
+    let result = '';
+    let count = 0;
+
+    for (let i = digits.length - 1; i >= 0; i--) {
+      result = digits[i] + result;
+      count++;
+      if (count === 3 && i !== 0) {
+        result = ',' + result;
+        count = 0;
+      }
+    }
+    return result;
+  };
+
+  const formattedInt = insertCommas(intPart.replace(/^([-+])/, ''));
+  const sign = intPart.startsWith('-') ? '-' : intPart.startsWith('+') ? '+' : '';
+
+  return decimalPart ? `${sign}${formattedInt}.${decimalPart}` : `${sign}${formattedInt}`;
+};
 
 
-
-	function removeCommas(str) {
-	    while (str.search(",") >= 0) {
-	        str = (str + "").replace(',', '');
-	    }
-	    return str;
-	}
-
-
-
-
-	function addCommas(number){
-		 return (
-		 	number.toString()).replace(/^([-+]?)(0?)(\d+)(.?)(\d+)$/g, function(match, sign, zeros, before, decimal, after) {
-		 		var reverseString = function(string) { return string.split('').reverse().join(''); };
-		 		var insertCommas  = function(string) {
-						var reversed   = reverseString(string);
-						var reversedWithCommas = reversed.match(/.{1,3}/g).join(',');
-						return reverseString(reversedWithCommas);
-						};
-					return sign + (decimal ? insertCommas(before) + decimal + after : insertCommas(before + after));
-					});
-	}
-
-
-
-
-//**************  Handlebars.js  **********************//
-function render(source, data, output){
-	var template = Handlebars.compile(source);
-	var html = template(data);
+const render = (source, data, output) => {
+	const template = Handlebars.compile(source);
+	const html = template(data);
 	output.html(html);
 }
 
-function render_prepend(source, data, output){
-	var template = Handlebars.compile(source);
-	var html = template(data);
+
+const renderPrepend = (source, data, output) => {
+	const template = Handlebars.compile(source);
+	const html = template(data);
 	output.prepend(html);
 }
 
 
-function render_append(source, data, output){
-	var template = Handlebars.compile(source);
-	var html = template(data);
+const renderAppend = (source, data, output) => {
+	const template = Handlebars.compile(source);
+	const html = template(data);
 	output.append(html);
 }
 
 
+const renderAfter = (source, data, output) => {
+	const template = Handlebars.compile(source);
+	const html = template(data);
+	$(html).insertAfter(output);
+};
 
 
-function set_rows()
-{
-	var rows = $('#set_rows').val();
-	$.ajax({
-		url:BASE_URL+'main/set_rows',
-		type:'POST',
-		cache:false,
-		data:{
-			'set_rows' : rows
-		},
-		success:function(){
-			window.location.reload();
-		}
-	});
-}
+const renderBefore = (source, data, output) => {
+  const template = Handlebars.compile(source);
+  const html = template(data);
+  $(html).insertBefore(output);
+};
 
 
+const setRows = () => {
+  const rows = document.getElementById('set-rows');
+
+  fetch(`${BASE_URL}tools/set_rows`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: new URLSearchParams({
+      set_rows: rows.value
+    })
+  })
+  .then(() => {
+    window.location.reload();
+  })
+  .catch(err => console.error(err));
+};
 
 
-$('#set_rows').keyup(function(e){
-	if(e.keyCode == 13 && $(this).val() > 0){
-		set_rows();
-	}
-});
+const reIndex = (className = 'no') => {
+  const elements = document.querySelectorAll(`.${className}`);
 
-
-
-
-function reIndex(){
-  $('.no').each(function(index, el) {
-    no = index +1;
-    $(this).text(addCommas(no));
+  elements.forEach((el, index) => {
+    const no = index + 1;
+    el.textContent = addCommas(no);
   });
-}
+};
 
 
+let downloadTimer;
 
-var downloadTimer;
-function get_download(token)
-{
-	load_in();
-	downloadTimer = window.setInterval(function(){
-		var cookie = getCookie("file_download_token");
-		if(cookie == token)
-		{
-			finished_download();
-		}
-	}, 1000);
-}
+const getDownload = (token) => {
+  loadIn();
 
-
-
-function finished_download()
-{
-	window.clearInterval(downloadTimer);
-	deleteCookie("file_down_load_token");
-	load_out();
-}
-
-
-
-function isJson(str){
-	try{
-		JSON.parse(str);
-	}catch(e){
-		return false;
-	}
-	return true;
-}
-
-
-
-function printOut(url)
-{
-	var center = ($(document).width() - 800) /2;
-	window.open(url, "_blank", "width=800, height=900. left="+center+", scrollbars=yes");
-}
-
-
-
-function setCookie(cname, cvalue, exdays) {
-  var d = new Date();
-  d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
-  var expires = "expires="+d.toUTCString();
-  document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
-}
-
-function getCookie(cname) {
-  var name = cname + "=";
-  var ca = document.cookie.split(';');
-  for(var i = 0; i < ca.length; i++) {
-    var c = ca[i];
-    while (c.charAt(0) == ' ') {
-      c = c.substring(1);
+  downloadTimer = setInterval(() => {
+    const cookie = getCookie("file_download_token");
+    if (cookie === token) {
+      finishedDownload();
     }
-    if (c.indexOf(name) == 0) {
-      return c.substring(name.length, c.length);
+  }, 1000);
+};
+
+
+const finishedDownload = () => {
+  clearInterval(downloadTimer);
+  deleteCookie("file_download_token");
+  loadOut();
+};
+
+
+const isJson = (str) => {
+  try {
+    JSON.parse(str);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+
+const printOut = (url, width = 800, height = 900) => {
+  const left = (window.screen.width - width) / 2;
+  const top = (window.screen.height - height) / 2;
+
+  window.open(url, "_blank",`width=${width},height=${height},left=${left},top=${top},scrollbars=yes`);
+};
+
+
+const setCookie = (name, value, days) => {
+  const d = new Date();
+  d.setTime(d.getTime() + days * 24 * 60 * 60 * 1000);
+  const expires = `expires=${d.toUTCString()}`;
+  document.cookie = `${name}=${value};${expires};path=/`;
+};
+
+
+const getCookie = (name) => {
+  const target = `${name}=`;
+  const cookies = document.cookie.split(";");
+
+  for (let c of cookies) {
+    c = c.trim();
+    if (c.startsWith(target)) {
+      return c.substring(target.length);
     }
   }
+
   return "";
+};
+
+const deleteCookie = (name) => {
+  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:01 GMT; path=/`;
+};
+
+
+const parseDefault = (value, def) => {
+  return isNaN(value) ? def : value;
+};
+
+
+const parseDefaultInt = (value, def) => {
+  const val = parseInt(value);
+  return isNaN(val) ? def : val;
+};
+
+
+const parseDefaultFloat = (value, def) => {
+  const val = parseFloat(value);
+  return isNaN(val) ? def : val;
+};
+
+
+const roundNumber = (num, digit = 2) => {
+  const d = parseDefaultInt(digit, 2);
+  return Number(parseFloat(num).toFixed(d));
+};
+
+
+const parseDiscountPercent = (price, discAmount) => {
+  if (price > 0 && discAmount > 0 && price > discAmount) {
+    return (discAmount / price) * 100;
+  }
+
+  return 0.0;
+};
+
+
+const parseDiscountAmount = (discountLabel, price) => {
+  let discAmount = 0;
+  let basePrice = price;
+
+  if (discountLabel && discountLabel !== "0") {
+    const parts = discountLabel.split("+");
+
+    parts.forEach((item, index) => {
+      if (index < 3) {
+        const [rawValue, percentSign] = item.split("%");
+        const value = parseDefault(parseFloat(rawValue), 0);
+
+        if (percentSign !== undefined) {
+          const currentPrice = price === 0 ? basePrice : price;
+          const amount = (value / 100) * currentPrice;
+          discAmount += amount;
+          price -= amount;
+        } else {
+          discAmount += value;
+          price -= value;
+        }
+      }
+    });
+  }
+
+  return discAmount;
+};
+
+
+const parseDiscount = (discountLabel, price) => {
+  const result = {
+    discLabel1: 0,
+    discUnit1: '',
+    discLabel2: 0,
+    discUnit2: '',
+    discLabel3: 0,
+    discUnit3: '',
+    discountAmount: 0,
+    finalPrice: price,
+    discountPercent: 0
+  };
+
+  if (discountLabel && discountLabel !== '0') {
+    const parts = discountLabel.split('+');
+    let currentPrice = price;
+
+    parts.forEach((item, index) => {
+      if (index < 3) {
+        const [rawValue, percentSign] = item.split('%');
+        const value = parseDefault(parseFloat(rawValue), 0);
+        const labelKey = `discLabel${index + 1}`;
+        const unitKey = `discUnit${index + 1}`;
+
+        result[labelKey] = value;
+
+        if (percentSign !== undefined) {
+          const amount = (value / 100) * currentPrice;
+          result[unitKey] = '%';
+          result.discountAmount += amount;
+          currentPrice -= amount;
+        } else {
+          result.discountAmount += value;
+          currentPrice -= value;
+        }
+      }
+    });
+
+    result.finalPrice = currentPrice;
+    result.discountPercent = price > 0 ? (result.discountAmount / price) * 100 : 0;
+  }
+
+  return result;
+};
+
+
+const sort = (field) => {
+  const el = field === 'date_add'
+    ? document.getElementById('sort_date_add')
+    : document.getElementById('sort_code');
+
+  const isDesc = el.classList.contains('sorting_desc');
+  const sortBy = isDesc ? 'ASC' : 'DESC';
+  const sortClass = isDesc ? 'sorting_asc' : 'sorting_desc';
+
+  document.querySelectorAll('.sorting').forEach(item => {
+    item.classList.remove('sorting_desc', 'sorting_asc');
+  });
+
+  el.classList.add(sortClass);
+
+  document.getElementById('sort_by').value = sortBy;
+  document.getElementById('order_by').value = field;
+
+  getSearch();
+};
+
+
+const getDeviceId = () => {
+  const deviceId = localStorage.getItem('DeviceId');
+
+  if( ! deviceId) {
+    deviceId = generateUID();
+    localStorage.setItem('DeviceId', deviceId);
+  }
+
+  return deviceId;
 }
 
-function deleteCookie( name ) {
-  document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-}
 
-
-function parseDefault(value, def){
-	if(isNaN(value)){
-		return def; //--- return default value
-	}
-
-	return value;
-}
-
-//--- return discount array
-function parseDiscount(discount_label, price)
-{
-	var discLabel = {
-		"discLabel1" : 0,
-		"discUnit1" : '',
-		"discLabel2" : 0,
-		"discUnit2" : '',
-		"discLabel3" : 0,
-		"discUnit3" : '',
-		"discLabel4" : 0,
-		"discUnit4" : '',
-		"discLabel5" : 0,
-		"discUnit5" : '',
-		"discountAmount" : 0,
-		"sellPrice" : price
-	};
-
-	bprice = 0;
-
-	if(discount_label != '' && discount_label != 0)
-	{
-		var arr = discount_label.split('+');
-		discLabel['sellPrice'] = price;
-		arr.forEach(function(item, index){
-			var i = index + 1;
-			if(i <= 5) {
-				if(price == 0) {
-					bprice--;
-				}
-
-				var disc = item.split('%');
-				var value = parseDefault(parseFloat(disc[0]), 0);
-				discLabel["discLabel"+i] = value;
-				var amount = (value * 0.01) * price;
-				discLabel["discUnit"+i] = '%';
-				discLabel["discountAmount"] += amount;
-				price -= amount;
-				discLabel['sellPrice'] = price;
-			}
-		});
-
-		//discLabel.sellPrice += bprice;
-	}
-
-	return discLabel;
-}
-
-
-function getSearch() {
-  $('#searchForm').submit();
-}
-
-
-
-
-$('.search-box').keyup(function(e){
-	if(e.keyCode === 13) {
-		getSearch();
-	}
-});
-
-
-$('.filter').change(function() {
-	getSearch();
-})
-
-
-function clearFilter() {
-	let url = HOME + 'clear_filter';
-	$.get(url, function(rs){ goBack(); });
-}
-
-function sort(field){
-	var el = $("#sort_"+field);
-	var sort_by = "";
-
-	sort_by = el.hasClass('sorting_desc') ? 'ASC' : 'DESC';
-	sort_class = el.hasClass('sorting_desc') ? 'sorting_asc' : 'sorting_desc';
-
-	$('.sorting').removeClass('sorting_desc');
-	$('.sorting').removeClass('sorting_asc');
-
-	el.addClass(sort_class);
-	$('#sort_by').val(sort_by);
-	$('#order_by').val(field);
-
-	getSearch();
-}
-
-
-function validCode(input, regex){
-  var regex = regex === undefined ? /[^a-z0-9.]+/gi : regex;
+const validInput = (input, regex = /[^a-z0-9-_.]+/gi) => {
   input.value = input.value.replace(regex, '');
-}
+};
 
 
-function changeUserPwd()
-{
-	window.location.href = BASE_URL + 'user_pwd';
-}
+const numberOnly = (input) => {
+  const regex = /[^0-9]+/gi;
+  input.value = input.value.replace(regex, '');
+};
 
 
-function uniqueId()
-{
-	return Math.floor(Math.random() * Date.now());
-}
+const closeModal = (modalName) => {
+  $('#' + modalName).modal('hide');
+};
 
 
-function roundNumber(num)
-{
-	return Math.round((num + Number.EPSILON) * 100) / 100;
-}
+const getVatAmount = (amount, rate, type) => {
+  let vatAmount = 0.00;
+
+  amount = parseDefault(parseFloat(amount), 0.00);
+  rate = parseDefault(parseFloat(rate), 0.00);
+
+  if (amount > 0 && rate > 0 && type !== 'N') {
+    const vatRate = type === 'I'
+      ? (rate + 100) * 0.01
+      : rate * 0.01;
+
+    vatAmount = type === 'I'
+      ? amount - (amount / vatRate)
+      : amount * vatRate;
+  }
+
+  return vatAmount;
+};
+
+const addVat = (amount, rate, type) => {
+  amount = parseDefault(parseFloat(amount), 0.00);
+  rate = parseDefault(parseFloat(rate), 0.00);
+
+  return type === 'E'
+    ? amount + (amount * rate)
+    : amount;
+};
+
+const removeVat = (amount, rate, type) => {
+  amount = parseDefault(parseFloat(amount), 0.00);
+  rate = parseDefault(parseFloat(rate), 0.00);
+
+  if (amount > 0 && rate > 0 && type !== 'N') {
+    const vatRate = (rate + 100) * 0.01;
+    amount = amount / vatRate;
+  }
+
+  return amount;
+};
+
+
+const parseAddress = (addr, subDistrict, district, province, postcode) => {
+  const pv = parseProvince(province);
+  const sd = parseSubDistrict(subDistrict, pv);
+  const dt = parseDistrict(district, pv);
+
+  return `${addr} ${sd} ${dt} ${pv} ${postcode}`;
+};
+
+
+const isBangkok = (province) => {
+  const p = province?.replace(/\s+/g, '');
+  const list = [
+    'จ.กรุงเทพมหานคร', 'จังหวัดกรุงเทพมหานคร', 'กรุงเทพ',
+    'กรุงเทพฯ', 'กรุงเทพมหานคร', 'กทม', 'กทม.', 'ก.ท.ม.'
+  ];
+  return list.includes(p);
+};
+
+
+const parseSubDistrict = (ad, province) => {
+  if (!ad) return ad;
+
+  let clean = ad.replace(/\s+/g, '').replace('แขวง', '').replace('ต.', '').replace('ตำบล', '');
+
+  return isBangkok(province)
+    ? `แขวง${clean}`
+    : `ต. ${clean}`;
+};
+
+
+const parseDistrict = (ad, province) => {
+  if (!ad) return ad;
+
+  let clean = ad.replace(/\s+/g, '').replace('เขต', '').replace('อ..', '').replace('อำเภอ', '');
+
+  return isBangkok(province)
+    ? `เขต${clean}`
+    : `อ. ${clean}`;
+};
+
+
+const parseProvince = (ad) => {
+  if (!ad) return ad;
+
+  let clean = ad.replace(/\s+/g, '').replace('จ.', '').replace('จังหวัด', '');
+
+  if (['กรุงเทพ', 'กรุงเทพฯ', 'กรุงเทพมหานคร', 'กทม', 'กทม.', 'ก.ท.ม.'].includes(clean)) {
+    clean = 'กรุงเทพมหานคร';
+  }
+
+  return `จ. ${clean}`;
+};
+
+
+const hilightRow = (id) => {
+  document.querySelectorAll('.order-rows').forEach(row => {
+    row.classList.remove('active-row');
+  });
+
+  const target = document.getElementById(`row-${id}`);
+  if (target) {
+    target.classList.add('active-row');
+  }
+};
+
+$.fn.hasError = function(msg) {
+  let name = this.attr('id');
+  $('#'+name+'-error').text(msg);
+  return this.addClass('has-error');
+};
+
+$.fn.clearError = function() {
+  this.removeClass('has-error');
+  let name = this.attr('id');
+  return $('#'+name+'-error').text('');
+};
+
+
+const clearErrorByClass = (className) => {
+  const elements = document.querySelectorAll(`.${className}`);
+
+  elements.forEach(el => {
+    const name = el.id;
+    const errorEl = document.getElementById(`${name}-error`);
+
+    if (errorEl) {
+      errorEl.textContent = '';
+    }
+
+    el.classList.remove('has-error');
+  });
+};
+
+
+const showError = (response) => {
+  loadOut();
+
+  setTimeout(() => {
+    swal({
+      title: 'Error!',
+      text: typeof response === 'object' ? response.responseText : response,
+      type: 'error',
+      html: true
+    });
+  }, 100);
+};
+
+
+const is_true = (val) => {
+  if (typeof val === 'string') {
+    val = val.trim().toLowerCase();
+  }
+
+  const truthy = ["true", "1", "yes", "y", "on"];
+  return val === true || val === 1 || truthy.includes(val);
+};

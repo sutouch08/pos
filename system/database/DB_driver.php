@@ -1105,11 +1105,6 @@ abstract class CI_DB_driver {
 		}
 		elseif (is_string($str) OR (is_object($str) && method_exists($str, '__toString')))
 		{
-			if($this->dbdriver == 'sqlsrv')
-			{
-				return "N'".$this->escape_str($str)."'";
-			}
-			
 			return "'".$this->escape_str($str)."'";
 		}
 		elseif (is_bool($str))

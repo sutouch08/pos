@@ -1,3 +1,19 @@
+function showPwd() {
+  var x = document.getElementById("pwd");
+  var y = document.getElementById("pwd-btn");
+
+  if(x.type === "password") {
+    x.type = "text";
+    y.classList.remove('fa-eye');
+    y.classList.add('fa-eye-slash');
+  }
+  else {
+    x.type = "password";
+    y.classList.remove('fa-eye-slash');
+    y.classList.add('fa-eye');
+  }
+}
+
 
 function doLogin() {
 	const uname = $('#uname').val();
@@ -25,7 +41,8 @@ function doLogin() {
 		cache:false,
 		data:{
 			'uname' : uname,
-			'pwd' : ipwd
+			'pwd' : ipwd,
+			'remember' : remember
 		},
 		success:function(rs) {
 			rs = $.trim(rs);
@@ -34,7 +51,7 @@ function doLogin() {
 				window.location.href = BASE_URL;
 			}
 			else {
-				$('#error-label').text(rs);
+				$('#login-error').text(rs);
 			}
 		}
 	});
@@ -51,9 +68,11 @@ $('#pwd').keyup(function(e) {
 	}
 });
 
-
-$('#uname').keyup(function(e) {
-	if(e.keyCode === 13) {
-		doLogin();
-	}
+$('#btn-login').click(function() {
+  doLogin();
 });
+
+
+$('#uname').change(function() {
+  $('#pwd').focus();
+})

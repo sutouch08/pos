@@ -12,25 +12,4 @@
 
 	</div>
 
-<?php if($this->_SuperAdmin) : ?>
-	<div class="row">
-		<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 padding-5">
-			<button type="button" class="btn btn-sm btn-primary" onclick="GetQuotaStock()">Test</button>
-		</div>
-	</div>
-
-	<script>
-	function GetQuotaStock() {
-		$.ajax({
-			url:BASE_URL + 'main/testApi',
-			type:'GET',
-			cache:false,
-			success:function(rs) {
-				console.log(rs);
-			}
-		});
-	}
-	</script>
-<?php endif; ?>
-
 <?php $this->load->view('include/footer'); ?>

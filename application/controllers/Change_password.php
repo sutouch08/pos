@@ -2,9 +2,8 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 class Change_password extends CI_Controller
 {
-  public $title = 'Change password';
+  public $title = 'เปลี่ยนรหัสผ่าน';
 	public $error;
-	public $_customer = FALSE;
 
 	public function __construct()
 	{
@@ -19,11 +18,10 @@ class Change_password extends CI_Controller
 
     if(!empty($code))
     {
-      $user = $this->user_model->get_by_uname($code);
+      $user = $this->user_model->get($code);
       if(!empty($user))
       {
         $ds['data'] = $user;
-				$ds['message'] = "กรุณาเปลี่ยนรหัสผ่าน";
         $this->load->view('change_password', $ds);
       }
       else
@@ -38,62 +36,6 @@ class Change_password extends CI_Controller
   		redirect(base_url().'users/authentication');
     }
 
-	}
-
-
-
-	public function e()
-	{
-		$code = get_cookie('uname');
-
-		if(!empty($code))
-    {
-      $user = $this->user_model->get_by_uname($code);
-      if(!empty($user))
-      {
-        $ds['data'] = $user;
-				$ds['message'] = "รหัสผ่านหมดอายุ กรุณาเปลี่ยนรหัสผ่านเพื่อเริ่มใช้งานใหม่อีกครั้ง";
-        $this->load->view('change_password', $ds);
-      }
-      else
-      {
-        //--- ถ้าไม่มีข้อมูล ให้ไป login ใหม่
-        redirect(base_url().'users/authentication');
-      }
-    }
-    else
-    {
-      //--- ถ้าไม่มีข้อมูล ให้ไป login ใหม่
-  		redirect(base_url().'users/authentication');
-    }
-	}
-
-
-
-	public function f()
-	{
-		$code = get_cookie('uname');
-
-		if(!empty($code))
-		{
-			$user = $this->user_model->get_by_uname($code);
-			if(!empty($user))
-			{
-				$ds['data'] = $user;
-				$ds['message'] = "กรุณาเปลี่ยนรหัสผ่าน";
-				$this->load->view('change_password', $ds);
-			}
-			else
-			{
-				//--- ถ้าไม่มีข้อมูล ให้ไป login ใหม่
-				redirect(base_url().'users/authentication');
-			}
-		}
-		else
-		{
-			//--- ถ้าไม่มีข้อมูล ให้ไป login ใหม่
-			redirect(base_url().'users/authentication');
-		}
 	}
 
 
@@ -138,22 +80,26 @@ class Change_password extends CI_Controller
 		{
 			if(password_verify($pwd, $user->pwd))
 			{
-				$arr = array(
-					'pwd' => password_hash($new_pwd, PASSWORD_DEFAULT),
-					'last_pass_change' => date('Y-m-d'),
-					'force_reset' => 0
-				);
-				//--- update last pass change
-				if( ! $this->user_model->update($user->id, $arr))
+				//--- change password
+				$password = password_hash($new_pwd, PASSWORD_DEFAULT);
+				if(!$this->user_model->change_password($user->id, $password))
 				{
 					$sc = FALSE;
 					$this->error = "เปลี่ยนรหัสผ่านไม่สำเร็จ";
+				}
+				else
+				{
+					$arr = array(
+						'last_pass_change' => date('Y-m-d')
+					);
+					//--- update last pass change
+					$this->user_model->update_user($user->id, $arr);
 				}
 			}
 			else
 			{
 				$sc = FALSE;
-				$this->error = "รหัสผ่านปัจจุบันไม่ถูกต้อง";
+				$this->error = "รหัสผ่านไม่ถูกต้อง";
 			}
 		}
 		else
@@ -164,5 +110,29 @@ class Change_password extends CI_Controller
 
 		echo $sc === TRUE ? 'success' : $this->error;
 	}
+
+
+  public function change_password()
+	{
+		if($this->input->post('user_id'))
+		{
+			$id = $this->input->post('user_id');
+			$pwd = password_hash($this->input->post('pwd'), PASSWORD_DEFAULT);
+			$rs = $this->user_model->change_password($id, $pwd);
+
+			if($rs === TRUE)
+			{
+				$this->session->set_flashdata('success', 'Password changed');
+			}
+			else
+			{
+				$this->session->set_flashdata('error', 'Change password not successfull, please try again');
+			}
+		}
+
+		redirect($this->home);
+	}
+
+
 }
  ?>

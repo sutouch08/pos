@@ -7,12 +7,13 @@ class Xprinter
 	public $page_width 	= 200;
 	public $page_height	= 282;
 	public $content_width	= 190;
+	public $content_height = 0;
 	public $row	= 10; //--- items rows perpage
 
 	//---- top header logo and doc name
 	public $title = "";
 	public $title_position = "right"; //--- left or middle or right
-	public $has_logo = TRUE;
+	public $has_logo = FALSE;
 	public $logo_position = "left"; //-- left or middle or right
 	public $cancle_watermark = "";
 
@@ -72,9 +73,16 @@ class Xprinter
 		$header .= "	<link href='".base_url()."assets/css/bootstrap.css' rel='stylesheet' />";
 		$header .= "	<link href='".base_url()."assets/css/template.css' rel='stylesheet' />";
 		$header .= "	<link href='".base_url()."assets/css/print.css' rel='stylesheet' />";
+		$header .= '	<link rel="preconnect" href="https://fonts.googleapis.com">';
+		$header .= '	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>';
+		$header .= '	<link href="https://fonts.googleapis.com/css2?family=Sarabun:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800&display=swap" rel="stylesheet">';
 		$header .= "	<script src='".base_url()."assets/js/jquery.min.js'></script>";
 		$header .= "	<script src='".base_url()."assets/js/bootstrap.min.js'></script> ";
-		$header .= "	<style> .page_layout{ border: solid 1px #333; border-radius:5px; 	} @media print{ 	.page_layout{ border: none; } } 	</style>";
+		$header .= "	<style> ";
+		$header .= " 		body { font-family:'Sarabun', sans-serif;} ";
+		$header .= " 		.page_layout {	border: solid 1px #333; border-radius:5px;}";
+		$header .= "		@media print { .page_layout {	border: none;	} }";
+		$header .= "	</style>";
 		$header .= "	</head>";
 		$header .= "	<body>";
 		$header .= "	<div class='modal fade' id='xloader' tabindex='-1' role='dialog' aria-labelledby='myModalLabel' aria-hidden='true' data-backdrop='static'>";
@@ -87,7 +95,7 @@ class Xprinter
 		$header .= "	<div id='preloader' style='margin-top:-10px; height:10px; width:1%; background-color:#09F;'></div>";
 		$header .= "	<div style='width:100%;  text-align:center; margin-top:15px; font-size:12px;'><span><strong>Loading....</strong></span></div>";
 		$header .= "	</div></div></div></div></div> "; // modal fade;
-		$header .= "	<div class='hidden-print' style='margin-top:10px; padding-bottom:10px; padding-right:5mm; width:200mm; margin-left:auto; margin-right:auto; text-align:right'>";
+		$header .= "	<div class='hidden-print' style='margin-top:10px; padding-bottom:10px; padding-right:5mm; margin-left:auto; margin-right:auto; text-align:right'>";
 		$header .= "	<button class='btn btn-primary' onclick='print()'><i class='fa fa-print'></i>&nbspพิมพ์</button>";
 		$header .= "	</div><div style='width:100%'>";
 
@@ -156,14 +164,14 @@ class Xprinter
 
 	public function thead(array $dataset)
 	{
-		$thead	= "<table class='table' style='margin-bottom:0px; margin-top:5px;'>";
+		$thead	= "<table class='table' style='margin-bottom:0px;'>";
 		$thead 	.= "<thead>";
-		$thead	.= "<tr style='line-height:".$this->row_height."mm; font-size:".$this->font_size."px; background:none;'>";
+		$thead	.= "<tr style='line-height:".$this->row_height."mm; font-size:".$this->font_size."px;'>";
 		foreach($dataset as $data)
 		{
 			$value 	= $data[0];
 			$css		= $data[1];
-			$thead 	.= "<th style='".$css."'>".$value."</th>";
+			$thead 	.= "<th class='border-bottom-2 border-top-2' style='".$css."'>".$value."</th>";
 		}
 		$thead	.= "</tr>";
 		$thead 	.= "</thead>";
@@ -195,7 +203,7 @@ class Xprinter
 
 		$header  = "<div style='width:{$this->content_width}mm; margin:auto; padding-bottom:10px; border-bottom:solid 2px #333;'>";
 
-		$header .= "<table style='border:none; width:100%; '>";
+		$header .= "<table style='border:none; width:100%;'>";
 		$header .= "<tr>";
 		//--- block A width 60%
 		$header .= "<td style='width:60%; padding-top:10px;'>";
@@ -315,7 +323,7 @@ class Xprinter
 		// 	$page_break = "";
 		// }
 
-		return "<div class='page_layout' style='width:".$this->page_width."mm; padding-top:5mm; height:".$this->page_height."mm; position:relative; margin:auto; ".$page_break."'>"; //// page start
+		return "<div class='page_layout' style='width:".$this->page_width."mm; padding-top:5mm; height:".$this->page_height."mm; position:relative; margin:auto; ".$page_break."'>";
 	}
 
 
@@ -323,9 +331,12 @@ class Xprinter
 
 
 
-	public function page_end()
+	public function page_end($html = NULL)
 	{
-		return "</div><div class='hidden-print' style='height: 5mm; width:".$this->page_width."'></div>";
+		$content = "</div>";
+		$content .= $html;
+		$content .= "<div class='hidden-print' style='height: 5mm; width:".$this->page_width."'></div>";
+		return $content;
 	}
 
 
@@ -355,14 +366,18 @@ class Xprinter
 	{
 		$logo_path = base_url()."images/company/company_logo.png";
 		$top  = "";
-		$top .= "<table style='width:60%; border:none; float:left; margin-bottom:5px;'>";
-		/*/
-		$top .= "<tr>";
-		$top .= "<td style='width:100%; height:10mm; text-align:{$this->logo_position}; vertical-aligh:top; padding-right:20mm;'>";
-		$top .= $this->has_logo === TRUE ? "<img src='{$logo_path}' class='company-logo' />" : '';
-		$top .= "</td>";
-		$top .= "</tr>";
-		*/
+		$top .= "<table style='width:60%; border:none; float:left;'>";
+
+		if($this->has_logo)
+		{
+			$top .= "<tr>";
+			$top .= "<td style='width:100%; height:10mm; text-align:{$this->logo_position}; vertical-aligh:top; padding-right:20mm;'>";
+			$top .= "<img src='{$logo_path}' class='company-logo' />";
+			$top .= "</td>";
+			$top .= "</tr>";
+		}
+
+
 		if(!empty($this->header_row['left']))
 		{
 			foreach($this->header_row['left'] as $left)
@@ -389,7 +404,7 @@ class Xprinter
 		$top  = "";
 		$top .= "<table class='' style='width:40%; border:none; float:left;'>";
 		$top .= "<tr>";
-		$top .= "<td colspan='2' class='{$this->text_color}' style='width:30%; height:10mm; font-size:24px; text-align:center; border-bottom:solid 2px #333;'>";
+		$top .= "<td colspan='2' class='{$this->text_color}' style='width:30%; height:10mm; font-size:20px; text-align:center; border-bottom:solid 2px #333;'>";
 		$top .= $this->title;
 		$top .= "<span style='font-size:10px; float:right; text-align:right; color:black; margin-top:-15px;'>";
 		$top .= "หน้า {$this->current_page}/{$this->total_page}</span>";
@@ -399,6 +414,8 @@ class Xprinter
 		if(!empty($this->header_row['right']))
 		{
 			$rob = 1;
+			$robC = count($this->header_row['right']);
+
 			foreach($this->header_row['right'] as $right)
 			{
 
@@ -408,11 +425,11 @@ class Xprinter
 				foreach($right as $row)
 				{
 					$count++;
-					$under_line = ($rob == 1 && $count == $item) ? 'border-bottom:solid 2px #333;' : '';
+					$under_line = ($rob < $robC && $count == $item) ? 'border-bottom:solid 2px #333;' : '';
 					$padding_top = ($count == 1) ? 'padding-top:5px;' : '';
 					$top .= "<tr class='font-size-12'>";
-					$top .= "<td class='{$this->text_color}' style='padding-bottom:5px; width:30%; {$under_line} {$padding_top}'>{$row['label']}</td>";
-					$top .= "<td class='' style='padding-bottom:5px; width:70%; {$under_line} {$padding_top}'>{$row['value']}</td>";
+					$top .= "<td class='{$this->text_color}' style='padding-bottom:5px; width:30%; vertical-align:text-top; {$under_line} {$padding_top}'>{$row['label']}</td>";
+					$top .= "<td class='' style='padding-bottom:5px; width:70%; white-space:pre-wrap; {$under_line} {$padding_top}'>{$row['value']}</td>";
 					$top .= "</tr>";
 				}
 
@@ -431,16 +448,19 @@ class Xprinter
 	public function content_start()
 	{
 		$border = $this->content_border == 0 ? 'border:none;' : 'border:solid 2px #ccc;';
-		return  "<div style='width:{$this->content_width}mm; margin:auto; margin-bottom:2mm; border-radius: 10px; {$border}'>";
+		$content_height = $this->content_height == 0 ? "" : "height:{$this->content_height}mm;";
+		return  "<div style='width:{$this->content_width}mm; {$content_height} margin:auto; margin-bottom:2mm; border-radius: 10px; {$border}'>";
 	}
 
 
 
 
 
-	public function content_end()
+	public function content_end($html = NULL)
 	{
-		return "</div>";
+		$content = $html;
+		$content .= "</div>";
+		return $content;
 	}
 
 
@@ -463,7 +483,7 @@ class Xprinter
 
 		foreach($data as $n=>$value)
 		{
-			$row .= "<td class='middle' style='border:none; {$pattern[$n]}'>".$value."</td>";
+			$row .= "<td class='' style='border:none; {$pattern[$n]}'>".$value."</td>";
 		}
 		$row .= "</tr>";
 		return $row;
@@ -500,7 +520,7 @@ class Xprinter
 
 
 
-	public function set_footer(array $data)
+	public function set_footer(array $data, $html = NULL)
 	{
 		if(!$this->footer)
 		{
@@ -511,15 +531,13 @@ class Xprinter
 			$c = count($data);
 			$box_width = $c >= 4 ? 25 : 33;
 			$space = $c+1;
-			$margin = 1;//$c == 1 ? 5 : (190/$space)/$c/4;
+			$margin = 1;
 			$height = $this->footer_row * $this->row_height;
 			$row1 = $this->row_height;
 			$row2 = 8;
 			$row4 = 10;
 			$row3 = $height - ($row1+$row2+$row4) - 2;
-			$row5 = 8;
-		
-			$footer = "<div style='width:190mm; height:".$height."mm; margin:auto; position:absolute; bottom:10mm; left:5mm;'>";
+			$footer = "<div style='width:190mm; height:".$height."mm; margin:auto; position:absolute; bottom:10mm; left:5mm; background-color:white;'>";
 			foreach($data as $n=>$value)
 			{
 				$footer .="<div style='width:".$box_width."%; height:".$height."mm; text-align:center; float:right; padding-left:{$margin}mm; padding-right:{$margin}mm;'>";
@@ -529,14 +547,11 @@ class Xprinter
 				$footer .="<span style='font-size:{$this->font_size}px; width:100%; height: ".$row3."mm; text-align:center; padding-left:5px; padding-right:5px; ".(is_null($value[1]) ? "" : "border-bottom:dotted 1px #333;")." float:left; padding:10px;'></span>";
 				$footer .="<span style='font-size:{$this->font_size}px; width:20%; height: ".$row4."mm; text-align:right; vertical-align:bottom; float:left; padding-top: 25px;'>".$value[2]."</span>";
 				$footer .="<span style='font-size:{$this->font_size}px; width:70%; height: ".$row4."mm; text-align:left; float:left; padding-top: 10px;".(is_null($value[2]) ? "" : " border-bottom:dotted 1px #333;")."'></span>";
-				if(!empty($value[3]))
-				{
-					$footer .="<span style='font-size:{$this->font_size}px; width:20%; height: ".$row5."mm; text-align:right; vertical-align:bottom; float:left; padding-top: 20px;'>".$value[3]."</span>";
-					$footer .="<span style='font-size:{$this->font_size}px; width:70%; height: ".$row5."mm; text-align:left; float:left; padding-top: 10px;".(is_null($value[3]) ? "" : " border-bottom:dotted 1px #333;")."'></span>";
-				}
 				$footer .="</div>";
 				$footer .="</div>";
 			}
+
+			$footer .= $html;
 			$footer .="</div>";
 			$this->footer = $footer;
 		}
@@ -547,32 +562,6 @@ class Xprinter
 	{
 		if($css == ""){ $css = "width: 100px;"; }
 		return "<img src='".base_url()."assets/barcode/barcode.php?text=".$barcode."' style='".$css."' />";
-	}
-
-	public function get_box_width($count = 1)
-	{
-		$width = 25;
-		if($count == 4)
-		switch($count)
-		{
-			case 1 :
-				$width = 33;
-				break;
-			case 2 :
-				$width = 33;
-				break;
-			case 3 :
-				$width = 33;
-				break;
-			case 4 :
-				$width = 25;
-				break;
-			default :
-				$width = 25;
-				break;
-		}
-
-		return $width;
 	}
 } //--- ensd class
 

@@ -1,5 +1,5 @@
 <?php
-$topMenuGroups = $this->menu->get_active_menu_groups('top');
+$topMenuGroups = $this->menu_model->get_active_menu_groups('top');
 $topSubMenuGroups = isset($this->menu_sub_group_code) ? $this->menu_sub_group_code : NULL;
 ?>
 
@@ -7,7 +7,7 @@ $topSubMenuGroups = isset($this->menu_sub_group_code) ? $this->menu_sub_group_co
   <!-- #section:basics/navbar.nav -->
   <?php if(!empty($topMenuGroups)) : ?>
     <?php foreach($topMenuGroups as $topMenu) : ?>
-      <?php $subGroups = $this->menu->get_menus_sub_group($topMenu->code); ?>
+      <?php $subGroups = $this->menu_model->get_menus_sub_group($topMenu->code); ?>
         <?php if(!empty($subGroups)) : ?>
           <?php foreach($subGroups as $subGroup) : ?>
             <ul class="nav navbar-nav">
@@ -16,7 +16,7 @@ $topSubMenuGroups = isset($this->menu_sub_group_code) ? $this->menu_sub_group_co
                 <?php echo $subGroup->name; ?> &nbsp;
                 <i class="ace-icon fa fa-angle-down bigger-110"></i>
               </a>
-              <?php $menus = $this->menu->get_menus_by_sub_group($subGroup->code, $topMenu->code); ?>
+              <?php $menus = $this->menu_model->get_menus_by_sub_group($subGroup->code, $topMenu->code); ?>
     					<?php if(!empty($menus)) : ?>
                 <ul class="dropdown-menu dropdown-light-blue dropdown-caret">
                   <?php foreach($menus as $menu) : ?>

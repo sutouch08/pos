@@ -1,23 +1,20 @@
 <?php
-  function full_name($fname, $mname=Null, $lname=NULL)
+function employee_in($txt)
+{
+  $sc = array('0');
+  $CI =& get_instance();
+  $CI->load->model('masters/employee_model');
+  $rs = $CI->employee_model->search($txt);
+
+  if(!empty($rs))
   {
-    return $fname.( ! empty($mname) ? " ".$mname : "").( ! empty($lname) ? " ".$lname : "");
-  }
-
-  
-  function get_full_name_by_id($id)
-  {
-    $ci =& get_instance();
-    $ci->load->model('masters/employee_model');
-
-    $rs = $ci->employee_model->get($id);
-
-    if( ! empty($rs))
+    foreach($rs as $cs)
     {
-      return full_name($rs->row()->fname, $rs->row()->mname, $rs->row()->lname);
+      $sc[] = $cs->empID;
     }
-
-    return NULL;
   }
 
- ?>
+  return $sc;
+}
+
+?>

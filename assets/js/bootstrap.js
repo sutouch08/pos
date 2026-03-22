@@ -1171,7 +1171,7 @@ if (typeof jQuery === 'undefined') {
     this.$body.append(scrollDiv)
     var scrollbarWidth = scrollDiv.offsetWidth - scrollDiv.clientWidth
     this.$body[0].removeChild(scrollDiv)
-    return 0; //scrollbarWidth
+    return scrollbarWidth
   }
 
 
