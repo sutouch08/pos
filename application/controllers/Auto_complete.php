@@ -2,216 +2,20 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Auto_complete extends CI_Controller
-{
-  public $ms;
+{  
   public function __construct()
   {
-    parent::__construct();
-    $this->ms = $this->load->database('ms', TRUE);
+    parent::__construct();    
   }
 
-  public function get_uninvoice_down_payment()
-  {
-    $ds = array();
-    $req = $this->db->escape_str(trim($_REQUEST['term']));
-
-    $this->db
-    ->where('status', 'O')
-    ->where('invoice_code IS NULL', NULL, FALSE);
-
-    if($req != '*')
-    {
-      $this->db
-      ->group_start()
-      ->like('code', $req)
-      ->or_like('customer_code', $req)
-      ->or_like('customer_name', $req)
-      ->or_like('customer_ref', $req)
-      ->group_end();
-    }
-
-    $rs = $this->db    
-    ->order_by('code', 'DESC')
-    ->limit(50)
-    ->get('order_down_payment');
-
-    if($rs->num_rows() > 0)
-    {
-      foreach($rs->result() as $rd)
-      {
-        $name = empty($rd->customer_ref) ? $rd->customer_name : $rd->customer_ref;
-
-        $ds[] = array(
-          'label' => $rd->code." | ({$rd->customer_code}) {$name}",
-          'code' => $rd->code,
-          'name' => $name
-        );
-      }
-    }
-    else
-    {
-      $ds[] = "Not found";
-    }
-
-    echo json_encode($ds);
-  }
-
-
-  public function get_down_payment_code()
-  {
-    $ds = array();
-
-    $req = $_REQUEST['term'];
-
-    $this->db->select('code');
-
-    if($req != '*')
-    {
-      $this->db->like('code', $this->db->escape_str($req));
-    }
-
-    $rs = $this->db->order_by('code', 'ASC')->limit(100)->get('order_down_payment');
-
-    if($rs->num_rows() > 0)
-    {
-      foreach($rs->result() as $rd)
-      {
-        $ds[] = $rd->code;
-      }
-    }
-    else
-    {
-      $ds[] = "Not found";
-    }
-
-    echo json_encode($ds);
-  }
-
-
-  public function get_so_code()
-  {
-    $ds = array();
-
-    $req = $_REQUEST['term'];
-
-    $this->db->select('code')->where('status', 'O');
-
-    if($req != '*')
-    {
-      $this->db->like('code', $this->db->escape_str($req));
-    }
-
-    $rs = $this->db->order_by('code', 'ASC')->limit(50)->get('sale_order');
-
-    if($rs->num_rows() > 0)
-    {
-      foreach($rs->result() as $rd)
-      {
-        $ds[] = $rd->code;
-      }
-    }
-
-    echo json_encode($ds);
-  }
-
-
-	public function get_wx_code()
-	{
-		$txt = trim($_REQUEST['term']);
-		$sc = array();
-
-		$this->db->select('code');
-		if($txt != '*')
-		{
-			$this->db->like('code', $txt);
-		}
-
-		$rs = $this->db->order_by('code', 'DESC')->limit(20)->get('consign_check');
-
-		if($rs->num_rows() > 0)
-    {
-      foreach($rs->result() as $rd)
-      {
-        $sc[] = $rd->code;
-      }
-    }
-		else
-		{
-			$sc[] = "not found";
-		}
-
-    echo json_encode($sc);
-	}
-
-
-	public function get_active_quotation()
-	{
-		$txt = $this->ms->escape_str(trim($_REQUEST['term']));
-
-		$sc = array();
-		$qr  = "SELECT DocNum, CardCode, CardName ";
-		$qr .= "FROM OQUT WHERE DocStatus = 'O' ";
-
-		if($txt != '*')
-		{
-			$sub  = "DocNum LIKE N'%".$txt."%' ";
-			$sub .= "OR CardCode LIKE N'%".$txt."%' ";
-			$sub .= "OR CardName LIKE N'%".$txt."%'";
-
-			$qr .= "AND ({$sub})";
-		}
-
-		$qr .= "ORDER BY DocNum DESC ";
-		$qr .= "OFFSET 0 ROWS FETCH NEXT 50 ROWS ONLY";
-
-		$qs = $this->ms->query($qr);
-
-		if($qs->num_rows() > 0)
-		{
-			foreach($qs->result() as $rs)
-			{
-				$sc[] = $rs->DocNum.' | '.$rs->CardCode.' : '.$rs->CardName;
-			}
-		}
-		else
-		{
-			$sc[] = "not found";
-		}
-
-		echo json_encode($sc);
-	}
-
-
-  public function get_sender()
-  {
-    $txt = $_REQUEST['term'];
-    $sc = array();
-    $rs = $this->db
-    ->select('id, name')
-    ->like('name', $txt)
-    ->limit(20)
-    ->get('address_sender');
-
-    if($rs->num_rows() > 0)
-    {
-      foreach($rs->result() as $rd)
-      {
-        $sc[] = $rd->id.' | '.$rd->name;
-      }
-    }
-
-    echo json_encode($sc);
-  }
-
-
-
+  
   public function get_customer_code_and_name()
   {
     $txt = $this->db->escape_str($_REQUEST['term']);
 
     $sc = array();
 
-    $this->db->select('code, name, Tax_id')->where('CardType', 'C')->where('active', 1);
+    $this->db->select('code, name, tax_id')->where('active', 1);
 
     if($txt != '*')
     {
@@ -228,13 +32,14 @@ class Auto_complete extends CI_Controller
           'label' => $rd->code.' | '.$rd->name,
           'code' => $rd->code,
           'name' => $rd->name,
-          'tax_id' => $rd->Tax_id
+          'tax_id' => $rd->tax_id
         );
       }
     }
 
     echo json_encode($sc);
   }
+
 
   public function get_invoice_customer()
   {
@@ -572,38 +377,6 @@ public function get_prepare_item_code()
   }
 
 
-
-
-  public function get_vendor_code_and_name()
-  {
-    $txt = $_REQUEST['term'];
-
-    $sc = array();
-
-    $qr = "SELECT CardCode, CardName FROM OCRD WHERE CardType = 'S' ";
-
-    if($txt != '*')
-    {
-      $qr .= "AND (CardCode LIKE N'%{$txt}%' OR CardName LIKE N'%{$txt}%') ";
-    }
-
-    $qr .= "ORDER BY 1 OFFSET 0 ROWS FETCH NEXT 20 ROWS ONLY";
-
-    $vendor = $this->ms->query($qr);
-
-    if($vendor->num_rows() > 0)
-    {
-      foreach($vendor->result() as $rs)
-      {
-        $sc[] = $rs->CardCode.' | '.$rs->CardName;
-      }
-    }
-
-    echo json_encode($sc);
-  }
-
-
-
   //---- ค้นหาใบเบิกสินค้าแปรสภาพ
   //---- $all : TRUE => ทุกสถานะ
   //---- $all : FALSE => เฉพาะที่ยังไม่ปิด
@@ -710,124 +483,6 @@ public function get_prepare_item_code()
     else
     {
       $sc[] = 'ไม่พบข้อมูล';
-    }
-
-    echo json_encode($sc);
-  }
-
-
-  public function get_po_code($vendor = FALSE)
-  {
-    $sc = array();
-    $txt = convert($_REQUEST['term']);
-
-    //---- receive product if over due date or not
-    $receive_due = getConfig('RECEIVE_OVER_DUE'); //--- 1 = receive , 0 = not receive
-    $qr = "SELECT DocNum, CardName, Comments FROM OPOR WHERE DocStatus = 'O' ";
-
-    if($vendor !== FALSE)
-    {
-      $qr .= "AND CardCode = '{$vendor}' ";
-    }
-
-    if($txt != '*')
-    {
-      $qr .= "AND (DocNum LIKE '%{$txt}%' OR Comments LIKE N'%{$txt}%' OR NumAtCard LIKE N'%{$txt}%') ";
-    }
-
-
-    if($receive_due == 0)
-    {
-      //--- not receive
-      $days = getConfig('PO_VALID_DAYS');
-      $date = date('Y-m-d',strtotime("-{$days} day")); //--- ย้อนไป $days วัน
-      $qr .= "AND DocDueDate >= '".sap_date($date)."' ";
-      // $this->ms->where('DocDueDate >=', sap_date($date));
-    }
-    //echo $this->ms->get_compiled_select('OPOR');
-    // $po = $this->ms->get('OPOR');
-    $po = $this->ms->query($qr);
-
-    if($po->num_rows() > 0)
-    {
-      foreach($po->result() as $rs)
-      {
-        $sc[] = $rs->DocNum." | ". (empty($rs->Comments) ? $rs->CardName : $rs->Comments);
-      }
-    }
-		else
-		{
-			$sc[] = "not found";
-		}
-
-    echo json_encode($sc);
-  }
-
-
-
-  public function get_request_receive_po_code($vendor = NULL)
-  {
-    $sc = array();
-    $txt = $_REQUEST['term'];
-
-    $this->db
-    ->select('code, po_code')
-    ->where('status', 1)
-    ->where('valid', 0);
-
-    if(!empty($vendor))
-    {
-      $this->db->where('vendor_code', $vendor);
-    }
-
-    if($txt != '*')
-    {
-      $this->db->like('code', $txt);
-    }
-
-    $rq = $this->db->get('receive_product_request');
-
-
-    if($rq->num_rows() > 0)
-    {
-      foreach($rq->result() as $rs)
-      {
-        $sc[] = $rs->code.' | '.$rs->po_code;
-      }
-    }
-    else
-    {
-      $sc[] = 'not found';
-    }
-
-    echo json_encode($sc);
-  }
-
-
-
-  public function get_valid_lend_code($empID = NULL)
-  {
-    $sc = array();
-    $txt = $_REQUEST['term'];
-    $this->db->select('order_code');
-    if($txt != '*')
-    {
-      $this->db->like('order_code', $txt);
-    }
-
-    if(!empty($empID))
-    {
-      $this->db->where('empID', $empID);
-    }
-
-    $this->db->where('valid' , 0)->group_by('order_code')->limit(20);
-    $rs = $this->db->get('order_lend_detail');
-    if($rs->num_rows() > 0)
-    {
-      foreach($rs->result() as $ds)
-      {
-        $sc[] = $ds->order_code;
-      }
     }
 
     echo json_encode($sc);
@@ -1046,107 +701,6 @@ public function get_prepare_item_code()
 
     echo json_encode($sc);
   }
-
-
-
-
-
-  public function get_sponsor()
-  {
-    $sc = array();
-    $txt = convert($_REQUEST['term']);
-    $qr = "SELECT BpCode, BpName FROM OOAT ";
-    $qr .= "WHERE StartDate <= '".now()."' AND EndDate >= '".now()."' ";
-		$qr .= "AND Cancelled = 'N' ";
-
-    if($txt != '*')
-    {
-      $qr .= "AND (BpCode LIKE N'%{$txt}%' OR BpName LIKE N'%{$txt}%') ";
-    }
-
-    $qr .= "ORDER BY 1 OFFSET 0 ROWS FETCH NEXT 20 ROWS ONLY";
-
-    $sponsor = $this->ms->query($qr);
-
-    if($sponsor->num_rows() > 0)
-    {
-      foreach($sponsor->result() as $rs)
-      {
-        $sc[] = $rs->BpCode.' | '.$rs->BpName;
-      }
-    }
-    else
-    {
-      $sc[] = 'ไม่พบรายการ';
-    }
-
-    echo json_encode($sc);
-  }
-
-
-  public function get_support()
-  {
-    $sc = array();
-    $txt = trim($_REQUEST['term']);
-
-    $qr = "SELECT BpCode, BpName FROM OOAT ";
-		$qr .= "WHERE StartDate <= '".now()."' AND EndDate >= '".now()."' ";
-
-    if($txt != '*')
-    {
-      $qr .= "AND (BpCode LIKE N'%{$txt}%' OR BpName LIKE N'%{$txt}%') ";
-    }
-
-    $qr .= "ORDER BY 1 OFFSET 0 ROWS FETCH NEXT 20 ROWS ONLY";
-
-    $sponsor = $this->ms->query($qr);
-
-    if($sponsor->num_rows() > 0)
-    {
-      foreach($sponsor->result() as $rs)
-      {
-        $sc[] = $rs->BpCode.' | '.$rs->BpName;
-      }
-    }
-    else
-    {
-      $sc[] = 'ไม่พบรายการ';
-    }
-
-    echo json_encode($sc);
-  }
-
-
-
-  public function get_employee()
-  {
-    $sc = array();
-    $txt = $_REQUEST['term'];
-    $qr  = "SELECT firstName, lastName, empID FROM OHEM ";
-    if($txt != '*')
-    {
-      $qr .= "WHERE firstName LIKE N'%{$txt}%' OR lastName LIKE N'%{$txt}%' ";
-    }
-
-    $qr .= "ORDER BY 1 OFFSET 0 ROWS FETCH NEXT 20 ROWS ONLY";
-
-    $emp = $this->ms->query($qr);
-
-    if($emp->num_rows() > 0)
-    {
-      foreach($emp->result() as $rs)
-      {
-        $sc[] = $rs->firstName.' '.$rs->lastName.' | '.$rs->empID;
-      }
-    }
-    else
-    {
-      $sc[] = 'ไม่พบรายการ';
-    }
-
-    echo json_encode($sc);
-  }
-
 
 
   public function get_user()
@@ -1470,35 +1024,6 @@ public function get_prepare_item_code()
   }
 
 
-  public function get_warehouse_code_and_name()
-  {
-    $txt = $_REQUEST['term'];
-    $sc  = array();
-    $qr  = "SELECT WhsCode, WhsName FROM OWHS ";
-
-    if($txt != '*')
-    {
-      $qr .= "WHERE WhsCode LIKE N'%{$txt}%' OR WhsName LIKE N'%{$txt}%' ";
-    }
-
-    $qr .= "ORDER BY WhsCode ASC OFFSET 0 ROWS FETCH NEXT 20 ROWS ONLY";
-
-    $rs = $this->ms->query($qr);
-
-    if($rs->num_rows() > 0)
-    {
-      foreach($rs->result() as $wh)
-      {
-        $sc[] = $wh->WhsCode.' | '.$wh->WhsName;
-      }
-    }
-    else
-    {
-      $sc[] = 'not found';
-    }
-
-    echo json_encode($sc);
-  }
 
 
   public function get_color_code_and_name()
@@ -1587,89 +1112,6 @@ public function get_prepare_item_code()
 
     echo json_encode($sc);
   }
-
-
-  public function get_invoice_code($customer_code = NULL)
-	{
-		$txt = trim($_REQUEST['term']);
-		$ds = array();
-
-		$this->ms
-		->select('DocNum, CardCode, CardName')
-    ->where('CANCELED', 'N')
-    ->where('DocStatus', 'O');
-
-    if( ! empty($customer_code))
-    {
-      $this->ms->where('CardCode', $customer_code);
-    }
-
-		if($txt != '*')
-		{
-			$this->ms->like('DocNum', $txt);
-		}
-
-		$this->ms->order_by('DocNum', 'DESC')->limit(50);
-
-		$iv = $this->ms->get('OINV');
-
-		if($iv->num_rows() > 0)
-		{
-			foreach($iv->result() as $rs)
-			{
-        $arr = array(
-          'label' => $rs->DocNum.' | '.$rs->CardName,
-          'inv_code' => $rs->DocNum,
-          'customer_code' => $rs->CardCode,
-          'customer_name' => $rs->CardName
-        );
-
-				array_push($ds, $arr);
-			}
-		}
-		else
-		{
-			$ds[] = "not found";
-		}
-
-		echo json_encode($ds);
-	}
-
-	// public function get_sap_invoice_code($customer_code = NULL)
-	// {
-	// 	$txt = trim($_REQUEST['term']);
-	// 	$sc = array();
-  //
-	// 	$this->ms
-	// 	->select('DocNum, U_ECOMNO')
-	// 	->where('CardCode', $customer_code)
-	// 	->where('CANCELED', 'N')
-	// 	->where('DocStatus', 'O');
-  //
-	// 	if($txt != '*')
-	// 	{
-	// 		$this->ms->like('DocNum', $txt);
-	// 	}
-  //
-	// 	$this->ms->order_by('DocNum', 'DESC')->limit(20);
-	// 	$rs = $this->ms->get('OINV');
-  //
-	// 	if($rs->num_rows() > 0)
-	// 	{
-	// 		foreach($rs->result() as $row)
-	// 		{
-	// 			$sc[] = $row->DocNum .' | '.$row->U_ECOMNO;
-	// 		}
-	// 	}
-	// 	else
-	// 	{
-	// 		$sc[] = "not found";
-	// 	}
-  //
-	// 	echo json_encode($sc);
-	// }
-
-
 
 } //-- end class
 ?>

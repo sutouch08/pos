@@ -2,41 +2,43 @@
 
 function select_saleman($id = NULL)
 {
-  $CI =& get_instance();
-  $CI->load->model('masters/slp_model');
-  $result = $CI->slp_model->get_data(1);
-  $ds = '';
-  if(!empty($result))
+  $ds = "";
+  $active = TRUE; // get only active rows
+  $ci =& get_instance();
+  $ci->load->model('masters/slp_model');
+  $list = $ci->slp_model->get_all($active);
+
+  if (!empty($list))
   {
-    foreach($result as $rs)
+    foreach ($list as $rs)
     {
-      $ds .= '<option value="'.$rs->id.'" '.is_selected($rs->id, $id).'>'.$rs->name.'</option>';
+      $ds .= '<option value="' . $rs->id . '" ' . is_selected($rs->id, $id) . '>' . $rs->name . '</option>';
     }
   }
 
   return $ds;
 }
 
-function get_sale_name($id = NULL)
-{
-  $ci =& get_instance();
-  $ci->load->model('masters/slp_model');
 
+function sale_name($id)
+{
+  $ci = &get_instance();
+  $ci->load->model('masters/slp_model');
   return $ci->slp_model->get_name($id);
 }
 
-function saleman_array()
+
+function sale_name_array()
 {
   $ds = array();
-
+  $active = FALSE; // get all not only active rows
   $ci =& get_instance();
   $ci->load->model('masters/slp_model');
+  $list = $ci->slp_model->get_all($active);
 
-  $list = $ci->slp_model->get_all_slp();
-
-  if( ! empty($list))
+  if (! empty($list))
   {
-    foreach($list as $rs)
+    foreach ($list as $rs)
     {
       $ds[$rs->id] = $rs->name;
     }
@@ -44,4 +46,3 @@ function saleman_array()
 
   return $ds;
 }
- ?>

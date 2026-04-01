@@ -1,197 +1,174 @@
 <?php
-function select_GroupCode($code = '')
-{
-  $sc = '';
-  $CI =& get_instance();
-  $CI->load->model('masters/customers_model');
-  $options = $CI->customers_model->getGroupCode(); //--- OCRG
 
-  if(!empty($options))
+function select_customer_group($code = NULL)
+{
+  $ds = "";
+  $ci = &get_instance();
+  $ci->load->model('masters/customer_group_model');
+  $options = $ci->customer_group_model->get_all();
+
+  if (!empty($options))
   {
-    foreach($options as $rs)
+    foreach ($options as $rs)
     {
-      $sc .= '<option value="'.$rs->code.'" '.is_selected($code, $rs->code).'>'.$rs->name.'</option>';
+      $ds .= '<option value="' . $rs->code . '" ' . is_selected(strval($code), strval($rs->code)) . '>' .$rs->code.' | '. $rs->name . '</option>';
     }
   }
 
-  return $sc;
+  return $ds;
 }
 
 
-
-function select_GroupNum($code = '')
+function select_customer_kind($code = NULL)
 {
-  $sc = '';
-  $CI =& get_instance();
-  $CI->load->model('masters/customers_model');
-  $options = $CI->customers_model->getGroupNum(); //--- OCRG
+  $ds = '';
+  $ci = &get_instance();
+  $ci->load->model('masters/customer_kind_model');
+  $options = $ci->customer_kind_model->get_all();
 
-  if(!empty($options))
+  if (!empty($options))
   {
-    foreach($options as $rs)
+    foreach ($options as $rs)
     {
-      $sc .= '<option value="'.$rs->code.'" '.is_selected($code, $rs->code).'>'.$rs->name.'</option>';
+      $ds .= '<option value="' . $rs->code . '" ' . is_selected(strval($code), strval($rs->code)) . '>' .$rs->code.' | '. $rs->name . '</option>';
     }
   }
 
-  return $sc;
+  return $ds;
 }
 
 
-
-function select_DebPayAcct($code = '')
+function select_customer_type($code = NULL)
 {
-  $sc = '';
-  $CI =& get_instance();
-  $CI->load->model('masters/customers_model');
-  $options = $CI->customers_model->getDebPayAcct(); //--- OCRG
+  $ds = '';
+  $ci = &get_instance();
+  $ci->load->model('masters/customer_type_model');
+  $options = $ci->customer_type_model->get_all();
 
-  if(!empty($options))
+  if (!empty($options))
   {
-    foreach($options as $rs)
+    foreach ($options as $rs)
     {
-      $sc .= '<option value="'.$rs->code.'" '.is_selected($code, $rs->code).'>'.$rs->code.' => '.$rs->name.'</option>';
+      $ds .= '<option value="' . $rs->code . '" ' . is_selected(strval($code), strval($rs->code)) . '>' .$rs->code.' | '. $rs->name . '</option>';
     }
   }
 
-  return $sc;
+  return $ds;
 }
 
 
-
-function select_sale($code='')
+function select_customer_class($code = NULL)
 {
-  $sc = '';
-  $CI =& get_instance();
-  $CI->load->model('masters/customers_model');
-  $options = $CI->customers_model->getSlp();
+  $ds = '';
+  $ci = &get_instance();
+  $ci->load->model('masters/customer_class_model');
+  $options = $ci->customer_class_model->get_all();
 
-  if(!empty($options))
+  if (!empty($options))
   {
-    foreach($options as $rs)
+    foreach ($options as $rs)
     {
-      $sc .= '<option value="'.$rs->code.'" '.is_selected($code, $rs->code).'>'.$rs->name.'</option>';
+      $ds .= '<option value="' . $rs->code . '" ' . is_selected(strval($code), strval($rs->code)) . '>' .$rs->code.' | '. $rs->name . '</option>';
     }
   }
 
-  return $sc;
+  return $ds;
 }
 
-function select_customer_group($code = '')
-{
-  $sc = '';
-  $CI =& get_instance();
-  $CI->load->model('masters/customer_group_model');
-  $options = $CI->customer_group_model->get_data();
 
-  if(!empty($options))
+function select_customer_area($code = NULL)
+{
+  $ds = '';
+  $ci = &get_instance();
+  $ci->load->model('masters/customer_area_model');
+  $options = $ci->customer_area_model->get_all();
+
+  if (!empty($options))
   {
-    foreach($options as $rs)
+    foreach ($options as $rs)
     {
-      $sc .= '<option value="'.$rs->code.'" '.is_selected($code, $rs->code).'>'.$rs->name.'</option>';
+      $ds .= '<option value="' . $rs->code . '" ' . is_selected(strval($code), strval($rs->code)) . '>' .$rs->code.' | '. $rs->name . '</option>';
     }
   }
 
-  return $sc;
-
+  return $ds;
 }
-
-
-function select_customer_kind($code = '')
-{
-  $sc = '';
-  $CI =& get_instance();
-  $CI->load->model('masters/customer_kind_model');
-  $options = $CI->customer_kind_model->get_data();
-
-  if(!empty($options))
-  {
-    foreach($options as $rs)
-    {
-      $sc .= '<option value="'.$rs->code.'" '.is_selected($code, $rs->code).'>'.$rs->name.'</option>';
-    }
-  }
-  return $sc;
-}
-
-
-
-function select_customer_type($code = '')
-{
-  $sc = '';
-  $CI =& get_instance();
-  $CI->load->model('masters/customer_type_model');
-  $options = $CI->customer_type_model->get_data();
-
-  if(!empty($options))
-  {
-    foreach($options as $rs)
-    {
-      $sc .= '<option value="'.$rs->code.'" '.is_selected($code, $rs->code).'>'.$rs->name.'</option>';
-    }
-  }
-  return $sc;
-}
-
-
-
-function select_customer_class($code = '')
-{
-  $sc = '';
-  $CI =& get_instance();
-  $CI->load->model('masters/customer_class_model');
-  $options = $CI->customer_class_model->get_data();
-
-  if(!empty($options))
-  {
-    foreach($options as $rs)
-    {
-      $sc .= '<option value="'.$rs->code.'" '.is_selected($code, $rs->code).'>'.$rs->name.'</option>';
-    }
-  }
-  return $sc;
-}
-
-
-
-function select_customer_area($code = '')
-{
-  $sc = '';
-  $CI =& get_instance();
-  $CI->load->model('masters/customer_area_model');
-  $options = $CI->customer_area_model->get_data();
-
-  if(!empty($options))
-  {
-    foreach($options as $rs)
-    {
-      $sc .= '<option value="'.$rs->code.'" '.is_selected($code, $rs->code).'>'.$rs->name.'</option>';
-    }
-  }
-  return $sc;
-}
-
-
 
 
 function customer_in($txt)
 {
-  $sc = array('0');
-  $CI =& get_instance();
-  $CI->load->model('masters/customers_model');
-  $rs = $CI->customers_model->search($txt);
+  $ds = array('0');
+  $ci = &get_instance();
+  $ci->load->model('masters/customers_model');
+  $rs = $ci->customers_model->search($txt);
 
-  if(!empty($rs))
+  if (!empty($rs))
   {
-    foreach($rs as $cs)
+    foreach ($rs as $cs)
     {
-      $sc[] = $cs->code;
+      $ds[] = $cs->code;
     }
   }
 
-  return $sc;
+  return $ds;
 }
 
 
+function customer_attribute_name_array($table = NULL)
+{
+  $ds = [];
 
- ?>
+  if (! empty($table))
+  {
+    $tables = array(
+      'group' => 'customer_group',
+      'class' => 'customer_class',
+      'grade' => 'customer_class',
+      'kind' => 'customer_kind',
+      'type' => 'customer_type',
+      'area' => 'customer_area'
+    );
+
+    if (! empty($tables[$table]))
+    {
+      $tb = $tables[$table];
+      $ci = &get_instance();
+      $data = $ci->db->get($tb);
+
+      if ($data->num_rows() > 0)
+      {
+        foreach ($data->result() as $rs)
+        {
+          $ds[$rs->code] = $rs->name;
+        }
+      }
+    }
+  }
+
+  return $ds;
+}
+
+
+function customer_attribute_name($code, array $ds = array())
+{
+  return empty($ds[$code]) ? $code : $ds[$code];
+}
+
+
+function select_customer_code_prefix($code = NULL)
+{
+  $ds = '';
+  $ci = &get_instance();
+  $ci->load->model('masters/customers_model');
+  $list = $ci->customers_model->get_prefix_list();
+
+  if (! empty($list))
+  {
+    foreach ($list as $rs)
+    {
+      $ds .= '<option value="' . $rs->code . '" ' . is_selected(strval($code), strval($rs->code)) . '>' . $rs->code . '</option>';
+    }
+  }
+
+  return $ds;
+}

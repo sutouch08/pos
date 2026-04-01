@@ -56,7 +56,7 @@
 			<div class="navbar-header pull-left">
 				<a href="<?php echo (!isset($_GET['nomenu']) ? base_url() : '#'); ?>" class="navbar-brand">
 					<small>
-						<?php echo getConfig('COMPANY_NAME'); ?>
+						<?php echo getConfig('APP_TITLE'); ?>
 					</small>
 				</a>
 			</div>

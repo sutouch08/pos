@@ -2,7 +2,7 @@
 <?php
 $company = $tab == 'company' ? 'active in' : '';
 $document = $tab == 'document' ? 'active in' : '';
-$order = $tab == 'order' ? 'active in' : '';
+// $order = $tab == 'order' ? 'active in' : '';
 $inventory = $tab == 'inventory' ? 'active in' : '';
 $system = $tab == 'system' ? 'active in' : '';
 $bookcode = $tab == 'boocode' ? 'active in' : '';
@@ -22,7 +22,7 @@ $bookcode = $tab == 'boocode' ? 'active in' : '';
 			<li class="li-block <?php echo $company; ?>" onclick="changeURL('company')"><a href="#company" data-toggle="tab">ข้อมูลบริษัท</a></li>
 			<li class="li-block <?php echo $system; ?>" onclick="changeURL('system')"><a href="#system" data-toggle="tab">ระบบ</a></li>
 			<li class="li-block <?php echo $inventory; ?>" onclick="changeURL('inventory')"><a href="#inventory" data-toggle="tab">คลังสินค้า</a></li>
-			<li class="li-block <?php echo $order; ?>" onclick="changeURL('order')"><a href="#order" data-toggle="tab">ออเดอร์</a></li>
+			<!-- <li class="li-block <?php echo $order; ?>" onclick="changeURL('order')"><a href="#order" data-toggle="tab">ออเดอร์</a></li> -->
 			<li class="li-block <?php echo $document; ?>" onclick="changeURL('document')"><a href="#document" data-toggle="tab">เลขที่เอกสาร</a></li>						
 	</ul>
 </div>
@@ -39,9 +39,9 @@ $bookcode = $tab == 'boocode' ? 'active in' : '';
 		</div>
 
 		<!---  ตั้งค่าออเดอร์  --------------------------------------------------->
-		<div class="tab-pane fade <?php echo $order; ?>" id="order">
-			<?php $this->load->view('setting/setting_order'); ?>
-		</div>
+		<!-- <div class="tab-pane fade <?php echo $order; ?>" id="order">
+			<?php //$this->load->view('setting/setting_order'); ?>
+		</div> -->
 
 		<!---  ตั้งค่าเอกสาร  --------------------------------------------------->
 		<div class="tab-pane fade <?php echo $document; ?>" id="document">

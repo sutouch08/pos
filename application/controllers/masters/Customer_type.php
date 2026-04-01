@@ -7,6 +7,7 @@ class Customer_type extends PS_Controller
 	public $menu_group_code = 'DB';
   public $menu_sub_group_code = 'CUSTOMER';
 	public $title = 'เพิ่ม/แก้ไข ชนิดลูกค้า';
+  public $segment = 4;
 
   public function __construct()
   {
@@ -18,197 +19,196 @@ class Customer_type extends PS_Controller
 
   public function index()
   {
-		$code = get_filter('code', 'code', '');
-		$name = get_filter('name', 'name', '');
-
-		//--- แสดงผลกี่รายการต่อหน้า
-		$perpage = get_filter('set_rows', 'rows', 20);
-		//--- หาก user กำหนดการแสดงผลมามากเกินไป จำกัดไว้แค่ 300
-		if($perpage > 300)
-		{
-			$perpage = get_filter('rows', 'rows', 300);
-		}
-
-		$segment = 4; //-- url segment
-		$rows = $this->customer_type_model->count_rows($code, $name);
-		//--- ส่งตัวแปรเข้าไป 4 ตัว base_url ,  total_row , perpage = 20, segment = 3
-		$init	= pagination_config($this->home.'/index/', $rows, $perpage, $segment);
-		$rs = $this->customer_type_model->get_data($code, $name, $perpage, $this->uri->segment($segment));
-    $ds = array(
-      'code' => $code,
-      'name' => $name,
-			'data' => $rs
+    $filter = array(
+      'code' => get_filter('code', 'customer_type_code', '')
     );
 
-		$this->pagination->initialize($init);
-    $this->load->view('masters/customer_type/customer_type_view', $ds);
+    if ($this->input->post('search'))
+    {
+      redirect($this->home);
+    }
+    else
+    {
+      $perpage = get_rows();
+      $rows = $this->customer_type_model->count_rows($filter);
+      $filter['data'] = $this->customer_type_model->get_list($filter, $perpage, $this->uri->segment($this->segment));
+      $init = pagination_config($this->home . '/index/', $rows, $perpage, $this->segment);
+      $this->pagination->initialize($init);
+      $this->load->view('masters/customer_type/customer_type_list', $filter);
+    }
   }
 
 
   public function add_new()
   {
-    $data['code'] = $this->session->flashdata('code');
-    $data['name'] = $this->session->flashdata('name');
-    $this->title = 'เพิ่ม ชนิดลูกค้า';
-    $this->load->view('masters/customer_type/customer_type_add_view', $data);
+    $this->load->view('masters/customer_type/customer_type_add');
+  }
+
+
+  public function is_exists_code()
+  {
+    $ds = json_decode(file_get_contents('php://input'));
+
+    if (! empty($ds))
+    {
+      if ($this->customer_type_model->is_exists($ds->code, $ds->id))
+      {
+        echo 'exists';
+      }
+      else
+      {
+        echo 'not_exists';
+      }
+    }
+  }
+
+
+  public function is_exists_name()
+  {
+    $ds = json_decode(file_get_contents('php://input'));
+
+    if (! empty($ds))
+    {
+      if ($this->customer_type_model->is_exists_name($ds->name, $ds->id))
+      {
+        echo 'exists';
+      }
+      else
+      {
+        echo 'not_exists';
+      }
+    }
   }
 
 
   public function add()
   {
-    if($this->input->post('code'))
+    $sc = TRUE;
+    $ds = json_decode(file_get_contents('php://input'));
+
+    if (! empty($ds) && ! empty($ds->code) && ! empty($ds->name))
     {
-      $sc = TRUE;
-      $code = $this->input->post('code');
-      $name = $this->input->post('name');
-      $ds = array(
-        'code' => $code,
-        'name' => $name
-      );
-
-      if($this->customer_type_model->is_exists($code) === TRUE)
+      if ($this->customer_type_model->is_exists($ds->code))
       {
         $sc = FALSE;
-        set_error("'".$code."' มีในระบบแล้ว");
+        set_error('exists', $ds->code);
       }
 
-      if($this->customer_type_model->is_exists_name($name) === TRUE)
+      if ($sc === TRUE)
       {
-        $sc = FALSE;
-        set_error("'".$name."' มีในระบบแล้ว");
-      }
-
-      if($sc === TRUE)
-      {
-        if($this->customer_type_model->add($ds))
-        {
-          set_message('เพิ่มข้อมูลเรียบร้อยแล้ว');
-        }
-        else
+        if ($this->customer_type_model->is_exists_name($ds->name))
         {
           $sc = FALSE;
-          set_error('เพิ่มข้อมูลไม่สำเร็จ');
+          set_error('exists', $ds->name);
         }
       }
 
-
-      if($sc === FALSE)
+      if ($sc === TRUE)
       {
-        $this->session->set_flashdata('code', $code);
-        $this->session->set_flashdata('name', $name);
+        $arr = array(
+          'code' => $ds->code,
+          'name' => $ds->name
+        );
+
+        if (! $this->customer_type_model->add($arr))
+        {
+          $sc = FALSE;
+          set_error('insert');
+        }
       }
     }
     else
     {
-      set_error('ไม่พบข้อมูล');
+      $sc = FALSE;
+      set_error('required');
     }
 
-    redirect($this->home.'/add_new');
+    $this->_response($sc);
   }
 
 
 
-  public function edit($code)
+  public function edit($id)
   {
-    $this->title = 'แก้ไข ชนิดลูกค้า';
-    $rs = $this->customer_type_model->get($code);
-    $data = array(
-      'code' => $rs->code,
-      'name' => $rs->name
-    );
-
-    $this->load->view('masters/customer_type/customer_type_edit_view', $data);
+    if ($this->pm->can_edit)
+    {
+      $ds['data'] = $this->customer_type_model->get_by_id($id);
+      $this->load->view('masters/customer_type/customer_type_edit', $ds);
+    }
+    else
+    {
+      $this->deny_page();
+    }
   }
-
 
 
   public function update()
   {
     $sc = TRUE;
+    $ds = json_decode(file_get_contents('php://input'));
 
-    if($this->input->post('code'))
+    if (! empty($ds) && ! empty($ds->id) && ! empty($ds->code) && ! empty($ds->name))
     {
-      $old_code = $this->input->post('customer_type_code');
-      $old_name = $this->input->post('customer_type_name');
-      $code = $this->input->post('code');
-      $name = $this->input->post('name');
-
-      $ds = array(
-        'code' => $code,
-        'name' => $name
-      );
-
-      if($sc === TRUE && $this->customer_type_model->is_exists($code, $old_code) === TRUE)
+      if ($sc === TRUE)
       {
-        $sc = FALSE;
-        set_error("'".$code."' มีอยู่ในระบบแล้ว โปรดใช้รหัสอื่น");
-      }
-
-      if($sc === TRUE && $this->customer_type_model->is_exists_name($name, $old_name) === TRUE)
-      {
-        $sc = FALSE;
-        set_error("'".$name."' มีอยู่ในระบบแล้ว โปรดใช้ชื่ออื่น");
-      }
-
-      if($sc === TRUE)
-      {
-        if($this->customer_type_model->update($old_code, $ds) === TRUE)
-        {
-          set_message('ปรับปรุงข้อมูลเรียบร้อยแล้ว');
-        }
-        else
+        if ($this->customer_type_model->is_exists_name($ds->name, $ds->id))
         {
           $sc = FALSE;
-          set_error('ปรับปรุงข้อมูลไม่สำเร็จ');
+          set_error('exists', $ds->name);
         }
       }
 
+      if ($sc === TRUE)
+      {
+        $arr = array(
+          'name' => $ds->name
+        );
+
+        if (! $this->customer_type_model->update_by_id($ds->id, $arr))
+        {
+          $sc = FALSE;
+          set_error('update');
+        }
+      }
     }
     else
     {
       $sc = FALSE;
-      set_error('ไม่พบข้อมูล');
+      set_error('required');
     }
 
-    if($sc === FALSE)
-    {
-      $code = $this->input->post('customer_type_code');
-    }
-
-    redirect($this->home.'/edit/'.$code);
+    $this->_response($sc);
   }
 
 
-
-  public function delete($code)
+  public function delete()
   {
-    if($code != '')
+    $sc = TRUE;
+    $id = $this->input->post('id');
+
+    if ($this->pm->can_delete)
     {
-      if($this->customer_type_model->delete($code))
+      if (! $this->customer_type_model->delete_by_id($id))
       {
-        set_message('ลบข้อมูลเรียบร้อยแล้ว');
-      }
-      else
-      {
-        set_error('ลบข้อมูลไม่สำเร็จ');
+        $sc = FALSE;
+        set_error('delete');
       }
     }
     else
     {
-      set_error('ไม่พบข้อมูล');
+      $sc = FALSE;
+      set_error('permission');
     }
 
-    redirect($this->home);
+    $this->_response($sc);
   }
 
 
-
   public function clear_filter()
-	{
-		$this->session->unset_userdata('code');
-    $this->session->unset_userdata('name');
-		echo 'done';
-	}
+  {
+    $filter = ['customer_type_code', 'customer_type_name'];
+    return clear_filter($filter);
+  }
 
 }//--- end class
  ?>

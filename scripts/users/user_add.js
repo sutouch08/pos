@@ -33,15 +33,15 @@ function debounce(fn, delay = 300) {
   };
 }
 
-function setError(input, errorBox, message) {
-  errorBox.textContent = message;
-  input.classList.add('has-error');
-}
+// function setError(input, errorBox, message) {
+//   errorBox.textContent = message;
+//   input.classList.add('has-error');
+// }
 
-function clearError(input, errorBox) {
-  errorBox.textContent = '';
-  input.classList.remove('has-error');
-}
+// function clearError(input, errorBox) {
+//   errorBox.textContent = '';
+//   input.classList.remove('has-error');
+// }
 
 async function validateRemote(url, data = {}) {
   try {

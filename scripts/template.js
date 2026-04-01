@@ -1,31 +1,31 @@
 window.addEventListener('load', () => {
   let uuid = getUid();
 
-  if(uuid == "" || uuid == null || uuid == undefined) {
+  if (uuid == "" || uuid == null || uuid == undefined) {
     uuid = generateUID();
 
-		localStorage.setItem('webPosUid', uuid);
+    localStorage.setItem('webPosUid', uuid);
   }
 });
 
 
-$('.search').keyup(function(e) {
-  if(e.key === 'Enter') {
+$('.search').keyup(function (e) {
+  if (e.key === 'Enter') {
     getSearch();
   }
 });
 
 
-$('.filter').change(function() {
+$('.filter').change(function () {
   getSearch();
 });
 
 
 const inputRows = document.getElementById('set-rows');
 
-if(inputRows) {
+if (inputRows) {
   inputRows.addEventListener('keyup', (e) => {
-    if(e.key === 'Enter') {
+    if (e.key === 'Enter') {
       setRows();
     }
   });
@@ -39,17 +39,17 @@ const generateUID = (length = 15) => {
 
 
 const getUid = () => {
-	return localStorage.getItem('webPosUid');
+  return localStorage.getItem('webPosUid');
 }
 
 
 const goBack = () => {
-	window.location.href = HOME;
+  window.location.href = HOME;
 }
 
 
 const getSearch = () => {
-	$('#search-form').submit();
+  $('#search-form').submit();
 }
 
 
@@ -112,7 +112,7 @@ const createDateValidator = (defaultLocale = "th-TH") => {
     "en-GB": ["DD", "MM", "YYYY"],
     "en-US": ["MM", "DD", "YYYY"],
     "ja-JP": ["YYYY", "MM", "DD"],
-    "iso":   ["YYYY", "MM", "DD"]
+    "iso": ["YYYY", "MM", "DD"]
   };
 
   const getFormat = (locale) => localeFormats[locale] || localeFormats[defaultLocale];
@@ -153,8 +153,8 @@ const createDateValidator = (defaultLocale = "th-TH") => {
 
 
 const isDate = (date, local) => {
-	const validator = createDateValidator(local);
-	return validator.isValidDate(date, local);
+  const validator = createDateValidator(local);
+  return validator.isValidDate(date, local);
 }
 
 
@@ -188,30 +188,30 @@ const addCommas = (number) => {
 
 
 const render = (source, data, output) => {
-	const template = Handlebars.compile(source);
-	const html = template(data);
-	output.html(html);
+  const template = Handlebars.compile(source);
+  const html = template(data);
+  output.html(html);
 }
 
 
 const renderPrepend = (source, data, output) => {
-	const template = Handlebars.compile(source);
-	const html = template(data);
-	output.prepend(html);
+  const template = Handlebars.compile(source);
+  const html = template(data);
+  output.prepend(html);
 }
 
 
 const renderAppend = (source, data, output) => {
-	const template = Handlebars.compile(source);
-	const html = template(data);
-	output.append(html);
+  const template = Handlebars.compile(source);
+  const html = template(data);
+  output.append(html);
 }
 
 
 const renderAfter = (source, data, output) => {
-	const template = Handlebars.compile(source);
-	const html = template(data);
-	$(html).insertAfter(output);
+  const template = Handlebars.compile(source);
+  const html = template(data);
+  $(html).insertAfter(output);
 };
 
 
@@ -234,10 +234,10 @@ const setRows = () => {
       set_rows: rows.value
     })
   })
-  .then(() => {
-    window.location.reload();
-  })
-  .catch(err => console.error(err));
+    .then(() => {
+      window.location.reload();
+    })
+    .catch(err => console.error(err));
 };
 
 
@@ -286,7 +286,7 @@ const printOut = (url, width = 800, height = 900) => {
   const left = (window.screen.width - width) / 2;
   const top = (window.screen.height - height) / 2;
 
-  window.open(url, "_blank",`width=${width},height=${height},left=${left},top=${top},scrollbars=yes`);
+  window.open(url, "_blank", `width=${width},height=${height},left=${left},top=${top},scrollbars=yes`);
 };
 
 
@@ -449,7 +449,7 @@ const sort = (field) => {
 const getDeviceId = () => {
   const deviceId = localStorage.getItem('DeviceId');
 
-  if( ! deviceId) {
+  if (!deviceId) {
     deviceId = generateUID();
     localStorage.setItem('DeviceId', deviceId);
   }
@@ -458,7 +458,7 @@ const getDeviceId = () => {
 }
 
 
-const validInput = (input, regex = /[^a-z0-9-_.]+/gi) => {
+const validInput = (input, regex = /[^a-zA-Z0-9-_.]+/gi) => {
   input.value = input.value.replace(regex, '');
 };
 
@@ -580,16 +580,34 @@ const hilightRow = (id) => {
   }
 };
 
-$.fn.hasError = function(msg) {
+
+async function validateRemote(url, data = {}) {
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    });
+
+    return (await response.text()).trim();
+  } catch (err) {
+    console.error('Validation error:', err);
+    return 'error';
+  }
+}
+
+$.fn.hasError = function (msg) {
   let name = this.attr('id');
-  $('#'+name+'-error').text(msg);
+  $('#' + name + '-error').text(msg);
   return this.addClass('has-error');
 };
 
-$.fn.clearError = function() {
+$.fn.clearError = function () {
   this.removeClass('has-error');
   let name = this.attr('id');
-  return $('#'+name+'-error').text('');
+  return $('#' + name + '-error').text('');
 };
 
 
@@ -622,6 +640,16 @@ const showError = (response) => {
   }, 100);
 };
 
+
+function setError(input, errorBox, message) {
+  errorBox.textContent = message;
+  input.classList.add('has-error');
+}
+
+function clearError(input, errorBox) {
+  errorBox.textContent = '';
+  input.classList.remove('has-error');
+}
 
 const is_true = (val) => {
   if (typeof val === 'string') {

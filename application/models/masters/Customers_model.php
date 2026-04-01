@@ -1,120 +1,84 @@
 <?php
 class Customers_model extends CI_Model
 {
+  private $tb = "customers";
+
   public function __construct()
   {
     parent::__construct();
   }
 
-
-
-  public function add_sap_customer(array $ds = array())
-  {
-    if(!empty($ds))
-    {
-      return $this->mc->insert('OCRD', $ds);
-    }
-
-    return FALSE;
-  }
-
-
-
-  public function update_sap_customer($code, $ds = array())
-  {
-    if(!empty($ds))
-    {
-      return $this->mc->where('CardCode', $code)->update('OCRD', $ds);
-    }
-
-    return FALSE;
-  }
-
-
-  public function sap_customer_exists($code)
-  {
-    $rs = $this->mc->where('CardCode', $code)->get('OCRD');
-    if($rs->num_rows() === 1)
-    {
-      return TRUE;
-    }
-
-    return FALSE;
-  }
-
-
-
-
-  public function get_credit($code)
-  {
-    $rs = $this->ms
-    ->select('CreditLine, Balance, DNotesBal, OrdersBal')
-    ->where('CardCode', $code)
-    ->get('OCRD');
-    if($rs->num_rows() === 1)
-    {
-      //$balance = $rs->row()->CreditLine - ($rs->row()->Balance + $rs->row()->DNotesBal + $rs->row()->OrdersBal);
-      $balance = $rs->row()->CreditLine - ($rs->row()->Balance + $rs->row()->DNotesBal);
-      return $balance;
-    }
-
-    return 0.00;
-  }
-
-
-
+  
   public function add(array $ds = array())
   {
-    if(!empty($ds))
+    if (!empty($ds))
     {
-      return  $this->db->insert('customers', $ds);
+      return  $this->db->insert($this->tb, $ds);
     }
 
     return FALSE;
   }
 
 
-
-  public function update($code, array $ds = array())
+  public function update($id, array $ds = array())
   {
-    if(!empty($ds))
+    if (!empty($ds))
     {
-      $this->db->where('code', $code);
-      return $this->db->update('customers', $ds);
+      return $this->db->where('id', $id)->update($this->tb, $ds);
     }
 
     return FALSE;
   }
 
 
-  public function delete($code)
+  public function delete($id)
   {
-    $rs = $this->db->where('code', $code)->delete('customers');
-    if(!$rs)
-    {
-      return $this->db->error();
-    }
-
-    return TRUE;
+    return $this->db->where('id', $id)->delete($this->tb);    
   }
 
 
   public function get($code)
   {
-    $rs = $this->db->where('code', $code)->get('customers');
+    $rs = $this->db->where('code', $code)->get($this->tb);
+
+    if ($rs->num_rows() === 1)
+    {
+      return $rs->row();
+    }
+
+    return NULL;
+  }
+
+
+  public function get_by_id($id)
+  {
+    $rs = $this->db->where('id', $id)->get($this->tb);
+
     if($rs->num_rows() === 1)
     {
       return $rs->row();
     }
 
-    return FALSE;
+    return NULL;
   }
-
-
 
   public function get_name($code)
   {
-    $rs = $this->db->select('name')->where('code', $code)->get('customers');
+    $rs = $this->db->select('name')->where('code', $code)->get($this->tb);
+
+    if ($rs->num_rows() === 1)
+    {
+      return $rs->row()->name;
+    }
+
+    return NULL;
+  }
+
+
+  public function get_name_by_id($id)
+  {
+    $rs = $this->db->select('name')->where('id', $id)->get($this->tb);
+
     if($rs->num_rows() === 1)
     {
       return $rs->row()->name;
@@ -126,18 +90,18 @@ class Customers_model extends CI_Model
 
   public function count_rows(array $ds = array())
   {
-    if($ds['code'] != "" && $ds['code'] !== NULL)
+    if (! empty($ds['code']))
     {
       $this->db
-      ->group_start()
-      ->like('code', $ds['code'])
-      ->or_like('name', $ds['code'])
-      ->group_end();
+        ->group_start()
+        ->like('code', $ds['code'])
+        ->or_like('name', $ds['code'])
+        ->grup_end();
     }
 
-    if($ds['group'] != 'all')
+    if ($ds['group'] != 'all')
     {
-      if($ds['group'] === "NULL")
+      if ($ds['group'] === "NULL")
       {
         $this->db->where('group_code IS NULL', NULL, FALSE);
       }
@@ -147,9 +111,9 @@ class Customers_model extends CI_Model
       }
     }
 
-    if($ds['kind'] != "all")
+    if ($ds['kind'] != "all")
     {
-      if($ds['kind'] === "NULL")
+      if ($ds['kind'] === "NULL")
       {
         $this->db->where('kind_code IS NULL', NULL, FALSE);
       }
@@ -159,9 +123,9 @@ class Customers_model extends CI_Model
       }
     }
 
-    if($ds['type'] != "all")
+    if ($ds['type'] != "all")
     {
-      if($ds['type'] === "NULL")
+      if ($ds['type'] === "NULL")
       {
         $this->db->where('type_code IS NULL', NULL, FALSE);
       }
@@ -169,25 +133,23 @@ class Customers_model extends CI_Model
       {
         $this->db->where('type_code', $ds['type']);
       }
-
     }
 
-    if($ds['class'] != "all")
+    if ($ds['grade'] != "all")
     {
-      if($ds['class'] === 'NULL')
+      if ($ds['grade'] === 'NULL')
       {
         $this->db->where('class_code IS NULL', NULL, FALSE);
       }
       else
       {
-        $this->db->where('class_code', $ds['class']);
+        $this->db->where('class_code', $ds['grade']);
       }
-
     }
 
-    if($ds['area'] != 'all')
+    if ($ds['area'] != 'all')
     {
-      if($ds['area'] === "NULL")
+      if ($ds['area'] === "NULL")
       {
         $this->db->where('area_code IS NULL', NULL, FALSE);
       }
@@ -197,106 +159,99 @@ class Customers_model extends CI_Model
       }
     }
 
-    if($ds['status'] != 'all')
+    if ($ds['status'] != 'all')
     {
       $this->db->where('active', $ds['status']);
     }
 
-    return $this->db->count_all_results('customers');
+    return $this->db->count_all_results($this->tb);
   }
-
 
 
   public function get_list(array $ds = array(), $perpage = 20, $offset = 0)
   {
     $this->db
-    ->select('cu.*, cg.name AS group, ck.name AS kind, ct.name AS type, cc.name AS class, ca.name AS area')
-    ->from('customers AS cu')
-    ->join('customer_group AS cg', 'cu.group_code = cg.code', 'left')
-    ->join('customer_kind AS ck', 'cu.kind_code = ck.code', 'left')
-    ->join('customer_type AS ct', 'cu.type_code = ct.code', 'left')
-    ->join('customer_class AS cc', 'cu.class_code = cc.code', 'left')
-    ->join('customer_area AS ca', 'cu.area_code = ca.code', 'left');
+    ->select('id, code, name, tax_id, group_code AS group, class_code AS grade')
+    ->select('kind_code AS kind, type_code AS type, area_code AS area, sale_id')
+    ->select('active, user, date_add, update_user, date_upd');    
 
-    if($ds['code'] != "" && $ds['code'] !== NULL)
+    if (! empty($ds['code']))
     {
       $this->db
-      ->group_start()
-      ->like('cu.code', $ds['code'])
-      ->or_like('cu.name', $ds['code'])
-      ->group_end();
+        ->group_start()
+        ->like('code', $ds['code'])
+        ->or_like('name', $ds['code'])
+        ->grup_end();
     }
 
-    if($ds['group'] != 'all')
+    if ($ds['group'] != 'all')
     {
-      if($ds['group'] === "NULL")
+      if ($ds['group'] === "NULL")
       {
-        $this->db->where('cu.group_code IS NULL', NULL, FALSE);
+        $this->db->where('group_code IS NULL', NULL, FALSE);
       }
       else
       {
-        $this->db->where('cu.group_code', $ds['group']);
+        $this->db->where('group_code', $ds['group']);
       }
     }
 
-    if($ds['kind'] != "all")
+    if ($ds['kind'] != "all")
     {
-      if($ds['kind'] === "NULL")
+      if ($ds['kind'] === "NULL")
       {
-        $this->db->where('cu.kind_code IS NULL', NULL, FALSE);
+        $this->db->where('kind_code IS NULL', NULL, FALSE);
       }
       else
       {
-        $this->db->where('cu.kind_code', $ds['kind']);
+        $this->db->where('kind_code', $ds['kind']);
       }
     }
 
-    if($ds['type'] != "all")
+    if ($ds['type'] != "all")
     {
-      if($ds['type'] === "NULL")
+      if ($ds['type'] === "NULL")
       {
-        $this->db->where('cu.type_code IS NULL', NULL, FALSE);
+        $this->db->where('type_code IS NULL', NULL, FALSE);
       }
       else
       {
-        $this->db->where('cu.type_code', $ds['type']);
+        $this->db->where('type_code', $ds['type']);
       }
-
     }
 
-    if($ds['class'] != "all")
+    if ($ds['grade'] != "all")
     {
-      if($ds['class'] === 'NULL')
+      if ($ds['grade'] === 'NULL')
       {
-        $this->db->where('cu.class_code IS NULL', NULL, FALSE);
+        $this->db->where('class_code IS NULL', NULL, FALSE);
       }
       else
       {
-        $this->db->where('cu.class_code', $ds['class']);
+        $this->db->where('class_code', $ds['grade']);
       }
-
     }
 
-    if($ds['area'] != 'all')
+    if ($ds['area'] != 'all')
     {
-      if($ds['area'] === "NULL")
+      if ($ds['area'] === "NULL")
       {
-        $this->db->where('cu.area_code IS NULL', NULL, FALSE);
+        $this->db->where('area_code IS NULL', NULL, FALSE);
       }
       else
       {
-        $this->db->where('cu.area_code', $ds['area']);
+        $this->db->where('area_code', $ds['area']);
       }
     }
 
-    if($ds['status'] != 'all')
+    if ($ds['status'] != 'all')
     {
-      $this->db->where('cu.active', $ds['status']);
+      $this->db->where('active', $ds['status']);
     }
 
-    $rs = $this->db->order_by('cu.code', 'ASC')->limit($perpage, $offset)->get();
+    $rs = $this->db->order_by('code', 'ASC')->limit($perpage, $offset)->get($this->tb);
 
-    if($rs->num_rows() > 0)
+    if ($rs->num_rows() > 0)
     {
       return $rs->result();
     }
@@ -305,148 +260,30 @@ class Customers_model extends CI_Model
   }
 
 
-  public function get_data($code = '', $name = '', $group = '', $kind = '', $type = '', $class = '', $area = '', $perpage = '', $offset = '')
-  {
-    if($code != '')
-    {
-      $this->db->group_start();
-      $this->db->like('code', $code);
-      $this->db->or_like('old_code', $code);
-      $this->db->group_end();
-    }
-
-    if($name != '')
-    {
-      $this->db->like('name', $name);
-    }
-
-
-    if(!empty($group))
-    {
-      if($group === "NULL")
-      {
-        $this->db->where('group_code IS NULL', NULL, FALSE);
-      }
-      else
-      {
-        $this->db->where('group_code', $group);
-      }
-
-    }
-
-
-    if(!empty($kind))
-    {
-      if($kind === "NULL")
-      {
-        $this->db->where('kind_code IS NULL', NULL, FALSE);
-      }
-      else
-      {
-        $this->db->where('kind_code', $kind);
-      }
-    }
-
-    if(!empty($type))
-    {
-      if($type === "NULL")
-      {
-        $this->db->where('type_code IS NULL', NULL, FALSE);
-      }
-      else
-      {
-        $this->db->where('type_code', $type);
-      }
-
-    }
-
-    if(!empty($class))
-    {
-      if($class === 'NULL')
-      {
-        $this->db->where('class_code IS NULL', NULL, FALSE);
-      }
-      else
-      {
-        $this->db->where('class_code', $class);
-      }
-
-    }
-
-    if(! empty($area))
-    {
-      if($area === "NULL")
-      {
-        $this->db->where('area_code IS NULL', NULL, FALSE);
-      }
-      else
-      {
-        $this->db->where('area_code', $area);
-      }
-
-    }
-
-    if($perpage != '')
-    {
-      $offset = $offset === NULL ? 0 : $offset;
-      $this->db->limit($perpage, $offset);
-    }
-
-    $rs = $this->db->get('customers');
-
-    if($rs->num_rows() > 0)
-    {
-      return $rs->result();
-    }
-
-    return FALSE;
+  public function is_exists_code($code)
+  {    
+    $count = $this->db->where('code', $code)->count_all_results($this->tb);
+    return $count > 0 ? TRUE : FALSE;    
   }
 
 
-
-
-  public function is_exists($code, $old_code = '')
+  public function is_exists_name($name, $id = NULL)
   {
-    if($old_code != '')
+    if( ! empty($id))
     {
-      $this->db->where('code !=', $old_code);
+      $this->db->where('name !=', $name);
     }
-
-    $rs = $this->db->where('code', $code)->get('customers');
-
-    if($rs->num_rows() > 0)
-    {
-      return TRUE;
-    }
-
-    return FALSE;
+    
+    $count = $this->db->where('name', $name)->count_all_results($this->tb);    
+    return $count > 0 ? TRUE : FALSE;
   }
 
 
-
-  public function is_exists_name($name, $old_name = '')
+  public function get_sale_id($code)
   {
-    if($old_name != '')
-    {
-      $this->db->where('name !=', $old_name);
-    }
+    $rs = $this->db->select('sale_id')->where('code', $code)->get($this->tb);
 
-    $rs = $this->db->where('name', $name)->get('customers');
-
-    if($rs->num_rows() > 0)
-    {
-      return TRUE;
-    }
-
-    return FALSE;
-  }
-
-
-
-  public function get_sale_code($code)
-  {
-    $rs = $this->db->select('sale_code')->where('code', $code)->get('customers');
-    if($rs->num_rows() === 1)
+    if ($rs->num_rows() === 1)
     {
       return $rs->row()->sale_code;
     }
@@ -455,130 +292,58 @@ class Customers_model extends CI_Model
   }
 
 
-  public function get_update_data($last_sync)
+  public function get_prefix_list()
   {
-    $rs = $this->ms
-    ->select("CardCode AS code")
-    ->select("CardName AS name")
-    ->select("LicTradNum AS Tax_Id")
-    ->select("DebPayAcct, CardType")
-    ->select("GroupCode, CmpPrivate")
-    ->select("GroupNum, SlpCode AS sale_code")
-    ->select("validFor")
-    ->select("CreditLine")
-    ->select("U_BEX_OLDCODE AS old_code")
-    ->where('CardType', 'C')
-    ->group_start()
-    ->where("UpdateDate >=", sap_date($last_sync))
-    ->or_where('CreateDate >=', sap_date($last_sync))
-    ->group_end()
-    ->get('OCRD');
+    $rs = $this->db->get('customer_code_prefix');
 
     if($rs->num_rows() > 0)
     {
       return $rs->result();
     }
 
-    return FALSE;
+    return NULL;
   }
 
 
-
-
-  public function search($txt)
+  public function get_prefix($code)
   {
-    $qr = "SELECT code FROM customers WHERE code LIKE '%".$txt."%' OR name LIKE '%".$txt."%'";
-    $rs = $this->db->query($qr);
-    if($rs->num_rows() > 0)
+    $rs = $this->db->where('code', $code)->get('customer_code_prefix');
+
+    if($rs->num_rows() === 1)
     {
-      return $rs->result();
-    }
-    else
-    {
-      return array();
+      return $rs->row();
     }
 
+    return NULL;
   }
 
 
-
-  public function getGroupCode()
+  public function get_max_code($prefix)
   {
-    $rs = $this->ms
-    ->select('GroupCode AS code, GroupName AS name')
-    ->where('GroupType', 'C')
-    ->get('OCRG');
+    $rs = $this->db
+    ->select_max('code')
+    ->like('code', $prefix, 'after')
+    ->order_by('code', 'DESC')    
+    ->get($this->tb);
 
-    if($rs->num_rows() > 0)
+    if($rs->num_rows() === 1)
     {
-      return $rs->result();
+      return $rs->row()->code;
     }
 
-    return FALSE;
+    return NULL;
   }
 
-
-
-
-  public function getGroupNum()
-  {
-    $rs = $this->ms
-    ->select('GroupNum AS code, PymntGroup AS name')
-    ->order_by('GroupNum', 'ASC')
-    ->get('OCTG');
-
-    if($rs->num_rows() > 0)
-    {
-      return $rs->result();
-    }
-
-    return FALSE;
-  }
-
-
-  public function getDebPayAcct()
-  {
-    $rs = $this->ms
-    ->select('AcctCode AS code, AcctName AS name')
-    ->order_by('AcctCode', 'ASC')
-    ->get('OACT');
-
-    if($rs->num_rows() > 0)
-    {
-      return $rs->result();
-    }
-
-    return FALSE;
-  }
-
-
-
-  public function getSlp()
-  {
-    $rs = $this->ms
-    ->select('SlpCode AS code, SlpName AS name')
-    ->where('Active', 'Y')
-    ->get('OSLP');
-
-    if($rs->num_rows() > 0)
-    {
-      return $rs->result();
-    }
-
-    return FALSE;
-  }
-
-
+  
   public function get_last_sync_date()
   {
-    $rs = $this->db->select_max('last_sync')->get('customers');
-    if($rs->num_rows() === 1)
+    $rs = $this->db->select_max('last_sync')->get($this->tb);
+
+    if ($rs->num_rows() === 1)
     {
       return $rs->row()->last_sync === NULL ? date('2019-01-01 00:00:00') : from_date($rs->row()->last_sync);
     }
 
     return date('2019-01-01 00:00:00');
   }
-
 }
-?>

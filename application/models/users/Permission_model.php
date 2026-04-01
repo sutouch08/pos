@@ -67,6 +67,30 @@ class Permission_model extends CI_Model
     return $this->db->where('id_profile', $id)->delete('permission');    
   }
 
+
+  public function can_add($menu, $id_profile)
+  {
+    $perm = $this->get_permission($menu, $id_profile);
+    return $perm->can_add == 1 ? TRUE : FALSE;
+  }
+
+  public function can_edit($menu, $id_profile)
+  {
+    $perm = $this->get_permission($menu, $id_profile);
+    return $perm->can_edit == 1 ? TRUE : FALSE;
+  }
+
+  public function can_delete($menu, $id_profile)
+  {
+    $perm = $this->get_permission($menu, $id_profile);
+    return $perm->can_delete == 1 ? TRUE : FALSE;
+  }
+
+  public function can_approve($menu, $id_profile)
+  {
+    $perm = $this->get_permission($menu, $id_profile);
+    return $perm->can_approve == 1 ? TRUE : FALSE;
+  }
 }
 
  ?>

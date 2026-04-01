@@ -1,30 +1,67 @@
 <?php
 class Customer_area_model extends CI_Model
 {
+  private $tb = "customer_area";
+
   public function __construct()
   {
     parent::__construct();
   }
 
 
+  public function get($code)
+  {
+    $rs = $this->db->where('code', $code)->get($this->tb);
+
+    if ($rs->num_rows() === 1)
+    {
+      return $rs->row();
+    }
+
+    return NULL;
+  }
+
+
+  public function get_by_id($id)
+  {
+    $rs = $this->db->where('id', $id)->get($this->tb);
+
+    if ($rs->num_rows() === 1)
+    {
+      return $rs->row();
+    }
+
+    return NULL;
+  }
+
+
   public function add(array $ds = array())
   {
-    if(!empty($ds))
+    if (!empty($ds))
     {
-      return  $this->db->insert('customer_area', $ds);
+      return  $this->db->insert($this->tb, $ds);
     }
 
     return FALSE;
   }
 
 
-
   public function update($code, array $ds = array())
   {
-    if(!empty($ds))
+    if (!empty($ds))
     {
-      $this->db->where('code', $code);
-      return $this->db->update('customer_area', $ds);
+      return $this->db->where('code', $code)->update($this->tb, $ds);
+    }
+
+    return FALSE;
+  }
+
+
+  public function update_by_id($id, array $ds = array())
+  {
+    if (! empty($ds))
+    {
+      return $this->db->where('id', $id)->update($this->tb, $ds);
     }
 
     return FALSE;
@@ -33,123 +70,100 @@ class Customer_area_model extends CI_Model
 
   public function delete($code)
   {
-    return $this->db->where('code', $code)->delete('customer_area');
+    return $this->db->where('code', $code)->delete($this->tb);
   }
 
 
-  public function count_rows($code = '', $name = '')
+  public function delete_by_id($id)
   {
-    $this->db->select('code');
-
-    if($code != '')
-    {
-      $this->db->like('code', $code);
-    }
-
-    if($name != '')
-    {
-      $this->db->like('name', $name);
-    }
-
-    $rs = $this->db->get('customer_area');
-
-    return $rs->num_rows();
+    return $this->db->where('id', $id)->delete($this->tb);
   }
 
 
-
-
-  public function get($code)
+  public function count_rows(array $ds = array())
   {
-    $rs = $this->db->where('code', $code)->get('customer_area');
-    if($rs->num_rows() === 1)
+    if (! empty($ds['code']))
     {
-      return $rs->row();
+      $this->db
+        ->group_start()
+        ->like('code', $ds['code'])
+        ->or_like('name', $ds['code'])
+        ->group_end();
     }
-    return FALSE;
+
+    return $this->db->count_all_results($this->tb);
+  }
+
+
+  public function get_list(array $ds = array(), $perpage = 20, $offset = 0)
+  {
+    if (! empty($ds['code']))
+    {
+      $this->db
+        ->group_start()
+        ->like('code', $ds['code'])
+        ->or_like('name', $ds['code'])
+        ->group_end();
+    }
+
+    $rs = $this->db->order_by('id', 'DESC')->limit($perpage, $offset)->get($this->tb);
+
+    if ($rs->num_rows() > 0)
+    {
+      return $rs->result();
+    }
+
+    return NULL;
+  }
+
+
+  public function get_all()
+  {
+    $rs = $this->db->get($this->tb);
+
+    if ($rs->num_rows() > 0)
+    {
+      return $rs->result();
+    }
+
+    return NULL;
   }
 
 
   public function get_name($code)
   {
-    if($code === NULL OR $code === '')
+    if ($code === NULL or $code === '')
     {
       return $code;
     }
 
-    $rs = $this->db->select('name')->where('code', $code)->get('customer_area');
-    if($rs->num_rows() === 1)
+    $rs = $this->db->select('name')->where('code', $code)->get($this->tb);
+
+    if ($rs->num_rows() === 1)
     {
       return $rs->row()->name;
     }
 
-    return NULL;  
+    return NULL;
   }
 
 
-  public function get_data($code = '', $name = '', $perpage = '', $offset = '')
+  public function is_exists($code)
   {
-    if($code != '')
-    {
-      $this->db->like('code', $code);
-    }
-
-    if($name != '')
-    {
-      $this->db->like('name', $name);
-    }
-
-    if($perpage != '')
-    {
-      $offset = $offset === NULL ? 0 : $offset;
-      $this->db->limit($perpage, $offset);
-    }
-
-    $rs = $this->db->get('customer_area');
-
-    return $rs->result();
+    $count = $this->db->where('code', $code)->count_all_results($this->tb);
+    return $count > 0 ? TRUE : FALSE;
   }
 
 
-
-
-  public function is_exists($code, $old_code = '')
+  public function is_exists_name($name, $id = NULL)
   {
-    if($old_code != '')
+    if (! empty($id))
     {
-      $this->db->where('code !=', $old_code);
+      $this->db->where('id !=', $id);
     }
 
-    $rs = $this->db->where('code', $code)->get('customer_area');
-
-    if($rs->num_rows() > 0)
-    {
-      return TRUE;
-    }
-
-    return FALSE;
+    $count = $this->db->where('name', $name)->count_all_results($this->tb);
+    return $count > 0 ? TRUE : FALSE;
   }
-
-
-
-  public function is_exists_name($name, $old_name = '')
-  {
-    if($old_name != '')
-    {
-      $this->db->where('name !=', $old_name);
-    }
-
-    $rs = $this->db->where('name', $name)->get('customer_area');
-
-    if($rs->num_rows() > 0)
-    {
-      return TRUE;
-    }
-
-    return FALSE;
-  }
-
-
-
 }
 ?>

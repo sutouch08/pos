@@ -27,12 +27,12 @@
 		<div class="main-container">
 			<div class="main-content">
 				<div class="row">
-					<div class="col-sm-10 col-sm-offset-1">
+					<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12" style="margin-top: 30px;">
 						<div class="login-container">
 							<div class="center">
 								<h1>
-									<span class="orange"><?php echo getConfig('COMPANY_NAME'); ?></span>
-									<span class="white" id="id-text2">Application</span>
+									<span class="orange"><?php echo getConfig('APP_TITLE'); ?></span>
+									<!--<span class="white" id="id-text2">Application</span>-->
 								</h1>
 								<h4 class="blue" id="id-company-text">&copy; <?php echo getConfig('COMPANY_FULL_NAME');?></h4>
 							</div>
