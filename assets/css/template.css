@@ -1126,7 +1126,7 @@ hr.padding-5 {
 }
 
 
-.col-sm-1-harf, .col-sm-2-harf, .col-sm-20, .col-sm-3-harf, .col-sm-4-harf, .col-sm-5-harf, .col-sm-6-harf, .col-sm-7-harf, .col-sm-8-harf, .col-sm-9-harf, .col-sm-10-harf, .col-sm-11-harf {
+.col-sm-harf, .col-sm-1-harf, .col-sm-2-harf, .col-sm-20, .col-sm-3-harf, .col-sm-4-harf, .col-sm-5-harf, .col-sm-6-harf, .col-sm-7-harf, .col-sm-8-harf, .col-sm-9-harf, .col-sm-10-harf, .col-sm-11-harf {
 	float:left;
 }
 
@@ -1137,11 +1137,13 @@ hr.padding-5 {
     width: 750px;
   }
 
+	.col-sm-harf {
+		width:4.1666%;
+	}
 
   .col-sm-1-harf {
   	width: 12.5%;
   }
-
 
 
   .col-sm-2-harf{
@@ -1154,11 +1156,9 @@ hr.padding-5 {
 	}
 
 
-
   .col-sm-3-harf {
   	width: 29.166666666667%;
   }
-
 
 
   .col-sm-4-harf{
@@ -1189,7 +1189,6 @@ hr.padding-5 {
   }
 
 
-
   .col-sm-9-harf{
   	width: 79.1666666667%;
   }
@@ -1199,7 +1198,6 @@ hr.padding-5 {
   .col-sm-10-harf{
   	width: 87.5%;
   }
-
 
 
   .col-sm-11-harf{
@@ -1216,7 +1214,7 @@ hr.padding-5 {
 
 
 
-.col-md-1-harf, .col-md-2-harf, .col-md-20, .col-md-3-harf, .col-md-4-harf, .col-md-5-harf, .col-md-6-harf, .col-md-7-harf, .col-md-8-harf, .col-md-9-harf, .col-md-10-harf, .col-md-11-harf {
+.col-md-harf, .col-md-1-harf, .col-md-2-harf, .col-md-20, .col-md-3-harf, .col-md-4-harf, .col-md-5-harf, .col-md-6-harf, .col-md-7-harf, .col-md-8-harf, .col-md-9-harf, .col-md-10-harf, .col-md-11-harf {
 	float:left;
 }
 
@@ -1227,11 +1225,13 @@ hr.padding-5 {
     width:970px;
   }
 
+	.col-md-harf {
+		width: 4.1666%;
+	}
 
   .col-md-1-harf {
   	width: 12.5%;
   }
-
 
 
   .col-md-2-harf{
@@ -1246,7 +1246,6 @@ hr.padding-5 {
   .col-md-3-harf {
   	width: 29.166666666667%;
   }
-
 
 
   .col-md-4-harf{
@@ -1305,7 +1304,7 @@ hr.padding-5 {
 
 
 
-.col-lg-1-harf, .col-lg-2-harf, .col-lg-20, .col-lg-3-harf, .col-lg-4-harf, .col-lg-5-harf, .col-lg-6-harf, .col-lg-7-harf, .col-lg-8-harf, .col-lg-9-harf, .col-lg-10-harf, .col-lg-11-harf {
+.col-lg-harf, .col-lg-1-harf, .col-lg-2-harf, .col-lg-20, .col-lg-3-harf, .col-lg-4-harf, .col-lg-5-harf, .col-lg-6-harf, .col-lg-7-harf, .col-lg-8-harf, .col-lg-9-harf, .col-lg-10-harf, .col-lg-11-harf {
 	float:left;
 }
 
@@ -1314,6 +1313,10 @@ hr.padding-5 {
   .container {
     width:1170px;
   }
+
+	.col-lg-harf {
+	width: 4.1666%;
+	}
 
   .col-lg-1-harf {
   	width: 12.5%;

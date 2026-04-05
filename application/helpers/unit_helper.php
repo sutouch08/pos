@@ -1,22 +1,52 @@
 <?php
-function select_unit($code = '')
+function select_unit($id = NULL)
 {
-  $sc = '';
-  $CI =& get_instance();
-  $CI->load->model('masters/unit_model');
-  $options = $CI->unit_model->get_list(); //--- OUOM
+  $ds = "";
 
-  if(!empty($options))
+  $ci =& get_instance();
+  $ci->load->model('masters/unit_model');
+  $units = $ci->unit_model->get_all();
+
+  if(!empty($units))
   {
-    foreach($options as $rs)
+    foreach($units as $unit)
     {
-      $group_id = empty($rs->group_id) ? $rs->id : $rs->group_id;
-
-      $sc .= '<option value="'.$rs->code.'" data-id="'.$rs->id.'" data-groupid="'.$group_id.'" '.is_selected($code, $rs->code).'>'.$rs->code.' | '.$rs->name.'</option>';
+      $selected = ($id == $unit->id) ? 'selected' : '';
+      $ds .= '<option value="'.$unit->id.'" data-code="'.$unit->code.'" '.$selected.'>'.$unit->code.' | '.$unit->name.'</option>';
     }
   }
 
-  return $sc;
+  return $ds;
+}
+
+
+function unit_name($id)
+{
+  $ci =& get_instance();
+  $ci->load->model('masters/unit_model');
+  $unit = $ci->unit_model->get_by_id($id);
+
+  return $unit ? $unit->name : '';
+}
+
+
+function unit_name_by_code($code)
+{
+  $ci =& get_instance();
+  $ci->load->model('masters/unit_model');
+  $unit = $ci->unit_model->get_by_code($code);
+
+  return $unit ? $unit->name : ''; 
+}
+
+
+function unit_code($id)
+{
+  $ci =& get_instance();
+  $ci->load->model('masters/unit_model');
+  $unit = $ci->unit_model->get_by_id($id);
+
+  return $unit ? $unit->code : '';
 }
 
 
