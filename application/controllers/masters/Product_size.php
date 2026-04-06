@@ -1,207 +1,101 @@
 <?php
-defined('BASEPATH') OR exit('No direct script access allowed');
+defined('BASEPATH') or exit('No direct script access allowed');
 
 class Product_size extends PS_Controller
 {
   public $menu_code = 'DBPDSI';
-	public $menu_group_code = 'DB';
+  public $menu_group_code = 'DB';
   public $menu_sub_group_code = 'PRODUCT';
-	public $title = 'เพิ่ม/แก้ไข ไซส์';
+  public $title = 'เพิ่ม/แก้ไข ไซส์';
+  public $segment = 4;
 
   public function __construct()
   {
     parent::__construct();
-    $this->home = base_url().'masters/product_size';
+    $this->home = base_url() . 'masters/product_size';
     $this->load->model('masters/product_size_model');
+    $this->load->helper('product_size');
   }
 
 
   public function index()
   {
-		$filter = [
+    $filter = [
       'code' => get_filter('code', 'size_code', ''),
-      'name' => get_filter('name', 'size_name', '')
+      'active' => get_filter('active', 'size_active', 'all'),
+      'group_id' => get_filter('group_id', 'size_group_id', 'all'),
+      'order_by' => get_filter('order_by', 'order_by', 'position'),
+      'sort_by' => get_filter('sort_by', 'sort_by', 'ASC')
     ];
 
-    if($this->input->post('search'))
+    if ($this->input->post('search'))
     {
       redirect($this->home);
     }
     else
     {
-      //--- แสดงผลกี่รายการต่อหน้า
-  		$perpage = get_rows();
-  		$segment = 4; //-- url segment
-  		$rows = $this->product_size_model->count_rows($filter);
-  		//--- ส่งตัวแปรเข้าไป 4 ตัว base_url ,  total_row , perpage = 20, segment = 3
-  		$init	= pagination_config($this->home.'/index/', $rows, $perpage, $segment);
-  		$size = $this->product_size_model->get_list($filter, $perpage, $this->uri->segment($segment));
-
-      if(! empty($size))
-      {
-        foreach($size as $rs)
-        {
-          $rs->member = $this->product_size_model->count_members($rs->code);
-        }
-      }
+      $perpage = get_rows();
+      $rows = $this->product_size_model->count_rows($filter);
+      $size = $this->product_size_model->get_list($filter, $perpage, $this->uri->segment($this->segment));
+      $init  = pagination_config($this->home . '/index/', $rows, $perpage, $this->segment);
 
       $filter['data'] = $size;
 
-  		$this->pagination->initialize($init);
-      $this->load->view('masters/product_size/product_size_view', $filter);
+      $this->pagination->initialize($init);
+      $this->load->view('masters/product_size/product_size_list', $filter);
     }
-
   }
 
 
   public function add_new()
   {
-    $this->load->view('masters/product_size/product_size_add_view');
+    if ($this->pm->can_add)
+    {
+      $this->load->view('masters/product_size/product_size_add');
+    }
+    else
+    {
+      $this->deny_page();
+    }
   }
 
 
   public function add()
   {
     $sc = TRUE;
+    $ds = json_decode(file_get_contents('php://input'));
 
-    if($this->pm->can_add)
+    if (! empty($ds) && ! empty($ds->code) && ! empty($ds->name))
     {
-      $code = trim($this->input->post('code'));
-      $name = trim($this->input->post('name'));
-      $position = trim($this->input->post('position'));
-
-      if( ! empty($code) && ! empty($name))
+      if ($this->pm->can_add)
       {
-        if($this->product_size_model->is_exists($code))
+        if ($this->product_size_model->is_exists_code($ds->code))
         {
           $sc = FALSE;
-          $this->error = "'{$code}' มีในระบแล้ว";
+          set_error('exists', $ds->code);
         }
 
-        if($sc === TRUE)
+        if ($sc === TRUE && $this->product_size_model->is_exists_name($ds->name))
+        {
+          $sc = FALSE;
+          set_error('exists', $ds->name);
+        }
+
+        if ($sc === TRUE)
         {
           $arr = array(
-            'code' => $code,
-            'name' => $name,
-            'position' => $position
+            'code' => $ds->code,
+            'name' => $ds->name,
+            'position' => $ds->position > 0 ? $ds->position : 0,
+            'active' => $ds->active,
+            'group_id' => $ds->group_id > 0 ? $ds->group_id : NULL
           );
 
-          if( ! $this->product_size_model->add($arr))
+          if (! $this->product_size_model->add($arr))
           {
             $sc = FALSE;
-            $this->error = "เพิ่มรายการไม่สำเร็จ";
+            set_error('insert');
           }
-        }
-
-        if($sc === TRUE)
-        {
-          $this->export_to_sap($code, $code);
-        }
-      }
-      else
-      {
-        $sc = FALSE;
-        set_error('required');
-      }
-    }
-    else
-    {
-      $sc = FALSE;
-      set_error('permission');
-    }
-
-    echo $sc === TRUE ? 'success' : $this->error;
-  }
-
-
-
-  public function edit($id)
-  {
-    $this->title = 'แก้ไข ไซส์';
-
-    $data = $this->product_size_model->get_by_id($id);
-
-    if( ! empty($data))
-    {
-      $this->load->view('masters/product_size/product_size_edit_view', $data);
-    }
-    else
-    {
-      $this->page_error();
-    }
-  }
-
-
-
-  public function update()
-  {
-    $sc = TRUE;
-    $id = $this->input->post('id');
-    $code = $this->input->post('code');
-    $name = $this->input->post('name');
-    $position = $this->input->post('position');
-
-    $size = $this->product_size_model->get_by_id($id);
-
-    if( ! empty($size))
-    {
-      if( ! empty($code) && ! empty($name))
-      {
-        if($this->product_size_model->is_exists($code, $id))
-        {
-          $sc = FALSE;
-          $this->error = "'{$code}' มีในระบบแล้ว";
-        }
-
-        if($sc === TRUE)
-        {
-          $arr = array(
-            'code' => $code,
-            'name' => $name,
-            'position' => $position
-          );
-
-          if( ! $this->product_size_model->update_by_id($id, $arr))
-          {
-            $sc = FALSE;
-            $this->error = "ปรับปรุงข้อมูลไม่สำเร็จ";
-          }
-        }
-
-        if($sc === TRUE)
-        {
-          $this->export_to_sap($code, $size->code);
-        }
-      }
-      else
-      {
-        $sc = FALSE;
-        set_error('required');
-      }
-    }
-    else
-    {
-      $sc = FALSE;
-      $this->error = "Invalid size id";
-    }
-
-    echo $sc === TRUE ? 'success' : $this->error;
-  }
-
-
-
-  public function delete($id)
-  {
-    $sc = TRUE;
-
-    if($id)
-    {
-      if($this->pm->can_delete)
-      {
-        if( ! $this->product_size_model->delete_by_id($id))
-        {
-          $sc = FALSE;
-          $this->error = "Delete failed";
         }
       }
       else
@@ -216,70 +110,251 @@ class Product_size extends PS_Controller
       set_error('required');
     }
 
-    echo $sc === TRUE ? 'success' : $this->error;
+    $this->_response($sc);
   }
 
 
-
-  public function export_to_sap($code, $old_code)
+  public function add_size_group()
   {
-    $rs = $this->product_size_model->get($code);
+    $sc = TRUE;
+    $ds = json_decode(file_get_contents('php://input'));
+    $group = NULL;
 
-    if(! empty($rs))
+    if (! empty($ds) && ! empty($ds->name))
     {
-      $ext = $this->product_size_model->is_sap_exists($old_code);
-
-      $arr = array(
-        'Code' => $rs->code,
-        'Name' => $rs->name,
-        'UpdateDate' => sap_date(now(), TRUE)
-      );
-
-      if($ext)
+      if ($this->pm->can_add)
       {
-        $arr['Flag'] = 'U';
-        if($code !== $old_code)
+        if ($this->product_size_model->is_exists_group_name($ds->name))
         {
-          $arr['OLDCODE'] = $old_code;
+          $sc = FALSE;
+          set_error('exists', $ds->name);
+        }
+
+        if ($sc === TRUE)
+        {
+          $arr = array(
+            'name' => $ds->name
+          );
+
+          $id = $this->product_size_model->add_group($arr);
+          if (! $id)
+          {
+            $sc = FALSE;
+            set_error('insert');
+          }
+
+          if ($sc === TRUE)
+          {
+            $group = $this->product_size_model->get_group($id);
+          }
         }
       }
       else
       {
-        $arr['Flag'] = 'A';
+        $sc = FALSE;
+        set_error('permission');
       }
-
-      return $this->product_size_model->add_sap_size($arr);
+    }
+    else
+    {
+      $sc = FALSE;
+      set_error('required');
     }
 
-    return FALSE;
+    $arr = array(
+      'status' => $sc === TRUE ? 'success' : 'error',
+      'message' => $sc === TRUE ? 'Group added' : $this->error,
+      'group' => $group
+    );
+
+    echo json_encode($arr);
   }
 
+
+  public function edit($id)
+  {
+    if ($this->pm->can_edit)
+    {
+      $ds = $this->product_size_model->get($id);
+
+      $this->load->view('masters/product_size/product_size_edit', $ds);
+    }
+    else
+    {
+      $this->deny_page();
+    }
+  }
+
+
+  public function update()
+  {
+    $sc = TRUE;
+    $ds = json_decode(file_get_contents('php://input'));
+    if (! empty($ds) && ! empty($ds->id) && ! empty($ds->code) && ! empty($ds->name))
+    {
+      if ($this->pm->can_edit)
+      {
+        if ($this->product_size_model->is_exists_code($ds->code, $ds->id))
+        {
+          $sc = FALSE;
+          set_error('exists', $ds->code);
+        }
+
+        if ($sc === TRUE && $this->product_size_model->is_exists_name($ds->name, $ds->id))
+        {
+          $sc = FALSE;
+          set_error('exists', $ds->name);
+        }
+
+        if ($sc === TRUE)
+        {
+          $arr = array(
+            'code' => $ds->code,
+            'name' => $ds->name,
+            'position' => $ds->position > 0 ? $ds->position : 0,
+            'active' => $ds->active,
+            'group_id' => $ds->group_id > 0 ? $ds->group_id : NULL,
+            'member' => $this->product_size_model->count_members($ds->id)
+          );
+
+          if (! $this->product_size_model->update_by_id($ds->id, $arr))
+          {
+            $sc = FALSE;
+            set_error('update');
+          }
+        }
+      }
+      else
+      {
+        $sc = FALSE;
+        set_error('permission');
+      }
+    }
+    else
+    {
+      $sc = FALSE;
+      set_error('required');
+    }
+
+    $this->_response($sc);
+  }
+
+
+  public function delete()
+  {
+    $sc = TRUE;
+    $ds = json_decode(file_get_contents('php://input'));
+
+    if (! empty($ds) && ! empty($ds->id))
+    {
+      if ($this->pm->can_delete)
+      {
+        $size = $this->product_size_model->get($ds->id);
+
+        if (! empty($size))
+        {
+          if ($size->member > 0)
+          {
+            $sc = FALSE;
+            set_error('transections');
+          }
+
+          if ($sc === TRUE)
+          {
+            if (! $this->product_size_model->delete_by_id($ds->id))
+            {
+              $sc = FALSE;
+              set_error('delete');
+            }
+          }
+        }
+        else
+        {
+          $sc = FALSE;
+          set_error('not_found');
+        }
+      }
+      else
+      {
+        $sc = FALSE;
+        set_error('permission');
+      }
+    }
+    else
+    {
+      $sc = FALSE;
+      set_error('required');
+    }
+
+    $this->_response($sc);
+  }
+
+
+  public function is_exists_code()
+  {
+    $ds = json_decode(file_get_contents('php://input'));
+
+    if (! empty($ds))
+    {
+      if ($this->product_size_model->is_exists_code($ds->code, $ds->id))
+      {
+        echo 'exists';
+      }
+      else
+      {
+        echo 'not_exists';
+      }
+    }
+  }
+
+
+  public function is_exists_name()
+  {
+    $ds = json_decode(file_get_contents('php://input'));
+
+    if (! empty($ds))
+    {
+      if ($this->product_size_model->is_exists_name($ds->name, $ds->id))
+      {
+        echo 'exists';
+      }
+      else
+      {
+        echo 'not_exists';
+      }
+    }
+  }
+
+
+  public function is_exists_group_name()
+  {
+    $ds = json_decode(file_get_contents('php://input'));
+
+    if (! empty($ds) && ! empty($ds->name))
+    {
+      if ($this->product_size_model->is_exists_group_name($ds->name))
+      {
+        echo 'exists';
+      }
+      else
+      {
+        echo 'not_exists';
+      }
+    }
+  }
 
 
   public function clear_filter()
-	{
-		$filter = array('size_code', 'size_name');
-    clear_filter($filter);
-		echo 'done';
-	}
-
-
-
-  public function export_api()
   {
-    $code = $this->input->post('code');
+    $filter = array(
+      'size_code',
+      'size_name',
+      'size_order_by',
+      'size_sort_by',
+      'size_active',
+      'size_group_id'
+    );
 
-    if(!empty($code))
-    {
-      $this->load->library('api');
-      $rs = json_decode($this->api->create_size($code), TRUE);
-      if(count($rs) === 1){
-        echo $rs['message'];
-      }else{
-        echo 'success';
-      }
-    }
+    return clear_filter($filter);    
   }
-
-}//--- end class
- ?>
+} //--- end class

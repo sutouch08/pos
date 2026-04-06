@@ -1,6 +1,6 @@
 let click = 0;
-let validCode = true;
-let validName = true;
+let validCode = false;
+let validName = false;
 
 const inputCode = document.getElementById('code');
 const inputName = document.getElementById('name');

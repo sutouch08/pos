@@ -425,10 +425,7 @@ const parseDiscount = (discountLabel, price) => {
 
 
 const sort = (field) => {
-  const el = field === 'date_add'
-    ? document.getElementById('sort_date_add')
-    : document.getElementById('sort_code');
-
+  const el = document.getElementById(`sort-${field}`);
   const isDesc = el.classList.contains('sorting_desc');
   const sortBy = isDesc ? 'ASC' : 'DESC';
   const sortClass = isDesc ? 'sorting_asc' : 'sorting_desc';
@@ -444,6 +441,23 @@ const sort = (field) => {
 
   getSearch();
 };
+
+// function sort(field) {
+//   var el = $("#sort_" + field);
+//   var sort_by = "";
+
+//   sort_by = el.hasClass('sorting_desc') ? 'ASC' : 'DESC';
+//   sort_class = el.hasClass('sorting_desc') ? 'sorting_asc' : 'sorting_desc';
+
+//   $('.sorting').removeClass('sorting_desc');
+//   $('.sorting').removeClass('sorting_asc');
+
+//   el.addClass(sort_class);
+//   $('#sort_by').val(sort_by);
+//   $('#order_by').val(field);
+
+//   getSearch();
+// }
 
 
 const getDeviceId = () => {

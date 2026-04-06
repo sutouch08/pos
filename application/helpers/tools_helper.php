@@ -12,6 +12,7 @@ function setToken($token)
 	return $CI->input->set_cookie($cookie);
 }
 
+
 function parsePhoneNumber($phone, $length = 10)
 {
 	$find = [" ", "-", "+"];
@@ -29,6 +30,7 @@ function parsePhoneNumber($phone, $length = 10)
 
 	return NULL;
 }
+
 
 function parseSubDistrict($ad, $province)
 {
@@ -105,6 +107,13 @@ function parseProvince($ad)
 	return NULL;
 }
 
+
+function escapeQuote($text)
+{
+	return trim(str_replace('"', '&quot;', $text));
+}
+
+
 //---	ตัดข้อความแล้วเติม ... ข้างหลัง
 function limitText($str, $length)
 {
@@ -120,21 +129,16 @@ function limitText($str, $length)
 }
 
 
-
-
 function is_selected($val, $select)
 {
 	return $val === $select ? 'selected' : '';
 }
 
 
-
-
 function is_checked($val1, $val2)
 {
 	return $val1 == $val2 ? 'checked' : '';
 }
-
 
 
 function is_active($val)
@@ -166,6 +170,11 @@ function get_filter($postName, $cookieName, $defaultValue = "")
 }
 
 
+function get_sort($field, $order_by = NULL, $sort_by = 'DESC')
+{
+	$sc = empty($order_by) ? '' : ($order_by === $field ? ($sort_by === 'DESC' ? 'sorting_desc' : 'sorting_asc') : '');
+	return $sc;
+}
 
 
 function clear_filter($cookies)
@@ -184,8 +193,6 @@ function clear_filter($cookies)
 }
 
 
-
-
 function set_rows($value = 20)
 {
 	$value = $value > 300 ? 300 : $value;
@@ -201,9 +208,6 @@ function set_rows($value = 20)
 }
 
 
-
-
-
 function get_rows()
 {
 	$rows = get_cookie('rows');
@@ -212,14 +216,10 @@ function get_rows()
 }
 
 
-
-
 function number($val, $digit = 0)
 {
 	return number_format($val, $digit);
 }
-
-
 
 
 function ac_format($val, $digit = 0)
@@ -239,7 +239,6 @@ function getConfig($code)
 
 	return NULL;
 }
-
 
 
 function get_vat_amount($amount, $vat = NULL, $type = 'I')
@@ -298,6 +297,7 @@ function remove_vat($amount, $vat = NULL)
 	return round($amount, 6);
 }
 
+
 //---- remove discount percent return price after discount
 function get_price_after_discount($price, $disc = 0)
 {
@@ -354,6 +354,7 @@ function set_error($key, $name = "data")
 	$ci->error = (!empty($error[$key]) ? $error[$key] : "Unknow error.");
 }
 
+
 function set_error_message($message)
 {
 	$ci = &get_instance();
@@ -372,6 +373,7 @@ function get_null($value)
 {
 	return $value === '' ? NULL : $value;
 }
+
 
 //--- return TRUE if value ==  1 else return FALSE;
 function is_true($value)
@@ -433,6 +435,7 @@ function convert($txt)
 	return $txt;
 }
 
+
 function statusBackgroundColor($is_expire, $status, $is_approve = 1)
 {
 	$bk_color = "";
@@ -491,6 +494,7 @@ function statusBgColor($status = 'O')
 	return empty($bk_color) ? "" : "color:{$bk_color};";
 }
 
+
 function genUid($lenght = 13)
 {
 
@@ -522,17 +526,6 @@ define('BAHT_TEXT_POINT', 'จุด');
 
 function baht_text($number, $include_unit = true, $display_zero = true)
 {
-
-
-	/**
-	 * Convert baht number to Thai text
-	 * @param double|int $number
-	 * @param bool $include_unit
-	 * @param bool $display_zero
-	 * @return string|null
-	 */
-
-
 	if (!is_numeric($number))
 	{
 		return null;
