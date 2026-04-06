@@ -7,6 +7,7 @@ class Product_color extends PS_Controller
 	public $menu_group_code = 'DB';
   public $menu_sub_group_code = 'PRODUCT';
 	public $title = 'เพิ่ม/แก้ไข สีสินค้า';
+  public $segment = 4;
 
   public function __construct()
   {
@@ -22,8 +23,10 @@ class Product_color extends PS_Controller
     $filter = array(
       'code' => get_filter('code', 'color_code', ''),
       'name' => get_filter('name', 'color_name', ''),
-      'color_group' => get_filter('color_group', 'color_group', 'all'),
-      'status' => get_filter('status', 'color_status', 'all')
+      'group' => get_filter('group', 'color_group', 'all'),
+      'active' => get_filter('active', 'color_active', 'all'),
+      'order_by' => get_filter('order_by', 'color_order_by', 'code'),
+      'sort_by' => get_filter('sort_by', 'color_sort_by', 'ASC')
     );
 
     if($this->input->post('search'))
@@ -32,165 +35,255 @@ class Product_color extends PS_Controller
     }
     else
     {
-      //--- แสดงผลกี่รายการต่อหน้า
-      $perpage = get_filter('set_rows', 'rows', 20);
-      //--- หาก user กำหนดการแสดงผลมามากเกินไป จำกัดไว้แค่ 300
-      if($perpage > 300)
-      {
-        $perpage = get_filter('rows', 'rows', 300);
-      }
-
-      $segment = 4; //-- url segment
-      $rows = $this->product_color_model->count_rows($filter);
-      //--- ส่งตัวแปรเข้าไป 4 ตัว base_url ,  total_row , perpage = 20, segment = 3
-      $init	= pagination_config($this->home.'/index/', $rows, $perpage, $segment);
-      $color = $this->product_color_model->get_data($filter, $perpage, $this->uri->segment($segment));
-
-      if(!empty($color))
-      {
-        foreach($color as $rs)
-        {
-          $rs->member = $this->product_color_model->count_members($rs->code);
-        }
-      }
-
-      $filter['data'] = $color;
-
+      $perpage = get_rows();     
+      $rows = $this->product_color_model->count_rows($filter);      
+      $filter['data'] = $this->product_color_model->get_list($filter, $perpage, $this->uri->segment($this->segment));
+      $init	= pagination_config($this->home.'/index/', $rows, $perpage, $this->segment);      
       $this->pagination->initialize($init);
-      $this->load->view('masters/product_color/product_color_view', $filter);
-    }
-
-  }
-
-
-
-  public function set_active()
-  {
-    $id = $this->input->post('id');
-    $active = $this->input->post('active') == 1 ? 0 :1;
-
-    if($id)
-    {
-      $rs = $this->product_color_model->set_active($id, $active);
-
-      if($rs)
-      {
-        $sc = "<span class=\"pointer\" onClick=\"toggleActive({$active}, '{$id}')\">";
-        $sc .= is_active($active);
-        $sc .= "</span>";
-
-        echo $sc;
-      }
+      $this->load->view('masters/product_color/product_color_list', $filter);
     }
   }
 
 
   public function add_new()
   {
-    $this->load->view('masters/product_color/product_color_add_view');
+    $this->load->view('masters/product_color/product_color_add');
   }
 
 
   public function add()
   {
-    if($this->input->post('code'))
+    $sc = TRUE;
+    $ds = json_decode(file_get_contents('php://input'));
+
+    if($this->pm->can_add)
     {
-      $sc = TRUE;
-      $code = $this->input->post('code');
-      $name = $this->input->post('name');
-      $id_group = get_null($this->input->post('color_group'));
-
-      $ds = array(
-        'code' => $code,
-        'name' => $name,
-        'id_group' => $id_group
-      );
-
-      if($this->product_color_model->is_exists_code($code) === TRUE)
-      {
-        $sc = FALSE;
-        $this->error = "'{$code}' มีในระบบแล้ว";
-      }
-
-      if($sc === TRUE)
-      {
-        $id = $this->product_color_model->add($ds);
-
-        if( ! $id)
+      if( ! empty($ds) && ! empty($ds->code) && ! empty($ds->name))
+      {        
+        if($this->product_color_model->is_exists_code($ds->code))
         {
           $sc = FALSE;
-          $this->error = "เพิ่มข้อมูลไม่สำเร็จ";
+          set_error('exists', $ds->code);
+        }
+
+        if($sc === TRUE && $this->product_color_model->is_exists_name($ds->name))
+        {
+          $sc = FALSE;
+          set_error('exists', $ds->name);
         }
 
         if($sc === TRUE)
         {
-          $this->export_to_sap($id, $code, NULL);
+          $arr = array(
+            'code' => $ds->code,
+            'name' => $ds->name,
+            'group_id' => $ds->group_id,
+            'active' => $ds->active
+          );
+
+          if( ! $this->product_color_model->add($arr))
+          {
+            $sc = FALSE;
+            set_error('insert');
+          }
         }
+      }
+      else
+      {
+        $sc = FALSE;
+        set_error('required');
       }
     }
     else
     {
       $sc = FALSE;
-      set_error('required');
+      set_error('permission');
     }
 
-    echo $sc === TRUE ? 'success' : $this->error;
+    $this->_response($sc);
   }
 
+
+  public function add_color_group()
+  {
+    $sc = TRUE;
+    $ds = json_decode(file_get_contents('php://input'));
+    $group = NULL;
+
+    if($this->pm->can_add)
+    {
+      if( ! empty($ds) && ! empty($ds->name))
+      {
+        if($this->product_color_model->is_exists_group_name($ds->name))
+        {
+          $sc = FALSE;
+          set_error('exists', $ds->name);
+        }
+
+        if($sc === TRUE)
+        {
+          $arr = array(
+            'name' => $ds->name
+          );
+
+          $id = $this->product_color_model->add_group($arr);
+
+          if($id)
+          {
+            $group = $this->product_color_model->get_group($id);
+          }
+          else
+          {
+            $sc = FALSE;
+            set_error('insert');
+          }
+        }
+      }
+      else
+      {
+        $sc = FALSE;
+        set_error('required');
+      }
+    }
+    else
+    {
+      $sc = FALSE;
+      set_error('permission');
+    }
+
+    $arr = array(
+      'status' => $sc === TRUE ? 'success' : 'error',
+      'message' => $sc === TRUE ? 'success' : $this->error,
+      'group' => $group
+    );
+
+    echo json_encode($arr);
+  }
 
 
   public function edit($id)
   {
-    $this->title = 'แก้ไข สีสินค้า';
-    $data = $this->product_color_model->get_by_id($id);
-    $this->load->view('masters/product_color/product_color_edit_view', $data);
+    if($this->pm->can_edit)
+    {
+      $ds = $this->product_color_model->get_by_id($id);
+
+      if( ! empty($ds))
+      {
+        $this->load->view('masters/product_color/product_color_edit', $ds);
+      }
+      else
+      {
+        $this->error_page();
+      }
+    }
+    else
+    {
+      $this->deny_page();     
+    }    
   }
 
 
-
-  public function update($id)
+  public function update()
   {
     $sc = TRUE;
+    $ds = json_decode(file_get_contents('php://input'));
 
-    if($this->input->post('code'))
+    if( ! empty($ds) && ! empty($ds->id) && ! empty($ds->code) && ! empty($ds->name))
     {
-      $code = $this->input->post('code');
-      $name = $this->input->post('name');
-      $id_group = get_null($this->input->post('color_group'));
-      $color = $this->product_color_model->get_by_id($id);
-
-      if( ! empty($color))
+      if($this->pm->can_edit)
       {
-        $ds = array(
-          'code' => $code,
-          'name' => $name,
-          'id_group' => $id_group
-        );
+        $color = $this->product_color_model->get_by_id($ds->id);
 
-        if($this->product_color_model->is_exists_code($code, $id))
+        if( ! empty($color))
         {
-          $sc = FALSE;
-          $this->error = "'{$code}' มีอยู่ในระบบแล้ว โปรดใช้รหัสอื่น";
-        }
+          $arr = array(
+            'code' => $ds->code,
+            'name' => $ds->name,
+            'group_id' => $ds->group_id,
+            'active' => $ds->active,
+            'member' => $this->product_color_model->count_members($ds->id)
+          );
 
-        if($sc === TRUE)
-        {
-          if( ! $this->product_color_model->update_by_id($id, $ds))
+          if($this->product_color_model->is_exists_code($ds->code, $ds->id))
           {
             $sc = FALSE;
-            $this->error = "ปรับปรุงข้อมูลไม่สำเร็จ";
+            set_error('exists', $ds->code);
+          }
+
+          if($sc === TRUE && $this->product_color_model->is_exists_name($ds->name, $ds->id))
+          {
+            $sc = FALSE;
+            set_error('exists', $ds->name);
+          }
+
+          if($sc === TRUE)
+          {
+            if( ! $this->product_color_model->update_by_id($ds->id, $arr))
+            {
+              $sc = FALSE;
+              set_error('update');
+            }
           }
         }
-
-        if($sc === TRUE)
+        else
         {
-          $this->export_to_sap($id, $code, $color->code);
+          $sc = FALSE;
+          set_error('not_found');
         }
       }
       else
       {
         $sc = FALSE;
-        $this->error = "Invalid color id";
+        set_error('permission');
+      }
+    }
+    else
+    {
+      $sc = FALSE;
+      set_error('required');
+    }    
+
+    $this->_response($sc);
+  }
+
+
+  public function delete()
+  {
+    $sc = TRUE;
+    $ds = json_decode(file_get_contents('php://input'));
+
+    if( ! empty($ds) && ! empty($ds->id))
+    {
+      if($this->pm->can_delete)
+      {
+        $color = $this->product_color_model->get_by_id($ds->id);
+
+        if( ! empty($color))
+        {
+          if($color->member > 0)
+          {
+            $sc = FALSE;
+            set_error('transections');
+          }
+          else
+          {
+            if( ! $this->product_color_model->delete_by_id($ds->id))
+            {
+              $sc = FALSE;
+              set_error('delete');
+            }
+          }
+        }
+        else
+        {
+          $sc = FALSE;
+          set_error('not_found');
+        }
+      }
+      else
+      {
+        $sc = FALSE;
+        set_error('permission');
       }
     }
     else
@@ -198,91 +291,77 @@ class Product_color extends PS_Controller
       $sc = FALSE;
       set_error('required');
     }
-
-    echo $sc === TRUE ? 'success' : $this->error;
+    
+    $this->_response($sc);
   }
 
-
-
-  public function delete($id)
+  
+  public function is_exists_code()
   {
-    if($id != '')
+    $ds = json_decode(file_get_contents('php://input'));
+
+    if( ! empty($ds) && isset($ds->code))
     {
-      if($this->product_color_model->delete_by_id($id))
+      if($this->product_color_model->is_exists_code($ds->code, $ds->id))
       {
-        set_message('ลบข้อมูลเรียบร้อยแล้ว');
+        echo 'exists';
       }
       else
       {
-        set_error('ลบข้อมูลไม่สำเร็จ');
+        echo 'not_exists';
       }
-    }
-    else
-    {
-      set_error('ไม่พบข้อมูล');
-    }
-
-    redirect($this->home);
+    }     
   }
 
 
-
-  public function export_to_sap($id, $code, $old_code = NULL)
+  public function is_exists_name()
   {
-    $rs = $this->product_color_model->get_by_id($id);
+    $ds = json_decode(file_get_contents('php://input'));
 
-    if( ! empty($rs))
+    if( ! empty($ds) && isset($ds->name))
     {
-      $ext = empty($old_code) ? FALSE : $this->product_color_model->is_sap_exists($old_code);
-
-      $arr = array(
-        'Code' => $rs->code,
-        'Name' => $rs->name,
-        'UpdateDate' => sap_date(now(), TRUE)
-      );
-
-      if($ext)
+      if($this->product_color_model->is_exists_name($ds->name, $ds->id))
       {
-        $arr['Flag'] = 'U';
-
-        if($code !== $old_code)
-        {
-          $arr['OLDCODE'] = $old_code;
-        }
+        echo 'exists';
       }
       else
       {
-        $arr['Flag'] = 'A';
+        echo 'not_exists';
       }
-
-      return $this->product_color_model->add_sap_color($arr);
     }
-
-    return FALSE;
   }
 
 
-
-  public function export_api()
+  public function is_exists_color_group()
   {
-    $code = $this->input->post('code');
+    $ds = json_decode(file_get_contents('php://input'));
 
-    if(!empty($code))
+    if( ! empty($ds) && isset($ds->name))
     {
-      $this->load->library('api');
-      $rs = json_decode($this->api->create_color($code), TRUE);
-      if(count($rs) === 1){
-        echo $rs['message'];
-      }else{
-        echo 'success';
+      if($this->product_color_model->is_exists_group_name($ds->name))
+      {
+        echo 'exists';
+      }
+      else
+      {
+        echo 'not_exists';
       }
     }
   }
+
 
   public function clear_filter()
 	{
-    $filter = array('color_code', 'color_name', 'color_group', 'color_status');
-    clear_filter($filter);
+    $filter = array(
+      'color_code',
+      'color_name',
+      'color_group',
+      'color_active',
+      'color_order_by',
+      'color_sort_by'
+    );
+
+    return clear_filter($filter);
 	}
 
 }//--- end class
