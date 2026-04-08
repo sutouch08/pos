@@ -442,23 +442,6 @@ const sort = (field) => {
   getSearch();
 };
 
-// function sort(field) {
-//   var el = $("#sort_" + field);
-//   var sort_by = "";
-
-//   sort_by = el.hasClass('sorting_desc') ? 'ASC' : 'DESC';
-//   sort_class = el.hasClass('sorting_desc') ? 'sorting_asc' : 'sorting_desc';
-
-//   $('.sorting').removeClass('sorting_desc');
-//   $('.sorting').removeClass('sorting_asc');
-
-//   el.addClass(sort_class);
-//   $('#sort_by').val(sort_by);
-//   $('#order_by').val(field);
-
-//   getSearch();
-// }
-
 
 const getDeviceId = () => {
   const deviceId = localStorage.getItem('DeviceId');
@@ -593,6 +576,18 @@ const hilightRow = (id) => {
     target.classList.add('active-row');
   }
 };
+
+
+async function postData(url, data) {
+  return fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(data)
+  });
+}
+
 
 
 async function validateRemote(url, data = {}) {

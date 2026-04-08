@@ -1,6 +1,8 @@
 <?php
 class Product_brand_model extends CI_Model
 {
+  private $tb = "product_brand";
+
   public function __construct()
   {
     parent::__construct();
@@ -11,189 +13,242 @@ class Product_brand_model extends CI_Model
   {
     if(!empty($ds))
     {
-      return  $this->db->insert('product_brand', $ds);
+      return  $this->db->insert($this->tb, $ds);
     }
 
     return FALSE;
   }
 
 
+  public function update($id, array $ds = array())
+  {
+    if(!empty($ds))
+    {
+      $this->db->where('id', $id);
+      return $this->db->update($this->tb, $ds);
+    }
 
-  public function update($code, array $ds = array())
+    return FALSE;
+  }
+
+
+  public function update_by_code($code, array $ds = array())
   {
     if(!empty($ds))
     {
       $this->db->where('code', $code);
-      return $this->db->update('product_brand', $ds);
+      return $this->db->update($this->tb, $ds);
     }
 
     return FALSE;
   }
 
 
-  public function delete($code)
+  public function update_by_id($id, array $ds = array())
   {
-    return $this->db->where('code', $code)->delete('product_brand');
+    if(!empty($ds))
+    {
+      $this->db->where('id', $id);
+      return $this->db->update($this->tb, $ds);
+    }
+
+    return FALSE;
   }
 
 
-  public function count_rows($code = '', $name = '')
+  public function delete($id)
   {
-    $this->db->select('code');
-
-    if($code != '')
-    {
-      $this->db->like('code', $code);
-    }
-
-    if($name != '')
-    {
-      $this->db->like('name', $name);
-    }
-
-    $rs = $this->db->get('product_brand');
-
-    return $rs->num_rows();
+    return $this->db->where('id', $id)->delete($this->tb);
   }
 
 
-
-
-  public function get($code)
+  public function get($id)
   {
-    $rs = $this->db->where('code', $code)->get('product_brand');
+    $rs = $this->db->where('id', $id)->get($this->tb);
     if($rs->num_rows() === 1)
     {
       return $rs->row();
-    }
-
-    return FALSE;
-  }
-
-
-
-  public function get_name($code)
-  {
-    if($code === NULL OR $code === '')
-    {
-      return $code;
-    }
-
-    $rs = $this->db->select('name')->where('code', $code)->get('product_brand');
-    if($rs->num_rows() === 1)
-    {
-      return $rs->row()->name;
     }
 
     return NULL;
   }
 
 
-
-
-  public function get_data($code = '', $name = '', $perpage = '', $offset = '')
+  public function get_by_code($code)
   {
-    if($code != '')
+    $rs = $this->db->where('code', $code)->get($this->tb);
+    if($rs->num_rows() === 1)
     {
-      $this->db->like('code', $code);
+      return $rs->row();
     }
 
-    if($name != '')
-    {
-      $this->db->like('name', $name);
-    }
-
-    if($perpage != '')
-    {
-      $offset = $offset === NULL ? 0 : $offset;
-      $this->db->limit($perpage, $offset);
-    }
-
-    $rs = $this->db->get('product_brand');
-
-    return $rs->result();
+    return NULL;
   }
 
 
-
-
-  public function is_exists($code, $old_code = '')
+  public function get_by_id($id)
   {
-    if($old_code != '')
+    $rs = $this->db->where('id', $id)->get($this->tb);
+    if($rs->num_rows() === 1)
     {
-      $this->db->where('code !=', $old_code);
+      return $rs->row();
     }
 
-    $rs = $this->db->where('code', $code)->get('product_brand');
+    return NULL;
+  }
+
+
+  public function get_code($id)
+  {
+    $rs = $this->db->select('code')->where('id', $id)->get($this->tb);
+    if($rs->num_rows() === 1)
+    {
+      return $rs->row()->code;
+    }
+
+    return NULL;  
+  }
+
+
+  public function get_id($code)
+  {
+    $rs = $this->db->select('id')->where('code', $code)->get($this->tb);
+    if($rs->num_rows() === 1)
+    {
+      return $rs->row()->id;
+    }
+
+    return NULL;  
+  }
+
+
+  public function get_name($id)
+  {
+    $rs = $this->db->select('name')->where('id', $id)->get($this->tb);
+    if($rs->num_rows() === 1)
+    {
+      return $rs->row()->name;
+    }
+
+    return NULL;  
+  }
+
+  public function get_name_by_code($code)
+  {
+    $rs = $this->db->select('name')->where('code', $code)->get($this->tb);
+    if($rs->num_rows() === 1)
+    {
+      return $rs->row()->name;
+    }
+
+    return NULL;  
+  }
+
+
+  public function is_exists_code($code, $id = NULL)
+  {
+    if($id !== NULL)
+    {
+      $this->db->where('id !=', $id);
+    }
+
+    return $this->db->where('code', $code)->count_all_results($this->tb) > 0 ? TRUE : FALSE;
+  }
+
+
+  public function is_exists_name($name, $id = NULL)
+  {
+    if($id !== NULL)
+    {
+      $this->db->where('id !=', $id);
+    }
+
+    return $this->db->where('name', $name)->count_all_results($this->tb) > 0 ? TRUE : FALSE;
+  }
+
+
+  public function count_rows(array $ds = array())
+  {
+    if( ! empty($ds['code']))
+    {
+      $this->db
+      ->group_start()
+      ->like('code', $ds['code'])
+      ->or_like('name', $ds['code'])
+      ->group_end();      
+    }
+
+    if( isset($ds['active']) && $ds['active'] != 'all')
+    {
+      $this->db->where('active', $ds['active']);
+    }
+
+    return $this->db->count_all_results($this->tb);
+  }
+
+
+  public function get_list(array $ds = array(), $perpage = 20, $offset = 0)
+  {
+    $order_by = empty($ds['order_by']) ? 'code' : $ds['order_by'];
+    $sort_by = empty($ds['sort_by']) ? 'ASC' : $ds['sort_by'];
+
+    if( ! empty($ds['code']))
+    {
+      $this->db
+      ->group_start()
+      ->like('code', $ds['code'])
+      ->or_like('name', $ds['code'])
+      ->group_end();      
+    }
+
+    if( isset($ds['active']) && $ds['active'] != 'all')
+    {
+      $this->db->where('active', $ds['active']);
+    }
+
+    $rs = $this->db
+    ->order_by($order_by, $sort_by)
+    ->limit($perpage, $offset)
+    ->get($this->tb);
 
     if($rs->num_rows() > 0)
     {
-      return TRUE;
+      return $rs->result();
     }
 
-    return FALSE;
+    return NULL;    
   }
 
 
 
-  public function is_exists_name($name, $old_name = '')
+  public function get_all($active = TRUE)
   {
-    if($old_name != '')
+    if($active === TRUE)
     {
-      $this->db->where('name !=', $old_name);
+      $this->db->where('active', 1);
     }
 
-    $rs = $this->db->where('name', $name)->get('product_brand');
+    $rs = $this->db->get($this->tb);
 
     if($rs->num_rows() > 0)
     {
-      return TRUE;
+      return $rs->result();
     }
 
-    return FALSE;
+    return NULL;
   }
 
 
-
-  public function count_members($code)
+  public function count_members($id)
   {
-    $this->db->select('active')->where('brand_code', $code);
-    $rs = $this->db->get('products');
-    return $rs->num_rows();
-  }
-
-  public function is_sap_exists($code)
-  {
-    $rs = $this->mc->select('Code')->where('Code', $code)->get('BRAND');
-    if($rs->num_rows() > 0)
-    {
-      return TRUE;
-    }
-
-    return FALSE;
+    return $this->db->where('brand_id', $id)->count_all_results('products');
   }
 
 
-  public function add_sap_brand(array $ds = array())
+  public function update_member($id)
   {
-    if(!empty($ds))
-    {
-      return $this->mc->insert('BRAND', $ds);
-    }
-
-    return FALSE;
-  }
-
-
-
-  public function update_sap_brand($code, array $ds = array())
-  {
-    if(!empty($ds))
-    {
-      return $this->mc->where('Code', $code)->update('BRAND', $ds);
-    }
-
-    return FALSE;
+    $count = $this->count_members($id);
+    return $this->db->where('id', $id)->update($this->tb, array('member' => $count));
   }
 }
 ?>

@@ -1,45 +1,229 @@
-function addNew(){
-  window.location.href = BASE_URL + 'masters/product_category/add_new';
+let click = 0;
+let valicode = false;
+let validname = false;
+
+const inputCode = document.getElementById('code');
+const inputName = document.getElementById('name');
+
+if (inputCode) {
+  inputCode.addEventListener('blur', validateCode);
 }
 
-
-
-function goBack(){
-  window.location.href = BASE_URL + 'masters/product_category';
+if (inputName) {
+  inputName.addEventListener('blur', validateName);
 }
 
-
-function getEdit(code){
-  window.location.href = BASE_URL + 'masters/product_category/edit/'+code;
+const addNew = () => {
+  window.location.href = `${HOME}add_new`;
 }
 
+const edit = (id) => {
+  window.location.href = `${HOME}edit/${id}`;
+}
 
-function clearFilter(){
-  var url = BASE_URL + 'masters/product_category/clear_filter';
-  var page = BASE_URL + 'masters/product_category';
-  $.get(url, function(rs){
-    window.location.href = page;
+async function validateCode() {
+  const id = document.getElementById('id') ? document.getElementById('id').value : null;
+  const inputCode = document.getElementById('code');
+  const codeError = document.getElementById('code-error');
+  const value = inputCode.value.trim();
+  if (!value) {
+    setError(inputCode, codeError, "Code is Required");
+    validCode = false;
+    return false;
+  }
+
+  //--- check duplicated
+  const url = `${HOME}is_exists_code`;
+  const res = await validateRemote(url, { code: value, id: id });
+  if (res === 'exists') {
+    setError(inputCode, codeError, 'Code already exists');
+    validCode = false;
+    return false;
+  }
+
+  clearError(inputCode, codeError);
+  validCode = true;
+  return true;
+}
+
+async function validateName() {
+  const id = document.getElementById('id') ? document.getElementById('id').value : null;
+  const inputName = document.getElementById('name');
+  const nameError = document.getElementById('name-error');
+  const value = inputName.value.trim();
+  if (!value) {
+    setError(inputName, nameError, "Name is Required");
+    validName = false;
+    return false;
+  }
+
+  //--- check duplicated
+  const url = `${HOME}is_exists_name`;
+  const res = await validateRemote(url, { name: value, id: id });
+  if (res === 'exists') {
+    setError(inputName, nameError, 'Name already exists');
+    validName = false;
+    return false;
+  }
+
+  clearError(inputName, nameError);
+  validName = true;
+  return true;
+}
+
+async function add() {
+  if(click !== 0) {
+    return false;
+  }
+
+  click = 1;
+  
+  const inputCode = document.getElementById('code');
+  const inputName = document.getElementById('name');
+  const codeError = document.getElementById('code-error');
+  const nameError = document.getElementById('name-error');
+  clearError(inputCode, codeError);
+  clearError(inputName, nameError);
+
+  if( ! await validateCode() | ! await validateName()) {
+    click = 0;
+    return false;
+  }
+
+  const url = `${HOME}add`;
+  const data = {
+    code: inputCode.value.trim(),
+    name: inputName.value.trim()
+  };
+
+  loadIn();
+
+  try {
+    const response = await postData(url, data);
+    const res = await response.text();
+
+    setTimeout(() => {
+      loadOut();
+      if (res === 'success') {
+        swal({
+          title: 'Success',
+          type: 'success',
+          timer: 1000
+        });
+
+        setTimeout(() => { addNew(); }, 1200);
+      }
+      else {
+        showError(res);
+      }
+    }, 500);
+
+    click = 0;
+  }
+  catch (error) {
+    click = 0;
+    showError(error.message);
+  }   
+}
+
+async function update() {
+  if (click !== 0) {
+    return false;
+  }
+
+  click = 1;
+
+  const id = document.getElementById('id').value;
+  const inputCode = document.getElementById('code');
+  const inputName = document.getElementById('name');
+  const codeError = document.getElementById('code-error');
+  const nameError = document.getElementById('name-error');
+  clearError(inputCode, codeError);
+  clearError(inputName, nameError);
+
+  if (!await validateCode() | !await validateName()) {
+    click = 0;
+    return false;
+  }
+
+  const url = `${HOME}update`;
+  const data = {
+    id: id,
+    code: inputCode.value.trim(),
+    name: inputName.value.trim()
+  };
+
+  loadIn();
+
+  try {
+    const response = await postData(url, data);
+    const res = await response.text();
+
+    setTimeout(() => {
+      loadOut();
+      if (res === 'success') {
+        swal({
+          title: 'Success',
+          type: 'success',
+          timer: 1000
+        });
+
+        setTimeout(() => { addNew(); }, 1200);
+      }
+      else {
+        showError(res);
+      }
+    }, 500);
+
+    click = 0;
+  }
+  catch (error) {
+    click = 0;
+    showError(error.message);
+  }
+}
+
+function confirmDelete(id, name) {
+  swal({
+    title: `Are you sure ?`,
+    text: `Do you want to delete "${name}" ?`,
+    type: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#DD6B55',
+    confirmButtonText: 'Yes, delete it!',
+    cancelButtonText: 'No, cancel',
+    closeOnConfirm: true
+  }, function () {
+    deleteItem(id);
   });
 }
 
+async function deleteItem(id) {
+  const url = `${HOME}delete`;
+  const data = { id: id };
+  loadIn();
 
-function getDelete(code, name){
-  swal({
-    title:'Are sure ?',
-    text:'ต้องการลบ ' + name + ' หรือไม่ ?',
-    type:'warning',
-    showCancelButton: true,
-		confirmButtonColor: '#FA5858',
-		confirmButtonText: 'ใช่, ฉันต้องการลบ',
-		cancelButtonText: 'ยกเลิก',
-		closeOnConfirm: false
-  },function(){
-    window.location.href = BASE_URL + 'masters/product_category/delete/' + code;
-  })
-}
+  try {
+    const response = await postData(url, data);
+    const res = await response.text();
 
+    setTimeout(() => {
+      loadOut();
+      if (res === 'success') {
+        swal({
+          title: 'Success',
+          type: 'success',
+          timer: 1000
+        });
 
-
-function getSearch(){
-  $('#searchForm').submit();
+        setTimeout(() => { addNew(); }, 1200);
+      }
+      else {
+        showError(res);
+      }
+    }, 500);
+  }
+  catch (error) {
+    showError(error.message);
+  }
 }

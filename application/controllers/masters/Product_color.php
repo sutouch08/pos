@@ -45,15 +45,10 @@ class Product_color extends PS_Controller
   }
 
 
-  public function add_new()
-  {
-    $this->load->view('masters/product_color/product_color_add');
-  }
-
-
   public function add()
   {
     $sc = TRUE;
+    $res = NULL;
     $ds = json_decode(file_get_contents('php://input'));
 
     if($this->pm->can_add)
@@ -81,10 +76,23 @@ class Product_color extends PS_Controller
             'active' => $ds->active
           );
 
-          if( ! $this->product_color_model->add($arr))
-          {
+          $id = $this->product_color_model->add($arr);
+          if( ! $id)
+          {            
             $sc = FALSE;
             set_error('insert');
+          }
+
+          if($sc === TRUE)
+          {
+            $res = $this->product_color_model->get($id);
+
+            if ( ! empty($res))
+            {
+              $res->group_name = $this->product_color_model->get_group_name($res->group_id);
+              $res->member = $this->product_color_model->count_members($id);
+              $res->is_active = is_active($res->active);
+            }
           }
         }
       }
@@ -100,7 +108,12 @@ class Product_color extends PS_Controller
       set_error('permission');
     }
 
-    $this->_response($sc);
+    $arr = array(
+      'status' => $sc === TRUE ? 'success' : 'error',
+      'message' => $sc === TRUE ? 'success' : $this->error,
+      'data' => $res
+    );
+    echo json_encode($arr);    
   }
 
 
@@ -161,31 +174,46 @@ class Product_color extends PS_Controller
   }
 
 
-  public function edit($id)
+  public function get_data()
   {
-    if($this->pm->can_edit)
-    {
-      $ds = $this->product_color_model->get_by_id($id);
+    $sc = TRUE;
+    $ds = json_decode(file_get_contents('php://input'));
+    $data = NULL;
 
-      if( ! empty($ds))
+    if( ! empty($ds) && ! empty($ds->id))
+    {
+      $data = $this->product_color_model->get($ds->id);
+      
+      if( ! empty($data))
       {
-        $this->load->view('masters/product_color/product_color_edit', $ds);
+        $data->isChecked = $data->active == 1 ? 'checked' : '';        
       }
-      else
+      else 
       {
-        $this->error_page();
+        $sc = FALSE;
+        set_error('not_found');
       }
     }
-    else
+    else 
     {
-      $this->deny_page();     
-    }    
-  }
+      $sc = FALSE;
+      set_error('required');
+    }
 
+    $arr = array(
+      'status' => $sc === TRUE ? 'success' : 'error',
+      'message' => $sc === TRUE ? 'success' : $this->error,
+      'data' => $data
+    );
+
+    echo json_encode($arr);
+  }
+  
 
   public function update()
   {
     $sc = TRUE;
+    $res = NULL;
     $ds = json_decode(file_get_contents('php://input'));
 
     if( ! empty($ds) && ! empty($ds->id) && ! empty($ds->code) && ! empty($ds->name))
@@ -218,10 +246,17 @@ class Product_color extends PS_Controller
 
           if($sc === TRUE)
           {
-            if( ! $this->product_color_model->update_by_id($ds->id, $arr))
+            if( ! $this->product_color_model->update($ds->id, $arr))
             {
               $sc = FALSE;
               set_error('update');
+            }
+
+            if($sc === TRUE)
+            {
+              $res = $this->product_color_model->get($ds->id);
+              $res->group_name = $this->product_color_model->get_group_name($res->group_id);
+              $res->is_active = is_active($res->active);
             }
           }
         }
@@ -243,7 +278,13 @@ class Product_color extends PS_Controller
       set_error('required');
     }    
 
-    $this->_response($sc);
+    $arr = array(
+      'status' => $sc === TRUE ? 'success' : 'error',
+      'message' => $sc === TRUE ? 'success' : $this->error,
+      'data' => $res
+    );
+
+    echo json_encode($arr);
   }
 
 
@@ -256,29 +297,22 @@ class Product_color extends PS_Controller
     {
       if($this->pm->can_delete)
       {
-        $color = $this->product_color_model->get_by_id($ds->id);
+        $member = $this->product_color_model->count_members($ds->id);
 
-        if( ! empty($color))
-        {
-          if($color->member > 0)
-          {
-            $sc = FALSE;
-            set_error('transections');
-          }
-          else
-          {
-            if( ! $this->product_color_model->delete_by_id($ds->id))
-            {
-              $sc = FALSE;
-              set_error('delete');
-            }
-          }
-        }
-        else
+        if($member > 0)
         {
           $sc = FALSE;
-          set_error('not_found');
+          set_error('transections');
         }
+
+        if($sc === TRUE)
+        {
+          if( ! $this->product_color_model->delete_by_id($ds->id))
+          {
+            $sc = FALSE;
+            set_error('delete');
+          }
+        }        
       }
       else
       {

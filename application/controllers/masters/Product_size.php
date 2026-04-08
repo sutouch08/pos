@@ -24,7 +24,7 @@ class Product_size extends PS_Controller
       'code' => get_filter('code', 'size_code', ''),
       'active' => get_filter('active', 'size_active', 'all'),
       'group_id' => get_filter('group_id', 'size_group_id', 'all'),
-      'order_by' => get_filter('order_by', 'order_by', 'position'),
+      'order_by' => get_filter('order_by', 'order_by', 'code'),
       'sort_by' => get_filter('sort_by', 'sort_by', 'ASC')
     ];
 
@@ -47,22 +47,10 @@ class Product_size extends PS_Controller
   }
 
 
-  public function add_new()
-  {
-    if ($this->pm->can_add)
-    {
-      $this->load->view('masters/product_size/product_size_add');
-    }
-    else
-    {
-      $this->deny_page();
-    }
-  }
-
-
   public function add()
   {
     $sc = TRUE;
+    $res = NULL;
     $ds = json_decode(file_get_contents('php://input'));
 
     if (! empty($ds) && ! empty($ds->code) && ! empty($ds->name))
@@ -96,6 +84,13 @@ class Product_size extends PS_Controller
             $sc = FALSE;
             set_error('insert');
           }
+
+          if ($sc === TRUE)
+          {
+            $res = $this->product_size_model->get($this->db->insert_id());
+            $res->is_active = is_active($res->active);
+            $res->group_name = $this->product_size_model->group_name($res->group_id);
+          }
         }
       }
       else
@@ -110,7 +105,13 @@ class Product_size extends PS_Controller
       set_error('required');
     }
 
-    $this->_response($sc);
+    $arr = array(
+      'status' => $sc === TRUE ? 'success' : 'error',
+      'message' => $sc === TRUE ? 'success' : $this->error,
+      'data' => $res
+    );
+
+    echo json_encode($arr);
   }
 
 
@@ -171,24 +172,10 @@ class Product_size extends PS_Controller
   }
 
 
-  public function edit($id)
-  {
-    if ($this->pm->can_edit)
-    {
-      $ds = $this->product_size_model->get($id);
-
-      $this->load->view('masters/product_size/product_size_edit', $ds);
-    }
-    else
-    {
-      $this->deny_page();
-    }
-  }
-
-
   public function update()
   {
     $sc = TRUE;
+    $res = NULL;
     $ds = json_decode(file_get_contents('php://input'));
     if (! empty($ds) && ! empty($ds->id) && ! empty($ds->code) && ! empty($ds->name))
     {
@@ -208,7 +195,7 @@ class Product_size extends PS_Controller
 
         if ($sc === TRUE)
         {
-          $arr = array(
+          $res = array(
             'code' => $ds->code,
             'name' => $ds->name,
             'position' => $ds->position > 0 ? $ds->position : 0,
@@ -217,10 +204,17 @@ class Product_size extends PS_Controller
             'member' => $this->product_size_model->count_members($ds->id)
           );
 
-          if (! $this->product_size_model->update_by_id($ds->id, $arr))
+          if (! $this->product_size_model->update_by_id($ds->id, $res))
           {
             $sc = FALSE;
             set_error('update');
+          }
+          
+          if($sc === TRUE)
+          {
+            $res['id'] = $ds->id;
+            $res['is_active'] = is_active($res['active']);
+            $res['group_name'] = $this->product_size_model->group_name($res['group_id']);
           }
         }
       }
@@ -236,7 +230,13 @@ class Product_size extends PS_Controller
       set_error('required');
     }
 
-    $this->_response($sc);
+    $arr = array(
+      'status' => $sc === TRUE ? 'success' : 'error',
+      'message' => $sc === TRUE ? 'Saved' : $this->error,
+      'data' => $res
+    );
+
+    echo json_encode($arr);
   }
 
 
@@ -249,30 +249,22 @@ class Product_size extends PS_Controller
     {
       if ($this->pm->can_delete)
       {
-        $size = $this->product_size_model->get($ds->id);
+        $member = $this->product_size_model->count_members($ds->id);
 
-        if (! empty($size))
-        {
-          if ($size->member > 0)
-          {
-            $sc = FALSE;
-            set_error('transections');
-          }
-
-          if ($sc === TRUE)
-          {
-            if (! $this->product_size_model->delete_by_id($ds->id))
-            {
-              $sc = FALSE;
-              set_error('delete');
-            }
-          }
-        }
-        else
+        if($member > 0)
         {
           $sc = FALSE;
-          set_error('not_found');
+          set_error('transections');
         }
+
+        if($sc === TRUE)
+        {
+          if (! $this->product_size_model->delete_by_id($ds->id))
+          {
+            $sc = FALSE;
+            set_error('delete');
+          }
+        }        
       }
       else
       {
@@ -340,6 +332,19 @@ class Product_size extends PS_Controller
       {
         echo 'not_exists';
       }
+    }
+  }
+
+
+  public function get_edit_data()
+  {
+    $ds = json_decode(file_get_contents('php://input'));
+
+    if (! empty($ds) && ! empty($ds->id))
+    {
+      $data = $this->product_size_model->get($ds->id);
+      $data->isChecked = $data->active == 1 ? 'checked' : '';
+      echo json_encode($data);
     }
   }
 

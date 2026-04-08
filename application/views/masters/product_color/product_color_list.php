@@ -1,13 +1,8 @@
 <?php $this->load->view('include/header'); ?>
 <div class="row">
-	<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 padding-5 padding-top-5">
+	<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 padding-5">
 		<h3 class="title"><?php echo $this->title; ?></h3>
-	</div>
-	<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 padding-5 text-right">
-		<?php if ($this->pm->can_add) : ?>
-			<button type="button" class="btn btn-white btn-success top-btn" onclick="addNew()"><i class="fa fa-plus"></i> Add New</button>
-		<?php endif; ?>
-	</div>
+	</div>	
 </div><!-- End Row -->
 <hr />
 <form id="search-form" method="post" action="<?php echo current_url(); ?>">
@@ -54,6 +49,11 @@
 </form>
 <hr class="margin-top-15">
 <?php echo $this->pagination->create_links(); ?>
+
+<?php if ($this->pm->can_add) : ?>
+	<?php $this->load->view('masters/product_color/product_color_control'); ?>
+<?php endif; ?>
+
 <?php $sort_code = get_sort('code', $order_by, $sort_by); ?>
 <?php $sort_name = get_sort('name', $order_by, $sort_by); ?>
 <?php $sort_group = get_sort('group_name', $order_by, $sort_by); ?>
@@ -67,14 +67,14 @@
 					<th class="fix-width-80 middle"></th>
 					<th class="fix-width-40 middle text-center">#</th>
 					<th class="fix-width-50 middle text-center">สถานะ</th>
-					<th class="fix-width-100 middle sorting <?php echo $sort_code; ?>" id="sort-code" onclick="sort('code')">รหัส</th>
-					<th class="fix-width-200 middle sorting <?php echo $sort_name; ?>" id="sort-name" onclick="sort('name')">ชื่อ</th>
-					<th class="fix-width-120 middle sorting <?php echo $sort_group; ?>" id="sort-group_name" onclick="sort('group_name')">กลุ่ม</th>
-					<th class="fix-width-100 middle sorting <?php echo $sort_member; ?>" id="sort-member" onclick="sort('member')">สินค้า</th>
+					<th class="fix-width-150 middle sorting <?php echo $sort_code; ?>" id="sort-code" onclick="sort('code')">รหัส</th>
+					<th class="fix-width-250 middle sorting <?php echo $sort_name; ?>" id="sort-name" onclick="sort('name')">ชื่อ</th>
+					<th class="fix-width-150 middle sorting <?php echo $sort_group; ?>" id="sort-group_name" onclick="sort('group_name')">กลุ่ม</th>
+					<th class="fix-width-100 middle text-center sorting <?php echo $sort_member; ?>" id="sort-member" onclick="sort('member')">สินค้า</th>
 					<th class="min-width-100 middle text-right"></th>
 				</tr>
 			</thead>
-			<tbody>
+			<tbody id="color-table">
 				<?php if (!empty($data)) : ?>
 					<?php $no = $this->uri->segment(4) + 1; ?>
 					<?php foreach ($data as $rs) : ?>
@@ -96,8 +96,8 @@
 							<td class="middle"><?php echo $rs->code; ?></td>
 							<td class="middle"><?php echo $rs->name; ?></td>
 							<td class="middle"><?php echo $rs->group_name; ?></td>
-							<td class="middle"><?php echo number($rs->member); ?></td>
-							<td></td>						
+							<td class="middle text-center"><?php echo number($rs->member); ?></td>
+							<td></td>
 						</tr>
 						<?php $no++; ?>
 					<?php endforeach; ?>
@@ -107,11 +107,59 @@
 	</div>
 </div>
 
+<script id="edit-row-template" type="text/x-handlebarsTemplate">
+	<tr id="edit-row-{{id}}">
+		<td class="middle text-center">
+			<button type="button" class="btn btn-minier btn-success" onclick="update({{id}})">
+				<i class="fa fa-save"></i> Save
+			</button>
+		</td>
+		<td colspan="2" class="middle text-center">
+			<label style="padding-top: 5px;">
+				<input class="ace ace-switch ace-switch-6" id="active-{{id}}" type="checkbox" value="1" {{isChecked}} data-id="{{id}}" />
+				<span class="lbl"></span>
+			</label>
+		</td>
+		<td class="middle">
+			<input type="text" class="form-control input-sm e" id="code-{{id}}" maxlength="20" value="{{code}}" data-id="{{id}}" data-code="{{code}}" />
+		</td>
+		<td class="middle">
+			<input type="text" class="form-control input-sm e" id="name-{{id}}" maxlength="100" value="{{name}}" data-id="{{id}}" data-name="{{name}}" />
+		</td>
+		<td class="middle">
+			<select class="form-control input-sm" id="group-id-{{id}}" data-id="{{id}}" data-group-id="{{group_id}}">
+				<option value="">ไม่ระบุ</option>
+				<?php echo select_color_group(); ?>
+			</select>
+		</td>		
+		<td colspan="2" class="middle red padding-left-10" id="error-{{id}}"></td>
+	</tr>		
+</script>
+
+<script id="row-template" type="text/x-handlebarsTemplate">
+	<td class="middle">
+		<?php if ($this->pm->can_edit) : ?>
+			<button type="button" class="btn btn-minier btn-warning" onclick="edit({{id}})">
+				<i class="fa fa-pencil"></i>
+			</button>
+		<?php endif; ?>
+		<?php if ($this->pm->can_delete) : ?>
+			<button type="button" class="btn btn-minier btn-danger" onclick="confirmDelete('{{id}}', '{{name}}')">
+				<i class="fa fa-trash"></i>
+			</button>
+		<?php endif; ?>
+	</td>
+	<td class="middle text-center no"></td>
+	<td class="middle text-center">{{{is_active}}}</td>
+	<td class="middle">{{code}}</td>
+	<td class="middle">{{name}}</td>
+	<td class="middle">{{group_name}}</td>	
+	<td class="middle text-center">{{{member}}}</td>
+	<td></td>
+</script>
+
 <script>
-	$('#group-id').select2({
-		placeholder: 'เลือกกลุ่มสี',
-		allowClear: true
-	});
+	$('#group-id').select2();
 </script>
 <script src="<?php echo base_url(); ?>scripts/masters/product_color.js?v=<?php echo date('Ymd'); ?>"></script>
 

@@ -261,9 +261,8 @@ async function addUnit() {
           let output = $('#unit-table');
 
           renderAppend(source, ds.data, output);
-
-          $('#new-alt-qty').val('');
-          $('#new-alt-unit').val('');
+          
+          $('#new-alt-unit').val('').change();
           $('#new-base-qty').val('');
 
           reIndex();  
@@ -381,3 +380,14 @@ async function deleteUnit(id) {
   }
 }
 
+
+$('#new-alt-unit').change(function() {
+  $('#new-base-qty').focus();
+});
+
+
+$('#new-base-qty').keyup(function(e) {
+  if (e.key === 'Enter' || e.keyCode === 13) {
+    addUnit();
+  }
+});

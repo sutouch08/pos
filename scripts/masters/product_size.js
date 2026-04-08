@@ -1,32 +1,12 @@
 let click = 0;
-let validCode = false;
-let validName = false;
 
 const inputCode = document.getElementById('code');
 const inputName = document.getElementById('name');
 const inputGroupName = document.getElementById('group-name');
+const regexCode = /[^a-zA-Z0-9\/.\-_@]+/gi; // อนุญาตเฉพาะ a-z, A-Z, /, ., -, _, @
 
 if (inputCode) {
-  inputCode.addEventListener('blur', validateCode);
-}
-
-
-if (inputName) {
-  inputName.addEventListener('blur', validateName);
-}
-
-if (inputGroupName) {
-  inputGroupName.addEventListener('blur', validateGroupName);
-}
-
-
-const addNew = () => {
-  window.location.href = `${HOME}add_new`;
-}
-
-
-const edit = (id) => {
-  window.location.href = `${HOME}edit/${id}`;
+  inputCode.addEventListener('input', () => validInput(inputCode, regexCode));
 }
 
 
@@ -34,7 +14,7 @@ async function validateCode() {
   const inputCode = document.getElementById('code');
   const codeError = document.getElementById('code-error');
   const value = inputCode.value.trim();
-  const id = document.getElementById('id') ? document.getElementById('id').value : null;
+  const id = null;
 
   if (!value) {
     setError(inputCode, codeError, "Code is Required");
@@ -61,7 +41,7 @@ async function validateName() {
   const inputName = document.getElementById('name');
   const nameError = document.getElementById('name-error');
   const value = inputName.value.trim();
-  const id = document.getElementById('id') ? document.getElementById('id').value : null;
+  const id = null;
 
   if (!value) {
     setError(inputName, nameError, "Name is Required");
@@ -119,8 +99,8 @@ async function add() {
   const inputName = document.getElementById('name');
   const nameError = document.getElementById('name-error');
   const position = parseDefaultInt(document.getElementById('position').value.trim(), 0);
-  const active = document.querySelector('input[name="active"]:checked').value;
-  const groupId = document.getElementById('group-id').value;
+  const active = document.getElementById('status').checked ? 1 : 0;
+  const groupId = document.getElementById('size-group-id').value;
   clearError(inputCode, codeError);
   clearError(inputName, nameError);
 
@@ -152,19 +132,29 @@ async function add() {
     const res = await response.text();
     setTimeout(() => {
       loadOut();
-      if (res === 'success') {
-        swal({
-          title: 'Success',
-          type: 'success',
-          timer: 1000
-        });
+      if (isJson(res)) {
+        const ds = JSON.parse(res);
+        if (ds.status === 'success') {
+          swal({
+            title: 'Success',
+            type: 'success',
+            timer: 1000
+          });
 
-        setTimeout(() => { addNew() }, 1200);
+          const template = $('#new-row-template').html();
+          const output = $('#size-table');
+          renderPrepend(template, ds.data, output);
+          reIndex();
+          clearInput();
+        }
+        else {
+          showError(ds.message)
+        }
       }
       else {
-        showError(res)
+        showError(res);
       }
-    }, 500);
+    }, 300);
 
     click = 0;
   }
@@ -175,84 +165,25 @@ async function add() {
 }
 
 
-async function update() {
-  if (click !== 0) {
-    return false;
-  }
-
-  click = 1;
-
-  const inputCode = document.getElementById('code');
-  const codeError = document.getElementById('code-error');
-  const inputName = document.getElementById('name');
-  const nameError = document.getElementById('name-error');
-  const position = parseDefaultInt(document.getElementById('position').value.trim(), 0);
-  const active = document.querySelector('input[name="active"]:checked').value;
-  const groupId = document.getElementById('group-id').value;
-  clearError(inputCode, codeError);
-  clearError(inputName, nameError);
-
-  if (! await validateCode() || ! await validateName()) {
-    click = 0;
-    return false;
-  }
-
-  const url = `${HOME}update`;
-  const id = document.getElementById('id').value;
-  const data = {
-    id: id,
-    code: inputCode.value.trim(),
-    name: inputName.value.trim(),
-    position: position,
-    active: active,
-    group_id: groupId
-  };
-
-  loadIn();
-
-  try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(data)
-    });
-
-    const res = await response.text();
-    setTimeout(() => {
-      loadOut();
-      if (res === 'success') {
-        swal({
-          title: 'Success',
-          type: 'success',
-          timer: 1000
-        });
-
-        setTimeout(() => { edit(id) }, 1200);
-      }
-      else {
-        showError(res)
-      }
-    }, 500);
-
-    click = 0;
-  }
-  catch (error) {
-    click = 0;
-    showError(error);
-  }
+function clearInput() {
+  document.getElementById('code').value = '';
+  document.getElementById('name').value = '';
+  document.getElementById('position').value = '';
+  document.getElementById('status').checked = true;
+  $('#size-group-id').val('').trigger('change');
+  document.getElementById('code').focus();
 }
 
 
 function openSizeGroupModal() {
-  $('#group-name').val('');
+  $('#group-name').val('').clearError();
   $('#group-name-error').text('');
   $('#size-group-modal').modal('show');
   $('#size-group-modal').on('shown.bs.modal', function () {
     $('#group-name').focus();
   });
 }
+
 
 async function addSizeGroup() {
   const groupNameInput = document.getElementById('group-name');
@@ -282,7 +213,7 @@ async function addSizeGroup() {
     setTimeout(() => {
       if (res.status === 'success') {
         const newOption = new Option(res.group.name, res.group.id, true, true);
-        $('#group-id').append(newOption).trigger('change');
+        $('#size-group-id').append(newOption).trigger('change');
         $('#size-group-modal').modal('hide');
       }
     }, 500);
@@ -308,7 +239,8 @@ function confirmDelete(id, name) {
     deleteSize(id);
   });
 }
-   
+
+
 async function deleteSize(id) {
   const url = `${HOME}delete`;
   const data = { id: id };
@@ -346,3 +278,128 @@ async function deleteSize(id) {
     showError(error);
   }
 }
+
+
+async function edit(id) {
+  const url = `${HOME}get_edit_data`;
+  const data = { id: id };
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(data)
+  });
+
+  const res = await response.json();
+
+  let source = $('#inline-edit-template').html();
+  let output = $(`#row-${id}`);
+
+  renderAfter(source, res, output);
+  output.addClass('hide');
+
+  $(`#group-id-${id}`).val(res.group_id).trigger('change');
+}
+
+
+async function update(id) {
+  clearErrorByClass('e');
+  const codeInput = document.getElementById(`code-${id}`);
+  const nameInput = document.getElementById(`name-${id}`);
+  const groupIdInput = document.getElementById(`group-id-${id}`);
+  const positionInput = document.getElementById(`position-${id}`);
+  const statusInput = document.getElementById(`active-${id}`);
+  const active = statusInput.checked ? 1 : 0;
+
+  if (! await validateInlineCode(id) || ! await validateInlineName(id)) {
+    return false;
+  }
+
+  const url = `${HOME}update`;
+  const data = {
+    id: id,
+    code: codeInput.value.trim(),
+    name: nameInput.value.trim(),
+    group_id: groupIdInput.value,
+    position: parseDefaultInt(positionInput.value.trim(), 0),
+    active: active
+  };
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    });
+
+    const res = await response.json();
+
+    if (res.status === 'success') {
+      let source = $(`#row-template`).html();
+      let output = $(`#row-${id}`);
+      render(source, res.data, output);
+
+      $(`#row-${id}`).removeClass('hide');
+      $(`#edit-row-${id}`).remove();
+      reIndex();
+    }
+    else {
+      showError(res.message);
+    }
+  }
+  catch (error) {
+    showError(error);
+  }
+
+}
+
+
+async function validateInlineCode(id) {
+  const codeInput = document.getElementById(`code-${id}`);
+  const errorLabel = document.getElementById(`error-${id}`);
+  const code = codeInput.value.trim();
+  if (!code) {
+    codeInput.classList.add('has-error');
+    errorLabel.textContent = 'Code is required';
+    return false;
+  }
+
+  const url = `${HOME}is_exists_code`;
+  const result = await validateRemote(url, { code: code, id: id });
+
+  if (result === 'exists') {
+    codeInput.classList.add('has-error');
+    errorLabel.textContent = 'Code already exists';
+    return false;
+  }
+  codeInput.classList.remove('has-error');
+  errorLabel.textContent = '';
+  return true;
+}
+
+
+async function validateInlineName(id) {
+  const nameInput = document.getElementById(`name-${id}`);
+  const errorLabel = document.getElementById(`error-${id}`);
+  const name = nameInput.value.trim();
+  if (!name) {
+    nameInput.classList.add('has-error');
+    errorLabel.textContent = 'Name is required';
+    return false;
+  }
+
+  const url = `${HOME}is_exists_name`;
+  const result = await validateRemote(url, { name: name, id: id });
+  if (result === 'exists') {
+    nameInput.classList.add('has-error');
+    errorLabel.textContent = 'Name already exists';
+    return false;
+  }
+  nameInput.classList.remove('has-error');
+  errorLabel.textContent = '';
+  return true;
+}
+

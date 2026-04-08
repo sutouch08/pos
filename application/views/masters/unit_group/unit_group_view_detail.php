@@ -39,15 +39,15 @@
   </div>    
   <div class="form-group">
     <label class="col-lg-3 col-md-3 col-sm-3 col-xs-12 control-label no-padding-right">หน่วยนับในกลุ่ม</label>
-    <div class="col-lg-6 col-md-7 col-sm-8 col-xs-12 table-responsive">
-      <table class="table table-bordered tableFixHead">
+    <div class="col-lg-9 col-md-9 col-sm-9 col-xs-12 table-responsive">
+      <table class="tableFixHead table-bordered table-striped border-1" style="min-width:350px;">
         <thead>
           <tr>
             <th class="fix-width-40 text-center">#</th>
-            <th class="fix-width-50 text-center">Alt. Qty</th>
-            <th class="fix-width-100 text-center">Alt. Uom</th>
+            <th class="fix-width-60 text-center">Alt. Qty</th>
+            <th class="min-width-100 text-center">Alt. Uom</th>
             <th class="fix-width-20 text-center">=</th>
-            <th class="fix-width-50 text-center">Base Qty</th>
+            <th class="fix-width-60 text-center">Base Qty</th>
             <th class="fix-width-100 text-center">Base Uom</th>            
           </tr>
         </thead>

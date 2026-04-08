@@ -1,36 +1,19 @@
 let click = 0;
-let validCode = false;
-let validName = false;
 const inputCode = document.getElementById('code');
-const inputName = document.getElementById('name');
+const regexCode = /[^a-zA-Z0-9\/.\-_@]+/gi; // อนุญาตเฉพาะ a-z, A-Z, /, ., -, _, @
 
 if (inputCode) {
-  inputCode.addEventListener('blur', validateCode);
-}
-
-if (inputName) {
-  inputName.addEventListener('blur', validateName);
+  inputCode.addEventListener('input', () => validInput(inputCode, regexCode));
 }
 
 
-const addNew = () => {
-  window.location.href = `${HOME}add_new`;
-}
-
-const edit = (id) => {
-  window.location.href = `${HOME}edit/${id}`;
-}
-
-
-async function validateCode() {
-  const id = document.getElementById('id') ? document.getElementById('id').value : null;
-  const inputCode = document.getElementById('code');
-  const codeError = document.getElementById('code-error');
+async function validateCode(id = null) {  
+  const inputCode = id === null ? document.getElementById('code') : document.getElementById(`code-${id}`);
+  const codeError = id === null ? document.getElementById('code-error') : document.getElementById(`error-${id}`);
   const value = inputCode.value.trim();
 
   if (!value) {
-    setError(inputCode, codeError, "Code is Required");
-    validCode = false;
+    setError(inputCode, codeError, "Code is Required");    
     return false;
   }
 
@@ -39,26 +22,22 @@ async function validateCode() {
   const res = await validateRemote(url, { code: value, id: id });
 
   if (res === 'exists') {
-    setError(inputCode, codeError, 'Code already exists');
-    validCode = false;
+    setError(inputCode, codeError, 'Code already exists');    
     return false;
   }
 
-  clearError(inputCode, codeError);
-  validCode = true;
+  clearError(inputCode, codeError);  
   return true;
 }
 
 
-async function validateName() {
-  const id = document.getElementById('id') ? document.getElementById('id').value : null;
-  const inputName = document.getElementById('name');
-  const nameError = document.getElementById('name-error');
+async function validateName(id = null) {  
+  const inputName = id === null ? document.getElementById('name') : document.getElementById(`name-${id}`);
+  const nameError = id === null ? document.getElementById('name-error') : document.getElementById(`error-${id}`);
   const value = inputName.value.trim();
 
   if (!value) {
-    setError(inputName, nameError, "Name is Required");
-    validName = false;
+    setError(inputName, nameError, "Name is Required");    
     return false;
   }
 
@@ -67,13 +46,11 @@ async function validateName() {
   const res = await validateRemote(url, { name: value, id: id });
 
   if (res === 'exists') {
-    setError(inputName, nameError, 'Name already exists');
-    validName = false;
+    setError(inputName, nameError, 'Name already exists');    
     return false;
   }
 
-  clearError(inputName, nameError);
-  validName = true;
+  clearError(inputName, nameError);  
   return true;
 }
 
@@ -107,14 +84,10 @@ async function add() {
   click = 1;
 
   const inputCode = document.getElementById('code');
-  const codeError = document.getElementById('code-error');
-  const inputName = document.getElementById('name');
-  const nameError = document.getElementById('name-error');
-  const groupId = document.getElementById('group-id').value;
-  const active = document.querySelector('input[name="active"]:checked').value;
-
-  clearError(inputCode, codeError);
-  clearError(inputName, nameError);
+  const inputName = document.getElementById('name');  
+  const groupId = document.getElementById('color-group-id').value;
+  const status = document.getElementById('status');
+  const active = status.checked ? 1 : 0;
 
   if (!await validateCode() || !await validateName()) {
     click = 0;
@@ -128,9 +101,7 @@ async function add() {
     group_id: groupId,
     active: active
   };
-
-  loadIn();
-
+  
   try {
     const response = await fetch(url, {
       method: 'POST',
@@ -140,59 +111,88 @@ async function add() {
 
     const res = await response.text();
 
-    setTimeout(() => {
-      loadOut();
-      if (res === 'success') {
-        swal({
-          title: 'Success',
-          type: 'success',
-          timer: 1000
-        });
-
-        setTimeout(() => { addNew() }, 1200);
+    if (isJson(res)) {
+      let ds = JSON.parse(res);
+      if (ds.status === 'success') {
+        const template = $('#new-row-template').html();
+        const output = $('#color-table');
+        renderPrepend(template, ds.data, output);
+        reIndex();
+        clearFields();
       }
       else {
-        showError(res);
+        showError(ds.message);
       }
-    }, 500);
-
+    }
+    else {
+      showError(res);
+    }
     click = 0;
   }
   catch (error) {
-    showError(error);
+    showError(error.message);
     click = 0;
   }
 }
 
 
-async function update() {
-  if (click !== 0) {
-    return false;
+async function edit(id) {
+  const url = `${HOME}get_data`;
+  const data = { id: id };
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+
+    const res = await response.text();
+
+    if (isJson(res)) {
+      let ds = JSON.parse(res);
+      if (ds.status === 'success') {
+        const template = $('#edit-row-template').html();
+        const output = $(`#row-${id}`);
+        renderAfter(template, ds.data, output);
+        output.addClass('hide');
+        $(`#group-id-${id}`).val(ds.data.group_id).select2();
+        setTimeout(() => { $(`#code-${id}`).focus();}, 100);
+      }
+      else {
+        showError(ds.message);
+      }
+    }
+    else {
+      showError(res);
+    }
   }
-  click = 1;
-  const id = document.getElementById('id').value;
-  const inputCode = document.getElementById('code');
-  const codeError = document.getElementById('code-error');
-  const inputName = document.getElementById('name');
-  const nameError = document.getElementById('name-error');
-  const groupId = document.getElementById('group-id').value;
-  const active = document.querySelector('input[name="active"]:checked').value;
-  clearError(inputCode, codeError);
-  clearError(inputName, nameError);
-  if (!await validateCode() || !await validateName()) {
+  catch (error) {
+    showError(error.message);
+  }
+}
+
+
+async function update(id) {
+  clearErrorByClass('e');
+  const codeInput = document.getElementById(`code-${id}`);
+  const nameInput = document.getElementById(`name-${id}`);  
+  const groupIdInput = document.getElementById(`group-id-${id}`);  
+  const statusInput = document.getElementById(`active-${id}`);
+  const active = statusInput.checked ? 1 : 0;
+    
+  if (!await validateCode(id) || !await validateName(id)) {
     click = 0;
     return false;
   }
+  
   const url = `${HOME}update`;
   const data = {
     id: id,
-    code: inputCode.value.trim(),
-    name: inputName.value.trim(),
-    group_id: groupId,
+    code: codeInput.value.trim(),
+    name: nameInput.value.trim(),
+    group_id: groupIdInput.value,
     active: active
-  };
-
-  loadIn();
+  };  
 
   try {
     const response = await fetch(url, {
@@ -203,21 +203,23 @@ async function update() {
 
     const res = await response.text();
 
-    setTimeout(() => {
-      loadOut();
-      if (res === 'success') {
-        swal({
-          title: 'Success',
-          type: 'success',
-          timer: 1000
-        });
-        setTimeout(() => { edit(id) }, 1200);
+    if(isJson(res)) {
+      let ds = JSON.parse(res);
+      if (ds.status === 'success') {
+        const template = $('#row-template').html();
+        const output = $(`#row-${id}`);
+        render(template, ds.data, output);
+        $(`#row-${id}`).removeClass('hide');
+        $(`#edit-row-${id}`).remove();
+        reIndex();        
       }
       else {
-        showError(res);
+        showError(ds.message);
       }
-    }, 500);
-
+    }
+    else {
+      showError(res);
+    }
     click = 0;
   }
   catch (error) {
@@ -239,24 +241,14 @@ $('#color-group-modal').on('shown.bs.modal', function () {
 
 
 async function addColorGroup() {
-  const inputGroupName = document.getElementById('group-name');
-  const groupNameError = document.getElementById('group-name-error');
-  const value = inputGroupName.value.trim();
-  if (!value) {
-    setError(inputGroupName, groupNameError, "Group name is required");
-    return false;
-  }
-
-  clearError(inputGroupName, groupNameError);
-
+  const inputGroupName = document.getElementById('group-name');  
+    
   if(!await validateColorGroup()) {
     return false;
   }
 
   const url = `${HOME}add_color_group`;
-  const data = { name: value };
-  
-  loadIn();
+  const data = { name: inputGroupName.value.trim() };  
 
   try {
     const response = await fetch(url, {
@@ -265,25 +257,22 @@ async function addColorGroup() {
       body: JSON.stringify(data)
     });
 
-    const res = await response.json();
+    const res = await response.text();
 
-    setTimeout(() => {
-      loadOut();
-      if (res.status === 'success') {
-        swal({
-          title: 'Success',
-          type: 'success',
-          timer: 1000
-        });
+    if(isJson(res)) {
+      let ds = JSON.parse(res);
 
+      if (ds.status === 'success') {
         $('#color-group-modal').modal('hide');
-        // Optionally, refresh the color group dropdown or perform other actions
-        $('#group-id').append(new Option(res.group.name, res.group.id, true, true)).trigger('change');
+        $('#color-group-id').append(new Option(ds.group.name, ds.group.id, true, true)).trigger('change');
       }
       else {
-        showError(res.message);
+        showError(ds.message);
       }
-    }, 500);
+    }
+    else {
+      showError(res);
+    }
   }
   catch (error) {
     showError(error);
@@ -344,4 +333,12 @@ async function deleteColor(id) {
   catch (error) {
     showError(error);    
   }
+}
+
+
+function clearFields() {
+  $('#name').val('');
+  $('#color-group-id').val('').trigger('change');
+  $('#status').prop('checked', true);
+  $('#code').val('').focus();
 }

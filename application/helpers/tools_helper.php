@@ -131,19 +131,24 @@ function limitText($str, $length)
 
 function is_selected($val, $select)
 {
+	$val = strtolower(strval($val));
+	$select = strtolower(strval($select));
 	return $val === $select ? 'selected' : '';
 }
 
 
 function is_checked($val1, $val2)
 {
-	return $val1 == $val2 ? 'checked' : '';
+	$val1 = strtolower(strval($val1));
+	$val2 = strtolower(strval($val2));
+	return $val1 === $val2 ? 'checked' : '';
 }
 
 
 function is_active($val)
 {
-	return ($val == 1 or $val == 'Y') ? '<i class="fa fa-check green"></i>' : '<i class="fa fa-times red"></i>';
+	$val = strtolower(strval($val));
+	return ($val === '1' || $val === 'y') || $val ? '<i class="fa fa-check green"></i>' : '<i class="fa fa-times red"></i>';
 }
 
 
@@ -346,7 +351,8 @@ function set_error($key, $name = "data")
 		'status' => "Invalid document status",
 		'notfound' => "Data or document number not found",
 		'not_found' => "Data or document number not found",
-		'transection' => "Unable to delete {$name} because transections exists or link to other module."
+		'transection' => "Unable to delete {$name} because transections exists or link to other module.",
+		'transections' => "Unable to delete {$name} because transections exists or link to other module."
 	);
 
 	$ci = &get_instance();

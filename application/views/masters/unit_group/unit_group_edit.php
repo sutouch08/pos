@@ -12,7 +12,7 @@
   </div>
 </div>
 <hr>
-<form class="form-horizontal margin-top-30">
+<div class="form-horizontal margin-top-30">
   <div class="form-group">
     <label class="col-lg-3 col-md-3 col-sm-3 col-xs-12 control-label no-padding-right">รหัส</label>
     <div class="col-lg-2 col-md-2-harf col-sm-3 col-xs-12">
@@ -48,15 +48,15 @@
   <div class="divider"></div>
   <div class="form-group">
     <label class="col-lg-3 col-md-3 col-sm-3 col-xs-12 control-label no-padding-right">หน่วยนับในกลุ่ม</label>
-    <div class="col-lg-6 col-md-7 col-sm-8 col-xs-12 table-responsive">
-      <table class="table table-bordered tableFixHead">
+    <div class="col-lg-9 col-md-9 col-sm-9 col-xs-12 table-responsive">
+      <table class="tableFixHead table-bordered border-1" style="min-width:350px;">
         <thead>
           <tr>
             <th class="fix-width-40 text-center">#</th>
-            <th class="fix-width-50 text-center">Alt. Qty</th>
-            <th class="fix-width-100 text-center">Alt. Uom</th>
+            <th class="fix-width-60 text-center">Alt. Qty</th>
+            <th class="min-width-100 text-center">Alt. Uom</th>
             <th class="fix-width-20 text-center">=</th>
-            <th class="fix-width-50 text-center">Base Qty</th>
+            <th class="fix-width-60 text-center">Base Qty</th>
             <th class="fix-width-100 text-center">Base Uom</th>
             <th class="fix-width-40"></th>
           </tr>
@@ -65,23 +65,23 @@
           <?php if (! empty($details)) : ?>
             <?php $no = 1; ?>
             <?php foreach ($details as $rs) : ?>
-                <tr id="unit-row-<?php echo $rs->id; ?>">
-                  <td class="middle text-center no"><?php echo $no; ?></td>
-                  <td class="middle text-center">
-                    <input type="number" class="form-control input-xs text-label text-right alt-qty" id="alt-qty-<?php echo $rs->id; ?>" value="<?php echo round($rs->altQty, 4); ?>" readonly>
-                  </td>
-                  <td class="middle text-center"><?php echo unit_code($rs->unitId); ?></td>
-                  <td class="middle text-center"> = </td>
-                  <td class="middle text-center">
-                    <input type="number" class="form-control input-xs text-label text-right base-qty" id="base-qty-<?php echo $rs->id; ?>" value="<?php echo round($rs->baseQty, 4); ?>" readonly>
-                  </td>
-                  <td class="middle text-center"><?php echo unit_code($data->baseUnit); ?></td>
-                  <td class="middle text-center">
-                    <?php if($no > 1) : ?>
-                      <button type="button" class="btn btn-minier btn-danger" onclick="removeUnit(<?php echo $rs->id; ?>)"><i class="fa fa-times"></i></button>
-                    <?php endif; ?>
-                  </td>
-                </tr>              
+              <tr id="unit-row-<?php echo $rs->id; ?>">
+                <td class="middle text-center no"><?php echo $no; ?></td>
+                <td class="middle text-center">
+                  <input type="number" class="form-control input-xs text-label text-right alt-qty" id="alt-qty-<?php echo $rs->id; ?>" value="<?php echo round($rs->altQty, 4); ?>" readonly>
+                </td>
+                <td class="middle text-center"><?php echo unit_code($rs->unitId); ?></td>
+                <td class="middle text-center"> = </td>
+                <td class="middle text-center">
+                  <input type="number" class="form-control input-xs text-label text-right base-qty" id="base-qty-<?php echo $rs->id; ?>" value="<?php echo round($rs->baseQty, 4); ?>" readonly>
+                </td>
+                <td class="middle text-center"><?php echo unit_code($data->baseUnit); ?></td>
+                <td class="middle text-center">
+                  <?php if ($no > 1) : ?>
+                    <a href="javascript:removeUnit(<?php echo $rs->id; ?>)" class="red"><i class="fa fa-times fa-lg"></i></a>
+                  <?php endif; ?>
+                </td>
+              </tr>
               <?php $no++; ?>
             <?php endforeach; ?>
           <?php endif; ?>
@@ -94,42 +94,45 @@
     <label class="col-lg-3 col-md-3 col-sm-3 col-xs-12 control-label no-padding-right">&nbsp;</label>
     <div class="col-lg-9 col-md-9 col-sm-9 col-xs-12">
       <div class="divider"></div>
-      <div class="row">
-        <div class="col-lg-1-harf col-md-1-harf col-sm-1-harf col-xs-4 padding-5">
-          <label>Alt. Qty</label>
-          <input type="number" class="form-control input-sm text-right" id="new-alt-qty">
+      <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 padding-0">
+        <div class="from-inline">
+          <div class="input-group inline fix-width-80">
+            <span class="font-size-11">Alt Qty</span>
+            <input type="number" class="form-control input-sm text-right" id="new-alt-qty" value="1" readonly>
+          </div>
+          <div class="input-group inline margin-left-10 fix-width-200">
+            <span>Alt Uom</span>
+            <select id="new-alt-unit" class="form-control input-sm">
+              <option value="">Select</option>
+              <?php echo select_unit(); ?>
+            </select>
+          </div>
+          <div class="input-group inline fix-width-20 text-center">
+            <span>&nbsp;</span>
+            <span class="form-control input-xs text-center text-label"> = </span>
+          </div>
+          <div class="input-group inline fix-width-80">
+            <span class="font-size-11">Base Qty</span>
+            <input type="number" class="form-control input-sm text-right" id="new-base-qty" value="">
+          </div>
+          <div class="input-group inline margin-left-10 fix-width-150">
+            <span class="font-size-11">Base Uom</span>
+            <select id="new-base-unit" class="form-control input-sm" disabled>
+              <option value="">Select</option>
+              <?php echo select_unit($data->baseUnit); ?>
+            </select>
+          </div>
         </div>
-        <div class="col-lg-2-harf col-md-3 col-sm-3-harf col-xs-8 padding-5">
-          <label>Alt. Uom</label>
-          <select id="new-alt-unit" class="form-control input-sm">
-            <option value="">Select</option>
-            <?php echo select_unit(); ?>
-          </select>
-        </div>
-        <div class="col-lg-harf col-md-harf col-sm-harf col-xs-12 padding-5">
-          <label class="not-show hidden-xs">buton</label>
-          <span class="form-control input-xs text-center text-label"> = </span>
-        </div>
-        <div class="col-lg-1-harf col-md-1-harf col-sm-1-harf col-xs-4 padding-5">
-          <label>Base Qty</label>
-          <input type="number" class="form-control input-sm text-right" id="new-base-qty">
-        </div>
-        <div class="col-lg-2-harf col-md-3 col-sm-3-harf col-xs-8 padding-5">
-          <label>Base Uom</label>
-          <select id="new-base-unit" class="form-control input-sm" disabled>
-            <option value="">Select</option>
-            <?php echo select_unit($data->baseUnit); ?>
-          </select>
-        </div>
+
         <div class="divider-hidden"></div>
         <div class="divider-hidden"></div>
-        <div class="col-lg-2 col-md-2-harf col-sm-2-harf col-xs-12 padding-5">
+        <div class="col-lg-2 col-md-2-harf col-sm-2-harf col-xs-12 padding-0">
           <button type="button" class="btn btn-white btn-primary btn-block" onclick="addUnit()"><i class="fa fa-plus"></i>&nbsp; Add Unit</button>
         </div>
       </div>
     </div>
   </div>
-</form>
+</div>
 
 <script id="unit-template" type="text/x-handlebarsTemplate">
   <tr id="unit-row-{{id}}">
@@ -144,7 +147,7 @@
     </td>
     <td class="middle text-center">{{baseUnitCode}}</td>
     <td class="middle text-center">
-      <button type="button" class="btn btn-minier btn-danger" onclick="removeUnit({{id}})"><i class="fa fa-times"></i></button>
+      <a href="javascript:removeUnit({{id}})" class="red"><i class="fa fa-times"></i></a>
     </td>
   </tr>
 </script>
@@ -152,6 +155,7 @@
 
 <script>
   $('#unit').select2();
+  $('#new-alt-unit').select2();
 </script>
 <script src="<?php echo base_url(); ?>scripts/masters/unit_group.js?v=<?php echo date('Ymd'); ?>"></script>
 <?php $this->load->view('include/footer'); ?>

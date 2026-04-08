@@ -172,6 +172,19 @@ class Product_color_model extends CI_Model
   }
 
 
+  public function get_group_name($id)
+  {
+    $rs = $this->db->select('name')->where('id', $id)->get($this->tg);
+
+    if($rs->num_rows() === 1)
+    {
+      return $rs->row()->name;
+    }
+
+    return NULL;
+  }
+
+
   public function get_all($active = NULL)
   {
     $this->db
@@ -337,6 +350,13 @@ class Product_color_model extends CI_Model
   public function count_members($id)
   {
     return $this->db->where('color_id', $id)->count_all_results('products');
+  }
+
+
+  public function update_member($id)
+  {
+    $count = $this->count_members($id);
+    return $this->db->where('id', $id)->update($this->tb, array('member' => $count));
   }
 } //-- end class 
 ?>
