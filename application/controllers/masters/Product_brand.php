@@ -43,22 +43,10 @@ class Product_brand extends PS_Controller
   }
 
 
-  public function add_new()
-  {
-    if ($this->pm->can_add)
-    {
-      $this->load->view('masters/product_brand/product_brand_add');
-    }
-    else
-    {
-      $this->permission_page();
-    }
-  }
-
-
   public function add()
   {
     $sc = TRUE;
+    $res = NULL;
     $ds = json_decode(file_get_contents('php://input'));
 
     if ($this->pm->can_add)
@@ -85,11 +73,23 @@ class Product_brand extends PS_Controller
             'active' => $ds->active
           );
 
-          if (! $this->product_brand_model->add($arr))
+          $id = $this->product_brand_model->add($arr);
+
+          if( ! $id)
           {
             $sc = FALSE;
             set_error('insert');
           }
+          
+          if($sc === TRUE)
+          {
+            $res = $this->product_brand_model->get($id);
+
+            if( ! empty($res))
+            {
+              $res->is_active = is_active($res->active);
+            }
+          }          
         }
       }
       else
@@ -104,35 +104,55 @@ class Product_brand extends PS_Controller
       set_error('permission');
     }
 
-    $this->_response($sc);
+    $arr = array(
+      'status' => $sc === TRUE ? 'success' : 'error',
+      'message' => $sc === TRUE ? 'success' : $this->error,
+      'data' => $res
+    );
+
+    echo json_encode($arr);
   }
 
 
-  public function edit($id)
+  public function get_data()
   {
-    if ($this->pm->can_edit)
-    {
-      $ds = $this->product_brand_model->get($id);
+    $sc = TRUE;
+    $res = NULL;
+    $ds = json_decode(file_get_contents('php://input'));
 
-      if (!empty($ds))
+    if( ! empty($ds) && ! empty($ds->id))
+    {
+      $res = $this->product_brand_model->get($ds->id);
+
+      if( ! empty($res))
       {
-        $this->load->view('masters/product_brand/product_brand_edit', $ds);
+        $res->isChecked = $res->active == 1 ? 'checked' : '';
       }
-      else
-      {
-        $this->page_error();
+      else {
+        $sc = FALSE;
+        set_error('not_found');
       }
     }
     else
     {
-      $this->permission_page();
+      $sc = FALSE;
+      set_error('required');
     }
+
+    $arr = array(
+      'status' => $sc === TRUE ? 'success' : 'error',
+      'message' => $sc === TRUE ? 'success' : $this->error,
+      'data' => $res
+    );
+
+    echo json_encode($arr);    
   }
 
 
   public function update()
   {
     $sc = TRUE;
+    $res = NULL;
     $ds = json_decode(file_get_contents('php://input'));
 
     if ($this->pm->can_edit)
@@ -165,6 +185,16 @@ class Product_brand extends PS_Controller
             $sc = FALSE;
             set_error('update');
           }
+
+          if($sc === TRUE)
+          {
+            $res = $this->product_brand_model->get($ds->id);
+
+            if( ! empty($res))
+            {
+              $res->is_active = is_active($res->active);
+            }
+          }
         }
       }
       else
@@ -179,7 +209,13 @@ class Product_brand extends PS_Controller
       set_error('permission');
     }
 
-    $this->_response($sc);
+    $arr = array(
+      'status' => $sc === TRUE ? 'success' : 'error',
+      'message' => $sc === TRUE ? 'success' : $this->error,
+      'data' => $res
+    );
+
+    echo json_encode($arr);
   }
 
 

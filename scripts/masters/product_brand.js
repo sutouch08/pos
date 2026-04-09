@@ -1,37 +1,18 @@
 let click = 0;
-let validCode = false;
-let validName = false;
 
 const inputCode = document.getElementById("code");
-const inputName = document.getElementById("name");
-const regex = /[^a-zA-Z0-9-_.@]+/gi;
-
+const regex = /[^a-zA-Z0-9-_.@\/]+/gi;
 
 if(inputCode) {
-  inputCode.addEventListener("input", () => validInput(inputCode, regex));
-  inputCode.addEventListener("blur", () => validateCode());
+  inputCode.addEventListener("input", () => validInput(inputCode, regex));  
 }
 
-if(inputName) {
-  inputName.addEventListener("blur", () => validateName());
-}
-
-const addNew = () => {
-  window.location.href = `${HOME}add_new`;
-}
-
-const edit = (id) => {
-  window.location.href = `${HOME}edit/${id}`;
-}
-
-async function validateCode() {
-  const id = document.getElementById("id") ? document.getElementById("id").value : null;
-  const inputCode = document.getElementById("code");
-  const codeError = document.getElementById("code-error");
+async function validateCode(id = null) {  
+  const inputCode = id === null ? document.getElementById("code") : document.getElementById(`code-${id}`);
+  const codeError = id === null ? document.getElementById("code-error") : document.getElementById(`error-${id}`);
   const value = inputCode.value.trim();
   if (!value) {
-    setError(inputCode, codeError, "Code is Required");
-    validCode = false;
+    setError(inputCode, codeError, "Code is Required");   
     return false;
   }
 
@@ -40,23 +21,21 @@ async function validateCode() {
   const res = await validateRemote(url, { code: value, id: id });
 
   if (res === "exists") {
-    setError(inputCode, codeError, "Code already exists");
-    validCode = false;
+    setError(inputCode, codeError, "Code already exists");    
     return false;
-  } 
-  clearError(inputCode, codeError);
-  validCode = true;
+  }
+
+  clearError(inputCode, codeError);  
   return true;
 }
 
-async function validateName() {
-  const id = document.getElementById("id") ? document.getElementById("id").value : null;
-  const inputName = document.getElementById("name");
-  const nameError = document.getElementById("name-error");
+
+async function validateName(id = null) {  
+  const inputName = id === null ? document.getElementById("name") : document.getElementById(`name-${id}`);
+  const nameError = id === null ? document.getElementById("name-error") : document.getElementById(`error-${id}`);
   const value = inputName.value.trim();
   if (!value) {
-    setError(inputName, nameError, "Name is Required");
-    validName = false;
+    setError(inputName, nameError, "Name is Required");    
     return false;
   }
 
@@ -65,14 +44,20 @@ async function validateName() {
   const res = await validateRemote(url, { name: value, id: id });
 
   if (res === "exists") {
-    setError(inputName, nameError, "Name already exists");
-    validName = false;
+    setError(inputName, nameError, "Name already exists");    
     return false;
   } 
-  clearError(inputName, nameError);
-  validName = true;
+  clearError(inputName, nameError);  
   return true;
 }
+
+
+function clearFields() {
+  $('#name').val('');
+  $('#status').prop('checked', true);
+  $('#code').val('').focus();
+}
+
 
 async function add() {
   if(click !== 0) {
@@ -83,13 +68,10 @@ async function add() {
 
   const inputCode = document.getElementById("code");
   const inputName = document.getElementById("name");
-  const codeError = document.getElementById("code-error");
-  const nameError = document.getElementById("name-error");
-  const active = document.querySelector('input[name="active"]:checked').value;
-  clearError(inputCode, codeError);
-  clearError(inputName, nameError);
+  const status = document.getElementById("status");
+  const active = status.checked ? 1 : 0;  
 
-  if( ! await validateCode() | ! await validateName()) {
+  if( ! await validateCode() || ! await validateName()) {
     click = 0;
     return false;
   }
@@ -100,28 +82,29 @@ async function add() {
     name: inputName.value.trim(),
     active: active
   };
-
-  loadIn();
-
+  
   try {
     const response = await postData(url, data);
     const res = await response.text();
 
-    setTimeout(() => {
-      loadOut();
-      if(res === "success") {
-        swal({
-          title: "Success",
-          type: "success",
-          timer: 1000
-        });
+    if(isJson(res)) {
+      const ds = JSON.parse(res);
 
-        setTimeout(() => { addNew(); }, 1200);
+      if(ds.status === 'success') {
+        const template = $('#new-row-template').html();
+        const output = $('#brand-table');
+
+        renderPrepend(template, ds.data, output);
+        reIndex();
+        clearFields();
       }
       else {
-        showError(res);
+        showError(ds.message);
       }
-    }, 500);
+    }
+    else {
+      showError(res);
+    }
 
     click = 0;
   } 
@@ -131,22 +114,45 @@ async function add() {
   }
 }
 
-async function update() {
-  if (click !== 0) {
-    return false;
+
+async function edit(id) {
+  const url = `${HOME}get_data`;
+  const data = { id: id };
+  try {
+    const response = await postData(url, data);
+    const res = await response.text();
+
+    if(isJson(res)) {
+      const ds = JSON.parse(res);
+      if(ds.status === 'success') {
+        const template = $('#edit-row-template').html();
+        const output = $(`#row-${id}`);
+
+        renderAfter(template, ds.data, output);
+
+        $(`#row-${id}`).addClass('hide');
+      }
+      else {
+        showError(ds.message);
+      }
+    }
+    else {
+      showError(res);
+    }
   }
-  click = 1;
-  const id = document.getElementById('id').value;
-  const inputCode = document.getElementById('code');
-  const inputName = document.getElementById('name');  
-  const codeError = document.getElementById('code-error');
-  const nameError = document.getElementById('name-error');
-  const active = document.querySelector('input[name="active"]:checked').value;
-  clearError(inputCode, codeError);
-  clearError(inputName, nameError);
+  catch (error) {
+    showError(error.message);
+  }
+}
+
+
+async function update(id) {    
+  const inputCode = document.getElementById(`code-${id}`);
+  const inputName = document.getElementById(`name-${id}`);
+  const status = document.getElementById(`status-${id}`);
+  const active = status.checked ? 1 : 0;
   
-  if( ! await validateCode() | ! await validateName()) {
-    click = 0;
+  if( ! await validateCode(id) || ! await validateName(id)) {    
     return false;
   }
 
@@ -156,34 +162,31 @@ async function update() {
     code: inputCode.value.trim(),
     name: inputName.value.trim(),
     active: active
-  };
-
-  loadIn();
+  };  
 
   try {
     const response = await postData(url, data);
     const res = await response.text();
 
-    setTimeout(() => {
-      loadOut();
-      if (res === 'success') {
-        swal({
-          title: 'Success',
-          type: 'success',
-          timer: 1000
-        });
-
-        setTimeout(() => { edit(id); }, 1200);
+    if(isJson(res)) {
+      const ds = JSON.parse(res);
+      if(ds.status === 'success') {
+        const template = $('#row-template').html();
+        const output = $(`#row-${id}`);
+        render(template, ds.data, output);
+        $(`#edit-row-${id}`).remove();
+        $(`#row-${id}`).removeClass('hide');
+        reIndex();
       }
       else {
-        showError(res);
+        showError(ds.message);
       }
-    }, 500);
-
-    click = 0;
+    }
+    else {
+      showError(res);
+    }    
   } 
-  catch (error) {
-    click = 0;
+  catch (error) {    
     showError(error.message);
   }
 }
@@ -209,29 +212,24 @@ function confirmDelete(id, name) {
 
 async function deleteBrand(id) {
   const url = `${HOME}delete`;
-  const data = { id: id };
-  loadIn();
-
+  const data = { id: id };  
   try {
     const response = await postData(url, data);
     const res = await response.text();
 
-    setTimeout(() => {
-      loadOut();
-      if (res === 'success') {
-        swal({
-          title: 'Success',
-          type: 'success',
-          timer: 1000
-        });
+    if (res === 'success') {
+      swal({
+        title: 'Success',
+        type: 'success',
+        timer: 1000
+      });
 
-        $(`#row-${id}`).remove();
-        reIndex();
-      }
-      else {
-        showError(res);
-      }
-    }, 500);
+      $(`#row-${id}`).remove();
+      reIndex();
+    }
+    else {
+      showError(res);
+    }
   } 
   catch (error) {
     showError(error.message);

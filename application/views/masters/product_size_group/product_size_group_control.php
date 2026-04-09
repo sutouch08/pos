@@ -46,7 +46,7 @@
   <tr id="row-{{id}}">
     <td class="middle">
 		<?php if ($this->pm->can_edit) : ?>
-			<button type="button" class="btn btn-minier btn-warning" onclick="getEdit({{id}})">
+			<button type="button" class="btn btn-minier btn-warning" onclick="edit({{id}})">
 				<i class="fa fa-pencil"></i>
 			</button>
 		<?php endif; ?>

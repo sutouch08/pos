@@ -13,7 +13,10 @@ class Product_brand_model extends CI_Model
   {
     if(!empty($ds))
     {
-      return  $this->db->insert($this->tb, $ds);
+      if($this->db->insert($this->tb, $ds))
+      {
+        return $this->db->insert_id();
+      }
     }
 
     return FALSE;
@@ -31,31 +34,7 @@ class Product_brand_model extends CI_Model
     return FALSE;
   }
 
-
-  public function update_by_code($code, array $ds = array())
-  {
-    if(!empty($ds))
-    {
-      $this->db->where('code', $code);
-      return $this->db->update($this->tb, $ds);
-    }
-
-    return FALSE;
-  }
-
-
-  public function update_by_id($id, array $ds = array())
-  {
-    if(!empty($ds))
-    {
-      $this->db->where('id', $id);
-      return $this->db->update($this->tb, $ds);
-    }
-
-    return FALSE;
-  }
-
-
+  
   public function delete($id)
   {
     return $this->db->where('id', $id)->delete($this->tb);
@@ -132,6 +111,7 @@ class Product_brand_model extends CI_Model
 
     return NULL;  
   }
+
 
   public function get_name_by_code($code)
   {

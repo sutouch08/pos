@@ -1,9 +1,9 @@
 let click = 0;
 const inputCode = document.getElementById('code');
-const regexCode = /[^a-zA-Z0-9\/.\-_@]+/gi; // อนุญาตเฉพาะ a-z, A-Z, /, ., -, _, @
+const regex = /[^a-zA-Z0-9\/.\-_@]+/gi; // อนุญาตเฉพาะ a-z, A-Z, /, ., -, _, @
 
 if (inputCode) {
-  inputCode.addEventListener('input', () => validInput(inputCode, regexCode));
+  inputCode.addEventListener('input', () => validInput(inputCode, regex));
 }
 
 

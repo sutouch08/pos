@@ -121,7 +121,7 @@
 			</label>
 		</td>
 		<td class="middle">
-			<input type="text" class="form-control input-sm e" id="code-{{id}}" maxlength="20" value="{{code}}" data-id="{{id}}" data-code="{{code}}" />
+			<input type="text" class="form-control input-sm e" id="code-{{id}}" maxlength="20" value="{{code}}" oninput="validInput(this, regex)" />
 		</td>
 		<td class="middle">
 			<input type="text" class="form-control input-sm e" id="name-{{id}}" maxlength="100" value="{{name}}" data-id="{{id}}" data-name="{{name}}" />

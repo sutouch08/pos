@@ -455,7 +455,7 @@ const getDeviceId = () => {
 }
 
 
-const validInput = (input, regex = /[^a-zA-Z0-9-_.]+/gi) => {
+const validInput = (input, regex = /[^a-zA-Z0-9-_.@]+/gi) => {
   input.value = input.value.replace(regex, '');
 };
 
