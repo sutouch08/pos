@@ -17,12 +17,13 @@ class Unit extends PS_Controller
   }
 
 
-
   public function index()
   {
     $filter = array(
       'code' => get_filter('code', 'unit_code', ''),
-      'active' => get_filter('active', 'unit_active', 'all')
+      'active' => get_filter('active', 'unit_active', 'all'),
+      'order_by' => get_filter('order_by', 'unit_order_by', 'code'),
+      'sort_by' => get_filter('sort_by', 'unit_sort_by', 'ASC')
     );
 
     $perpage = get_rows();
@@ -34,22 +35,10 @@ class Unit extends PS_Controller
   }
 
 
-  public function add_new()
-  {
-    if ($this->pm->can_add)
-    {
-      $this->load->view('masters/unit/unit_add');
-    }
-    else
-    {
-      $this->deny_page();
-    }
-  }
-
-
   public function add()
   {
     $sc = TRUE;
+    $res = NULL;
     $ds = json_decode(file_get_contents('php://input'));
 
     if (! empty($ds) && ! empty($ds->code) && ! empty($ds->name))
@@ -63,7 +52,7 @@ class Unit extends PS_Controller
       if ($this->unit_model->is_exists_code($ds->code))
       {
         $sc = FALSE;
-        set_error('exxists', $ds->code);
+        set_error('exists', $ds->code);
       }
 
       if ($sc === TRUE && $this->unit_model->is_exists_name($ds->name))
@@ -74,10 +63,22 @@ class Unit extends PS_Controller
 
       if ($sc === TRUE)
       {
-        if (! $this->unit_model->add($arr))
+        $id = $this->unit_model->add($arr);
+
+        if (! $id)
         {
           $sc = FALSE;
           set_error('insert');
+        }
+
+        if ($sc === TRUE)
+        {
+          $res = $this->unit_model->get($id);
+
+          if (! empty($res))
+          {
+            $res->is_active = is_active($res->active);
+          }
         }
       }
     }
@@ -87,36 +88,51 @@ class Unit extends PS_Controller
       set_error('required');
     }
 
-    $this->_response($sc);
+    $arr = array(
+      'status' => $sc === TRUE ? 'success' : 'error',
+      'message' => $sc === TRUE ? 'success' : $this->error,
+      'data' => $res
+    );
+
+    echo json_encode($arr);
   }
 
 
-  public function edit($id)
+  public function get_data()
   {
-    if ($this->pm->can_edit)
-    {
-      $data = $this->unit_model->get_by_id($id);
+    $sc = TRUE;
+    $res = NULL;
+    $ds = json_decode(file_get_contents('php://input'));
 
-      if (! empty($data))
+    if(! empty($ds) && ! empty($ds->id))
+    {
+      $res = $this->unit_model->get($ds->id);
+
+      if (! empty($res))
       {
-        $ds['unit'] = $data;
-        $this->load->view('masters/unit/unit_edit', $ds);
-      }
-      else
-      {
-        $this->page_error();
+        $res->isChecked = $res->active == 1 ? 'checked' : '';
       }
     }
     else
     {
-      $this->deny_page();
+      $sc = FALSE;
+      set_error('required');
     }
+
+    $arr = array(
+      'status' => $sc === TRUE ? 'success' : 'error',
+      'message' => $sc === TRUE ? 'success' : $this->error,
+      'data' => $res
+    );
+
+    echo json_encode($arr);
   }
 
 
   public function update()
   {
     $sc = TRUE;
+    $res = NULL;
     $ds = json_decode(file_get_contents('php://input'));
 
     if (! empty($ds) && ! empty($ds->id) && ! empty($ds->code) && ! empty($ds->name))
@@ -146,6 +162,16 @@ class Unit extends PS_Controller
           $sc = FALSE;
           set_error('update');
         }
+
+        if($sc === TRUE)
+        {
+          $res = $this->unit_model->get($ds->id);
+
+          if (! empty($res))
+          {
+            $res->is_active = is_active($res->active);
+          }
+        }
       }
     }
     else
@@ -154,7 +180,13 @@ class Unit extends PS_Controller
       set_error('required');
     }
 
-    $this->_response($sc);
+    $arr = array(
+      'status' => $sc === TRUE ? 'success' : 'error',
+      'message' => $sc === TRUE ? 'success' : $this->error,
+      'data' => $res
+    );
+
+    echo json_encode($arr);
   }
 
 
@@ -163,18 +195,26 @@ class Unit extends PS_Controller
     $sc = TRUE;
     $ds = json_decode(file_get_contents('php://input'));
 
-    if (! empty($ds) && ! empty($ds->id))
+    if($this->pm->can_delete)
     {
-      if (! $this->unit_model->delete($ds->id))
+      if (! empty($ds) && ! empty($ds->id))
+      {
+        if (! $this->unit_model->delete($ds->id))
+        {
+          $sc = FALSE;
+          set_error('delete');
+        }
+      }
+      else
       {
         $sc = FALSE;
-        $this->error = 'ลบข้อมูลไม่สำเร็จ';
+        set_error('required');
       }
     }
     else
     {
       $sc = FALSE;
-      set_error('required');
+      set_error('permission');
     }
 
     $this->_response($sc);
@@ -185,9 +225,27 @@ class Unit extends PS_Controller
   {
     $ds = json_decode(file_get_contents('php://input'));
 
-    if (! empty($ds))
+    if (! empty($ds) && ! empty($ds->code))
     {
-      if ($this->unit_model->is_exists_code($ds->code))
+      if ($this->unit_model->is_exists_code($ds->code, $ds->id))
+      {
+        echo 'exists';
+      }
+      else
+      {
+        echo 'not_exists';
+      }
+    }
+  }
+
+
+  public function is_exists_name()
+  {
+    $ds = json_decode(file_get_contents('php://input'));
+
+    if (! empty($ds) && ! empty($ds->name))
+    {
+      if ($this->unit_model->is_exists_name($ds->name, $ds->id))
       {
         echo 'exists';
       }
@@ -201,7 +259,7 @@ class Unit extends PS_Controller
 
   public function clear_filter()
   {
-    $filter = array('unit_code', 'unit_active');
+    $filter = array('unit_code', 'unit_active', 'unit_order_by', 'unit_sort_by');
 
     return clear_filter($filter);
   }

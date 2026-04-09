@@ -50,9 +50,9 @@
     <table class="table table-striped tableFixHead dataTable border-1">
       <thead>
         <tr>
-          <th class="fix-width-60 middle"></th>
-          <th class="fix-width-50 middle text-center">#</th>
-          <th class="fix-width-50 middle text-center">สถานะ</th>
+          <th class="fix-width-80 middle"></th>
+          <th class="fix-width-40 middle text-center">#</th>
+          <th class="fix-width-80 middle text-center">สถานะ</th>
           <th class="fix-width-100 middle sorting <?php echo $sort_code; ?>" id="sort-code" onclick="sort('code', '<?php echo $sort_code; ?>')">รหัส</th>
           <th class="fix-width-200 middle sorting <?php echo $sort_name; ?>" id="sort-name" onclick="sort('name', '<?php echo $sort_name; ?>')">ชื่อ</th>
           <th class="fix-width-100 middle text-center sorting <?php echo $sort_member; ?>" id="sort-member" onclick="sort('member', '<?php echo $sort_member; ?>')">สินค้า</th>
@@ -93,12 +93,15 @@
 
 <script id="edit-row-template" type="text/x-handlebarsTemplate">
   <tr id="edit-row-{{id}}">
-		<td class="middle text-center">
+		<td colspan="2" class="middle text-center">
 			<button type="button" class="btn btn-minier btn-success" onclick="update({{id}})">
 				<i class="fa fa-save"></i> Save
 			</button>
+      <button type="button" class="btn btn-minier btn-default" onclick="cancel({{id}})">
+        <i class="fa fa-close"></i>
+      </button>
 		</td>
-		<td colspan="2" class="middle text-center">
+		<td class="middle text-center">
 			<label style="padding-top: 5px;">
 				<input class="ace ace-switch ace-switch-6" id="status-{{id}}" type="checkbox" value="1" {{isChecked}} data-id="{{id}}" />
 				<span class="lbl"></span>

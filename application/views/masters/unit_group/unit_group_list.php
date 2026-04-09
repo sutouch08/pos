@@ -34,20 +34,27 @@
       <button type="button" class="btn btn-xs btn-warning btn-block" onclick="clearFilter()"><i class="fa fa-retweet"></i> Reset</button>
     </div>
   </div>
-  <hr class="margin-top-15 padding-5">
+  <input type="hidden" name="search" value="1" />
+  <input type="hidden" name="order_by" id="order_by" value="<?php echo $order_by; ?>">
+  <input type="hidden" name="sort_by" id="sort_by" value="<?php echo $sort_by; ?>">
 </form>
+  <hr class="margin-top-15 padding-5">
 <?php echo $this->pagination->create_links(); ?>
+
+<?php $sort_code = get_sort('code', $order_by, $sort_by); ?>
+<?php $sort_name = get_sort('name', $order_by, $sort_by); ?>
 
 <div class="row">
   <div class="col-sm-12 col-xs-12 padding-5 table-responsive">
-    <table class="table tableFixHead border-1">
+    <table class="table dataTable tableFixHead border-1">
       <thead>
         <tr>
-          <th class="fix-width-80 middle"></th>
+          <th class="fix-width-100 middle"></th>
           <th class="fix-width-40 middle text-center">#</th>          
-          <th class="fix-width-100 middle">รหัส</th>
-          <th class="min-width-200 middle">ชื่อ</th>
+          <th class="fix-width-120 middle sorting <?php echo $sort_code; ?>" id="sort-code" onclick="sort('code', '<?php echo $sort_code; ?>')">รหัส</th>
+          <th class="fix-width-250 middle sorting <?php echo $sort_name; ?>" id="sort-name" onclick="sort('name', '<?php echo $sort_name; ?>')">ชื่อ</th>
           <th class="fix-width-100 middle">หน่วยมาตรฐาน</th>
+          <th class="min-width-100 middle"></th>
         </tr>
       </thead>
       <tbody>
@@ -75,6 +82,7 @@
               <td class="middle"><?php echo $rs->code; ?></td>
               <td class="middle"><?php echo $rs->name; ?></td>
               <td class="middle"><?php echo $unitName; ?></td>
+              <td></td>
             </tr>
             <?php $no++; ?>
           <?php endforeach; ?>

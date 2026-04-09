@@ -2,13 +2,11 @@
 <?php $this->load->view('masters/unit_group/style'); ?>
 
 <div class="row">
-  <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 padding-5 padding-top-5">
-    <h3 class="title"><?php echo $this->title; ?></h3>
-  </div>
-  <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 padding-5 text-right">
-    <button type="button" class="btn btn-default btn-white top-btn" onclick="goBack()">
-      <i class="fa fa-arrow-left"></i>&nbsp; กลับ
-    </button>
+  <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 padding-5">
+    <h3 class="title">
+      <a href="javascript:goBack()" class="pull-left margin-right-15"><i class="fa fa-chevron-left"></i></a>
+      <?php echo $this->title; ?>
+    </h3>
   </div>
 </div>
 <hr>
@@ -36,7 +34,7 @@
       </select>
     </div>
     <div class="help-block col-lg-9 col-lg-offset-3 col-md-9 col-md-offset-3 col-sm-9 col-sm-offset-3" id="unit-error"></div>
-  </div>    
+  </div>
   <div class="form-group">
     <label class="col-lg-3 col-md-3 col-sm-3 col-xs-12 control-label no-padding-right">หน่วยนับในกลุ่ม</label>
     <div class="col-lg-9 col-md-9 col-sm-9 col-xs-12 table-responsive">
@@ -48,7 +46,7 @@
             <th class="min-width-100 text-center">Alt. Uom</th>
             <th class="fix-width-20 text-center">=</th>
             <th class="fix-width-60 text-center">Base Qty</th>
-            <th class="fix-width-100 text-center">Base Uom</th>            
+            <th class="fix-width-100 text-center">Base Uom</th>
           </tr>
         </thead>
         <tbody id="unit-table">
@@ -65,7 +63,7 @@
                 <td class="middle text-center">
                   <input type="number" class="form-control input-xs text-label text-right base-qty" id="base-qty-<?php echo $rs->id; ?>" value="<?php echo round($rs->baseQty, 4); ?>" readonly>
                 </td>
-                <td class="middle text-center"><?php echo unit_code($data->baseUnit); ?></td>                
+                <td class="middle text-center"><?php echo unit_code($data->baseUnit); ?></td>
               </tr>
               <?php $no++; ?>
             <?php endforeach; ?>
@@ -73,7 +71,7 @@
         </tbody>
       </table>
     </div>
-  </div>  
+  </div>
 </form>
 
 <script>

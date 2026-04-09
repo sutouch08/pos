@@ -1,6 +1,8 @@
 <?php
 class Product_type_model extends CI_Model
 {
+  private $tb = "product_type";
+
   public function __construct()
   {
     parent::__construct();
@@ -9,78 +11,100 @@ class Product_type_model extends CI_Model
 
   public function add(array $ds = array())
   {
-    if(!empty($ds))
+    if (!empty($ds))
     {
-      return  $this->db->insert('product_type', $ds);
+      if ($this->db->insert($this->tb, $ds))
+      {
+        return $this->db->insert_id();
+      }
     }
 
     return FALSE;
   }
 
 
-
-  public function update($code, array $ds = array())
+  public function update($id, array $ds = array())
   {
-    if(!empty($ds))
+    if (!empty($ds))
     {
-      $this->db->where('code', $code);
-      return $this->db->update('product_type', $ds);
+      $this->db->where('id', $id);
+      return $this->db->update($this->tb, $ds);
     }
 
     return FALSE;
   }
 
 
-  public function delete($code)
+  public function delete($id)
   {
-    return $this->db->where('code', $code)->delete('product_type');
+    return $this->db->where('id', $id)->delete($this->tb);
   }
 
 
-  public function count_rows($code = '', $name = '')
+  public function get($id)
   {
-    $this->db->select('code');
-
-    if($code != '')
-    {
-      $this->db->like('code', $code);
-    }
-
-    if($name != '')
-    {
-      $this->db->like('name', $name);
-    }
-
-    $rs = $this->db->get('product_type');
-
-    return $rs->num_rows();
-  }
-
-
-
-
-  public function get($code)
-  {
-    $rs = $this->db->where('code', $code)->get('product_type');
-    if($rs->num_rows() === 1)
+    $rs = $this->db->where('id', $id)->get($this->tb);
+    if ($rs->num_rows() === 1)
     {
       return $rs->row();
     }
 
-    return FALSE;
+    return NULL;
   }
 
 
-
-  public function get_name($code)
+  public function get_by_code($code)
   {
-    if($code === NULL OR $code === '')
+    $rs = $this->db->where('code', $code)->get($this->tb);
+    if ($rs->num_rows() === 1)
     {
-      return $code;
+      return $rs->row();
     }
 
-    $rs = $this->db->select('name')->where('code', $code)->get('product_type');
-    if($rs->num_rows() === 1)
+    return NULL;
+  }
+
+
+  public function get_by_id($id)
+  {
+    $rs = $this->db->where('id', $id)->get($this->tb);
+    if ($rs->num_rows() === 1)
+    {
+      return $rs->row();
+    }
+
+    return NULL;
+  }
+
+
+  public function get_code($id)
+  {
+    $rs = $this->db->select('code')->where('id', $id)->get($this->tb);
+    if ($rs->num_rows() === 1)
+    {
+      return $rs->row()->code;
+    }
+
+    return NULL;
+  }
+
+
+  public function get_id($code)
+  {
+    $rs = $this->db->select('id')->where('code', $code)->get($this->tb);
+    if ($rs->num_rows() === 1)
+    {
+      return $rs->row()->id;
+    }
+
+    return NULL;
+  }
+
+
+  public function get_name($id)
+  {
+    $rs = $this->db->select('name')->where('id', $id)->get($this->tb);
+    if ($rs->num_rows() === 1)
     {
       return $rs->row()->name;
     }
@@ -89,112 +113,121 @@ class Product_type_model extends CI_Model
   }
 
 
-
-
-  public function get_data($code = '', $name = '', $perpage = '', $offset = '')
+  public function get_name_by_code($code)
   {
-    if($code != '')
+    $rs = $this->db->select('name')->where('code', $code)->get($this->tb);
+    if ($rs->num_rows() === 1)
     {
-      $this->db->like('code', $code);
+      return $rs->row()->name;
     }
 
-    if($name != '')
+    return NULL;
+  }
+
+
+  public function is_exists_code($code, $id = NULL)
+  {
+    if ($id !== NULL)
     {
-      $this->db->like('name', $name);
+      $this->db->where('id !=', $id);
     }
 
-    if($perpage != '')
+    return $this->db->where('code', $code)->count_all_results($this->tb) > 0 ? TRUE : FALSE;
+  }
+
+
+  public function is_exists_name($name, $id = NULL)
+  {
+    if ($id !== NULL)
     {
-      $offset = $offset === NULL ? 0 : $offset;
-      $this->db->limit($perpage, $offset);
+      $this->db->where('id !=', $id);
     }
 
-    $rs = $this->db->get('product_type');
+    return $this->db->where('name', $name)->count_all_results($this->tb) > 0 ? TRUE : FALSE;
+  }
 
-    return $rs->result();
+
+  public function count_rows(array $ds = array())
+  {
+    if (! empty($ds['code']))
+    {
+      $this->db
+        ->group_start()
+        ->like('code', $ds['code'])
+        ->or_like('name', $ds['code'])
+        ->group_end();
+    }
+
+    if (isset($ds['active']) && $ds['active'] != 'all')
+    {
+      $this->db->where('active', $ds['active']);
+    }
+
+    return $this->db->count_all_results($this->tb);
+  }
+
+
+  public function get_list(array $ds = array(), $perpage = 20, $offset = 0)
+  {
+    $order_by = empty($ds['order_by']) ? 'code' : $ds['order_by'];
+    $sort_by = empty($ds['sort_by']) ? 'ASC' : $ds['sort_by'];
+
+    if (! empty($ds['code']))
+    {
+      $this->db
+        ->group_start()
+        ->like('code', $ds['code'])
+        ->or_like('name', $ds['code'])
+        ->group_end();
+    }
+
+    if (isset($ds['active']) && $ds['active'] != 'all')
+    {
+      $this->db->where('active', $ds['active']);
+    }
+
+    $rs = $this->db
+      ->order_by($order_by, $sort_by)
+      ->limit($perpage, $offset)
+      ->get($this->tb);
+
+    if ($rs->num_rows() > 0)
+    {
+      return $rs->result();
+    }
+
+    return NULL;
   }
 
 
 
-
-  public function is_exists($code, $old_code = '')
+  public function get_all($active = TRUE)
   {
-    if($old_code != '')
+    if ($active === TRUE)
     {
-      $this->db->where('code !=', $old_code);
+      $this->db->where('active', 1);
     }
 
-    $rs = $this->db->where('code', $code)->get('product_type');
+    $rs = $this->db->get($this->tb);
 
-    if($rs->num_rows() > 0)
+    if ($rs->num_rows() > 0)
     {
-      return TRUE;
+      return $rs->result();
     }
 
-    return FALSE;
+    return NULL;
   }
 
 
-
-  public function is_exists_name($name, $old_name = '')
+  public function count_members($id)
   {
-    if($old_name != '')
-    {
-      $this->db->where('name !=', $old_name);
-    }
-
-    $rs = $this->db->where('name', $name)->get('product_type');
-
-    if($rs->num_rows() > 0)
-    {
-      return TRUE;
-    }
-
-    return FALSE;
+    return $this->db->where('type_id', $id)->count_all_results('products');
   }
 
 
-
-  public function count_members($code)
+  public function update_member($id)
   {
-    $this->db->select('active')->where('type_code', $code);
-    $rs = $this->db->get('products');
-    return $rs->num_rows();
+    $count = $this->count_members($id);
+    return $this->db->where('id', $id)->update($this->tb, array('member' => $count));
   }
-
-  public function is_sap_exists($code)
-  {
-    $rs = $this->mc->select('Code')->where('Code', $code)->get('TYPE');
-    if($rs->num_rows() > 0)
-    {
-      return TRUE;
-    }
-
-    return FALSE;
-  }
-
-
-  public function add_sap_type(array $ds = array())
-  {
-    if(!empty($ds))
-    {
-      return $this->mc->insert('TYPE', $ds);
-    }
-
-    return FALSE;
-  }
-
-
-
-  public function update_sap_type($code, array $ds = array())
-  {
-    if(!empty($ds))
-    {
-      return $this->mc->where('Code', $code)->update('TYPE', $ds);
-    }
-
-    return FALSE;
-  }
-
 }
-?>

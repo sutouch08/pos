@@ -2141,12 +2141,12 @@ input[type=number]::-webkit-outer-spin-button {
 	top: -1px;
 	background-color: #f2f2f2;
 	font-size: 11px;
-	padding: 3px;
+	padding: 3px 8px;
 }
 
 .tableFixHead > tbody > tr > td {
 	font-size:11px;
-	padding: 3px;
+	padding: 3px 8px;
 }
 
 .fix-header {

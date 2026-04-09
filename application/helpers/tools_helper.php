@@ -361,6 +361,13 @@ function set_error($key, $name = "data")
 }
 
 
+function get_error()
+{
+	$ci = &get_instance();
+	return $ci->error;
+}
+
+
 function set_error_message($message)
 {
 	$ci = &get_instance();

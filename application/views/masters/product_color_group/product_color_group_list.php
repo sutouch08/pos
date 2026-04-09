@@ -30,11 +30,11 @@
 
 <div class="row">
   <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 padding-5 table-responsive">
-    <table class="table table-striped tableFixHead border-1" style="min-width:400px;">
+    <table class="table table-striped tableFixHead border-1">
       <thead>
         <tr>
-          <th class="fix-width-60 middle"></th>
-          <th class="fix-width-50 middle text-center">#</th>
+          <th class="fix-width-80 middle"></th>
+          <th class="fix-width-40 middle text-center">#</th>
           <th class="fix-width-200 middle">กลุ่ม</th>
           <th class="fix-width-80 middle text-center">members</th>
           <th class="min-width-100"></th>
@@ -72,13 +72,15 @@
 
 <script id="edit-row-template" type="text/x-handlebarsTemplate">
   <tr id="edit-row-{{id}}">		
-		<td colspan="2" class="middle text-center"></td>
+		<td colspan="2" class="middle text-center">
+      <button type="button" class="btn btn-minier btn-success" onclick="update({{id}})"><i class="fa fa-save"></i> Save</button>
+      <button type="button" class="btn btn-minier btn-default" onclick="cancel({{id}})"><i class="fa fa-times"></i></button>
+    </td>
 		<td class="middle">
 			<input type="text" class="form-control input-xs" id="name-{{id}}" maxlength="100" value="{{name}}" data-id="{{id}}" />
 		</td>
 		<td class="middle">
-			<button type="button" class="btn btn-minier btn-success" onclick="update({{id}})"><i class="fa fa-save"></i></button>
-      <button type="button" class="btn btn-minier btn-default" onclick="cancelEdit({{id}})"><i class="fa fa-times"></i></button>
+			
 		</td>		
 		<td class="middle red padding-left-10" id="error-{{id}}"></td>
 	</tr>		

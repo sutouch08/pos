@@ -192,6 +192,12 @@ async function update(id) {
 }
 
 
+function cancel(id) {
+  $(`#edit-row-${id}`).remove();
+  $(`#row-${id}`).removeClass('hide');
+}
+
+
 function confirmDelete(id, name) {
   swal({
     title: `Are you sure ?`,

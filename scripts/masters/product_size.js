@@ -37,6 +37,7 @@ async function validateCode() {
   return true;
 }
 
+
 async function validateName() {
   const inputName = document.getElementById('name');
   const nameError = document.getElementById('name-error');
@@ -354,6 +355,12 @@ async function update(id) {
     showError(error);
   }
 
+}
+
+
+function cancel(id) {
+  $(`#edit-row-${id}`).remove();
+  $(`#row-${id}`).removeClass('hide');
 }
 
 

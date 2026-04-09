@@ -20,15 +20,24 @@ class Unit_group extends PS_Controller
   {
     $filter = array(
       'code' => get_filter('code', 'ug_code'),
-      'baseUnit' => get_filter('baseUnit', 'ug_base_unit', 'all')
+      'baseUnit' => get_filter('baseUnit', 'ug_base_unit', 'all'),
+      'order_by' => get_filter('order_by', 'ug_order_by', 'code'),
+      'sort_by' => get_filter('sort_by', 'ug_sort_by', 'ASC')
     );
 
-    $per_page = get_rows();
-    $rows = $this->unit_group_model->count_rows($filter);
-    $filter['data'] = $this->unit_group_model->get_list($filter, $per_page, $this->uri->segment($this->segment));
-    $init = pagination_config($this->home . '/index/', $rows, $per_page, $this->segment);
-    $this->pagination->initialize($init);
-    $this->load->view('masters/unit_group/unit_group_list', $filter);
+    if($this->input->post('search'))
+    {
+      redirect($this->home);
+    }
+    else 
+    {
+      $per_page = get_rows();
+      $rows = $this->unit_group_model->count_rows($filter);
+      $filter['data'] = $this->unit_group_model->get_list($filter, $per_page, $this->uri->segment($this->segment));
+      $init = pagination_config($this->home . '/index/', $rows, $per_page, $this->segment);
+      $this->pagination->initialize($init);
+      $this->load->view('masters/unit_group/unit_group_list', $filter);
+    }
   }
 
 
@@ -383,6 +392,6 @@ class Unit_group extends PS_Controller
 
   public function clear_filter()
   {
-    return clear_filter(array('ug_code', 'ug_base_unit'));
+    return clear_filter(array('ug_code', 'ug_base_unit', 'ug_order_by', 'ug_sort_by'));
   }
 } //-- End of file Unit_group.php --//

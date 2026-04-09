@@ -33,7 +33,7 @@
     <table class="table table-striped tableFixHead border-1" style="min-width:400px;">
       <thead>
         <tr>
-          <th class="fix-width-60 middle"></th>
+          <th class="fix-width-80 middle"></th>
           <th class="fix-width-50 middle text-center">#</th>
           <th class="fix-width-200 middle">กลุ่ม</th>
           <th class="fix-width-60 middle text-center">members</th>
@@ -72,16 +72,18 @@
 
 <script id="edit-row-template" type="text/x-handlebarsTemplate">
   <tr id="edit-row-{{id}}">		
-		<td colspan="2" class="middle text-center"></td>
-		<td class="middle">
-			<input type="text" class="form-control input-sm" id="name-{{id}}" maxlength="100" value="{{name}}" data-id="{{id}}" />
-		</td>
-		<td class="middle">
-			<button type="button" class="btn btn-xs btn-success" onclick="update({{id}})">
+		<td colspan="2" class="middle text-center">
+      <button type="button" class="btn btn-minier btn-success" onclick="update({{id}})">
         <i class="fa fa-save"></i> &nbsp; Save
       </button>
+      <button type="button" class="btn btn-minier btn-default" onclick="cancel({{id}})">
+        <i class="fa fa-times"></i> 
+      </button>
+    </td>
+		<td class="middle">
+			<input type="text" class="form-control input-sm" id="name-{{id}}" maxlength="100" value="{{name}}" data-id="{{id}}" />
 		</td>		
-		<td class="middle red padding-left-10" id="error-{{id}}"></td>
+		<td colspan="2" class="middle red padding-left-10" id="error-{{id}}"></td>
 	</tr>		
 </script>
 

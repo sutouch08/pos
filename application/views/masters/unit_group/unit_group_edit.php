@@ -2,14 +2,12 @@
 <?php $this->load->view('masters/unit_group/style'); ?>
 
 <div class="row">
-  <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 padding-5 padding-top-5">
-    <h3 class="title"><?php echo $this->title; ?></h3>
-  </div>
-  <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 padding-5 text-right">
-    <button type="button" class="btn btn-default btn-white top-btn" onclick="goBack()">
-      <i class="fa fa-arrow-left"></i>&nbsp; กลับ
-    </button>
-  </div>
+  <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 padding-5">    
+    <h3 class="title">
+      <a href="javascript:goBack()" class="pull-left margin-right-15"><i class="fa fa-chevron-left"></i></a>
+      <?php echo $this->title; ?>
+    </h3>
+  </div>  
 </div>
 <hr>
 <div class="form-horizontal margin-top-30">
@@ -95,33 +93,31 @@
     <div class="col-lg-9 col-md-9 col-sm-9 col-xs-12">
       <div class="divider"></div>
       <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 padding-0">
-        <div class="from-inline">
-          <div class="input-group inline fix-width-80">
-            <span class="font-size-11">Alt Qty</span>
-            <input type="number" class="form-control input-sm text-right" id="new-alt-qty" value="1" readonly>
-          </div>
-          <div class="input-group inline margin-left-10 fix-width-200">
-            <span>Alt Uom</span>
-            <select id="new-alt-unit" class="form-control input-sm">
-              <option value="">Select</option>
-              <?php echo select_unit(); ?>
-            </select>
-          </div>
-          <div class="input-group inline fix-width-20 text-center">
-            <span>&nbsp;</span>
-            <span class="form-control input-xs text-center text-label"> = </span>
-          </div>
-          <div class="input-group inline fix-width-80">
-            <span class="font-size-11">Base Qty</span>
-            <input type="number" class="form-control input-sm text-right" id="new-base-qty" value="">
-          </div>
-          <div class="input-group inline margin-left-10 fix-width-150">
-            <span class="font-size-11">Base Uom</span>
-            <select id="new-base-unit" class="form-control input-sm" disabled>
-              <option value="">Select</option>
-              <?php echo select_unit($data->baseUnit); ?>
-            </select>
-          </div>
+        <div class="inline-table fix-width-80">
+          <span class="font-size-11">Alt Qty</span>
+          <input type="number" class="form-control input-sm text-right" id="new-alt-qty" value="1" readonly>
+        </div>
+        <div class="inline-table margin-left-10 fix-width-200">
+          <span>Alt Uom</span>
+          <select id="new-alt-unit" class="form-control input-sm">
+            <option value="">Select</option>
+            <?php echo select_unit(); ?>
+          </select>
+        </div>
+        <div class="inline-table fix-width-20 text-center">
+          <span>&nbsp;</span>
+          <span class="form-control input-xs text-center text-label"> = </span>
+        </div>
+        <div class="inline-table fix-width-80">
+          <span class="font-size-11">Base Qty</span>
+          <input type="number" class="form-control input-sm text-right" id="new-base-qty" value="">
+        </div>
+        <div class="inline-table margin-left-10 fix-width-150">
+          <span class="font-size-11">Base Uom</span>
+          <select id="new-base-unit" class="form-control input-sm" disabled>
+            <option value="">Select</option>
+            <?php echo select_unit($data->baseUnit); ?>
+          </select>
         </div>
 
         <div class="divider-hidden"></div>

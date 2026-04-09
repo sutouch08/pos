@@ -136,6 +136,12 @@ async function edit(id) {
 }
 
 
+function cancel(id) {
+  $(`#edit-row-${id}`).remove();
+  $(`#row-${id}`).removeClass('hide');
+}
+
+
 function confirmDelete(id, name) {
   swal({
     title: 'Are you sure?',
@@ -149,14 +155,14 @@ function confirmDelete(id, name) {
   }, function (isConfirm) {
     if (isConfirm) {
       setTimeout(() => {
-        deleteGroup(id);
+        deleteItem(id);
       }, 100);
     }
   });
 }
 
 
-async function deleteGroup(id) {
+async function deleteItem(id) {
   const url = `${HOME}delete`;
   const data = { id: id };
   try {

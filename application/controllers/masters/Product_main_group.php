@@ -7,6 +7,7 @@ class Product_main_group extends PS_Controller
 	public $menu_group_code = 'DB';
   public $menu_sub_group_code = 'PRODUCT';
 	public $title = 'เพิ่ม/แก้ไข กลุ่มหลักสินค้า';
+  public $segment = 4;
 
   public function __construct()
   {
@@ -18,249 +19,297 @@ class Product_main_group extends PS_Controller
 
   public function index()
   {
-		$code = get_filter('code', 'main_code', '');
-		$name = get_filter('name', 'main_name', '');
-
-		//--- แสดงผลกี่รายการต่อหน้า
-		$perpage = get_filter('set_rows', 'rows', 20);
-		//--- หาก user กำหนดการแสดงผลมามากเกินไป จำกัดไว้แค่ 300
-		if($perpage > 300)
-		{
-			$perpage = get_filter('rows', 'rows', 300);
-		}
-
-		$segment = 4; //-- url segment
-		$rows = $this->product_main_group_model->count_rows($code, $name);
-		//--- ส่งตัวแปรเข้าไป 4 ตัว base_url ,  total_row , perpage = 20, segment = 3
-		$init	= pagination_config($this->home.'/index/', $rows, $perpage, $segment);
-		$group = $this->product_main_group_model->get_data($code, $name, $perpage, $this->uri->segment($segment));
-
-    $data = array();
-
-    if(!empty($group))
-    {
-      foreach($group as $rs)
-      {
-        $arr = new stdClass();
-        $arr->code = $rs->code;
-        $arr->name = $rs->name;
-        $arr->menber = $this->product_main_group_model->count_members($rs->code);
-
-        $data[] = $arr;
-      }
-    }
-
-
-    $ds = array(
-      'code' => $code,
-      'name' => $name,
-			'data' => $data
+    $filter = array(
+      'code' => get_filter('code', 'product_main_group_code', ''),
+      'name' => get_filter('name', 'product_main_group_name', ''),
+      'active' => get_filter('active', 'product_main_group_active', 'all'),
+      'order_by' => get_filter('order_by', 'product_main_group_order_by', 'code'),
+      'sort_by' => get_filter('sort_by', 'product_main_group_sort_by', 'ASC')
     );
 
-		$this->pagination->initialize($init);
-    $this->load->view('masters/product_main_group/product_main_group_view', $ds);
-  }
-
-
-  public function add_new()
-  {
-    $data['code'] = $this->session->flashdata('code');
-    $data['name'] = $this->session->flashdata('name');
-    $this->title = 'เพิ่ม กลุ่มย่อยสินค้า';
-    $this->load->view('masters/product_main_group/product_main_group_add_view', $data);
+    if ($this->input->post('search'))
+    {
+      redirect($this->home);
+    }
+    else
+    {
+      $perpage = get_rows();
+      $rows = $this->product_main_group_model->count_rows($filter);
+      $filter['data'] = $this->product_main_group_model->get_list($filter, $perpage, $this->uri->segment($this->segment));
+      $init = pagination_config($this->home . '/index/', $rows, $perpage, $this->segment);
+      $this->pagination->initialize($init);
+      $this->load->view('masters/product_main_group/product_main_group_list', $filter);
+    }
   }
 
 
   public function add()
   {
-    if($this->input->post('code'))
+    $sc = TRUE;
+    $res = NULL;
+    $ds = json_decode(file_get_contents('php://input'));
+
+    if ($this->pm->can_add)
     {
-      $sc = TRUE;
-      $code = $this->input->post('code');
-      $name = $this->input->post('name');
-      $ds = array(
-        'code' => $code,
-        'name' => $name
-      );
-
-      if($this->product_main_group_model->is_exists($code) === TRUE)
+      if (! empty($ds) && ! empty($ds->code) && ! empty($ds->name))
       {
-        $sc = FALSE;
-        set_error("'".$code."' มีในระบบแล้ว");
-      }
-
-      if($this->product_main_group_model->is_exists_name($name) === TRUE)
-      {
-        $sc = FALSE;
-        set_error("'".$name."' มีในระบบแล้ว");
-      }
-
-      if($sc === TRUE)
-      {
-        if($this->product_main_group_model->add($ds))
-        {
-          $this->export_to_sap($code, $code);
-          set_message('เพิ่มข้อมูลเรียบร้อยแล้ว');
-        }
-        else
+        if ($this->product_main_group_model->is_exists_code($ds->code))
         {
           $sc = FALSE;
-          set_error('เพิ่มข้อมูลไม่สำเร็จ');
+          set_error('exists', $ds->code);
+        }
+
+        if ($sc === TRUE && $this->product_main_group_model->is_exists_name($ds->name))
+        {
+          $sc = FALSE;
+          set_error('exists', $ds->name);
+        }
+
+        if ($sc === TRUE)
+        {
+          $arr = array(
+            'code' => $ds->code,
+            'name' => $ds->name,
+            'active' => $ds->active
+          );
+
+          $id = $this->product_main_group_model->add($arr);
+
+          if (! $id)
+          {
+            $sc = FALSE;
+            set_error('insert');
+          }
+
+          if ($sc === TRUE)
+          {
+            $res = $this->product_main_group_model->get($id);
+
+            if (! empty($res))
+            {
+              $res->is_active = is_active($res->active);
+            }
+          }
         }
       }
-
-
-      if($sc === FALSE)
+      else
       {
-        $this->session->set_flashdata('code', $code);
-        $this->session->set_flashdata('name', $name);
+        $sc = FALSE;
+        set_error('required');
       }
     }
     else
     {
-      set_error('ไม่พบข้อมูล');
+      $sc = FALSE;
+      set_error('permission');
     }
 
-    redirect($this->home.'/add_new');
-  }
-
-
-
-  public function edit($code)
-  {
-    $this->title = 'แก้ไข กลุ่มย่อยสินค้า';
-    $rs = $this->product_main_group_model->get($code);
-    $data = array(
-      'code' => $rs->code,
-      'name' => $rs->name
+    $arr = array(
+      'status' => $sc === TRUE ? 'success' : 'error',
+      'message' => $sc === TRUE ? 'success' : $this->error,
+      'data' => $res
     );
 
-    $this->load->view('masters/product_main_group/product_main_group_edit_view', $data);
+    echo json_encode($arr);
   }
 
+
+  public function get_data()
+  {
+    $sc = TRUE;
+    $res = NULL;
+    $ds = json_decode(file_get_contents('php://input'));
+
+    if (! empty($ds) && ! empty($ds->id))
+    {
+      $res = $this->product_main_group_model->get($ds->id);
+
+      if (! empty($res))
+      {
+        $res->isChecked = $res->active == 1 ? 'checked' : '';
+      }
+      else
+      {
+        $sc = FALSE;
+        set_error('not_found');
+      }
+    }
+    else
+    {
+      $sc = FALSE;
+      set_error('required');
+    }
+
+    $arr = array(
+      'status' => $sc === TRUE ? 'success' : 'error',
+      'message' => $sc === TRUE ? 'success' : $this->error,
+      'data' => $res
+    );
+
+    echo json_encode($arr);
+  }
 
 
   public function update()
   {
     $sc = TRUE;
+    $res = NULL;
+    $ds = json_decode(file_get_contents('php://input'));
 
-    if($this->input->post('code'))
+    if ($this->pm->can_edit)
     {
-      $old_code = $this->input->post('product_main_group_code');
-      $old_name = $this->input->post('product_main_group_name');
-      $code = $this->input->post('code');
-      $name = $this->input->post('name');
-
-      $ds = array(
-        'code' => $code,
-        'name' => $name
-      );
-
-      if($sc === TRUE && $this->product_main_group_model->is_exists($code, $old_code) === TRUE)
+      if (! empty($ds) && ! empty($ds->id) && ! empty($ds->code) && ! empty($ds->name))
       {
-        $sc = FALSE;
-        set_error("'".$code."' มีอยู่ในระบบแล้ว โปรดใช้รหัสอื่น");
-      }
-
-      if($sc === TRUE && $this->product_main_group_model->is_exists_name($name, $old_name) === TRUE)
-      {
-        $sc = FALSE;
-        set_error("'".$name."' มีอยู่ในระบบแล้ว โปรดใช้ชื่ออื่น");
-      }
-
-      if($sc === TRUE)
-      {
-        if($this->product_main_group_model->update($old_code, $ds) === TRUE)
-        {
-          $this->export_to_sap($code, $old_code);
-          set_message('ปรับปรุงข้อมูลเรียบร้อยแล้ว');
-        }
-        else
+        if ($this->product_main_group_model->is_exists_code($ds->code, $ds->id))
         {
           $sc = FALSE;
-          set_error('ปรับปรุงข้อมูลไม่สำเร็จ');
+          set_error('exists', $ds->code);
+        }
+
+        if ($sc === TRUE && $this->product_main_group_model->is_exists_name($ds->name, $ds->id))
+        {
+          $sc = FALSE;
+          set_error('exists', $ds->name);
+        }
+
+        if ($sc === TRUE)
+        {
+          $arr = array(
+            'code' => $ds->code,
+            'name' => $ds->name,
+            'active' => $ds->active,
+            'member' => $this->product_main_group_model->count_members($ds->id)
+          );
+
+          if (! $this->product_main_group_model->update($ds->id, $arr))
+          {
+            $sc = FALSE;
+            set_error('update');
+          }
+
+          if ($sc === TRUE)
+          {
+            $res = $this->product_main_group_model->get($ds->id);
+
+            if (! empty($res))
+            {
+              $res->is_active = is_active($res->active);
+            }
+          }
         }
       }
-
+      else
+      {
+        $sc = FALSE;
+        set_error('required');
+      }
     }
     else
     {
       $sc = FALSE;
-      set_error('ไม่พบข้อมูล');
+      set_error('permission');
     }
 
-    if($sc === FALSE)
-    {
-      $code = $this->input->post('product_main_group_code');
-    }
+    $arr = array(
+      'status' => $sc === TRUE ? 'success' : 'error',
+      'message' => $sc === TRUE ? 'success' : $this->error,
+      'data' => $res
+    );
 
-    redirect($this->home.'/edit/'.$code);
+    echo json_encode($arr);
   }
 
 
-
-  public function delete($code)
+  public function delete()
   {
-    if($code != '')
+    $sc = TRUE;
+    $ds = json_decode(file_get_contents('php://input'));
+
+    if (! empty($ds) && ! empty($ds->id))
     {
-      if($this->product_main_group_model->delete($code))
+      if ($this->pm->can_delete)
       {
-        set_message('ลบข้อมูลเรียบร้อยแล้ว');
+        $member = $this->product_main_group_model->count_members($ds->id);
+
+        if ($member > 0)
+        {
+          $sc = FALSE;
+          set_error('transaction');
+        }
+
+        if ($sc === TRUE)
+        {
+          if (! $this->product_main_group_model->delete($ds->id))
+          {
+            $sc = FALSE;
+            set_error('delete');
+          }
+        }
       }
       else
       {
-        set_error('ลบข้อมูลไม่สำเร็จ');
+        $sc = FALSE;
+        set_error('permission');
       }
     }
     else
     {
-      set_error('ไม่พบข้อมูล');
+      $sc = FALSE;
+      set_error('required');
     }
 
-    redirect($this->home);
+    $this->_response($sc);
   }
 
 
-  public function export_to_sap($code, $old_code)
+  public function is_exists_code()
   {
-    $rs = $this->product_main_group_model->get($code);
-    if(!empty($rs))
+    $ds = json_decode(file_get_contents('php://input'));
+
+    if (! empty($ds->code))
     {
-      $ext = $this->product_main_group_model->is_sap_exists($old_code);
-
-      $arr = array(
-        'Code' => $rs->code,
-        'Name' => $rs->name,
-        'UpdateDate' => sap_date(now(), TRUE)
-      );
-
-      if($ext)
+      if ($this->product_main_group_model->is_exists_code($ds->code, $ds->id))
       {
-        $arr['Flag'] = 'U';
-        if($code !== $old_code)
-        {
-          $arr['OLDCODE'] = $old_code;
-        }
-        //return $this->product_main_group_model->update_sap_major($old_code, $arr);
+        echo 'exists';
       }
       else
       {
-        $arr['Flag'] = 'A';
+        echo 'not_exists';
       }
-
-      return $this->product_main_group_model->add_sap_main_group($arr);
     }
+  }
 
-    return FALSE;
+
+  public function is_exists_name()
+  {
+    $ds = json_decode(file_get_contents('php://input'));
+
+    if (! empty($ds->name))
+    {
+      if ($this->product_main_group_model->is_exists_name($ds->name, $ds->id))
+      {
+        echo 'exists';
+      }
+      else
+      {
+        echo 'not_exists';
+      }
+    }
   }
 
 
   public function clear_filter()
-	{
-		$filter = array('main_code', 'main_name');
-    clear_filter($filter);
-    echo 'done';
-	}
+  {
+    $filter = array(
+      'product_main_group_code',
+      'product_main_group_name',
+      'product_main_group_active',
+      'product_main_group_order_by',
+      'product_main_group_sort_by'
+    );
+
+    return clear_filter($filter);
+  }
 
 }//--- end class
  ?>

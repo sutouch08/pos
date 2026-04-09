@@ -229,6 +229,12 @@ async function update(id) {
 }
 
 
+function cancel(id) {
+  $(`#edit-row-${id}`).remove();
+  $(`#row-${id}`).removeClass('hide');
+}
+
+
 function openColorGroupModal() {
   $('#group-name').val('').removeClass('has-error');
   $('#group-name-error').text('');

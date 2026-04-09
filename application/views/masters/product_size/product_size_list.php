@@ -2,7 +2,7 @@
 <div class="row">
 	<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 padding-5 padding-top-5">
 		<h3 class="title"><?php echo $this->title; ?></h3>
-	</div>	
+	</div>
 </div><!-- End Row -->
 <hr class="" />
 <form id="search-form" method="post" action="<?php echo current_url(); ?>">
@@ -61,9 +61,9 @@
 		<table class="table tableFixHead dataTable border-1" style="min-width: 800px;">
 			<thead>
 				<tr>
-					<th class="fix-width-60 middle"></th>
+					<th class="fix-width-80 middle"></th>
 					<th class="fix-width-40 middle text-center">#</th>
-					<th class="fix-width-60 middle text-center">สถานะ</th>
+					<th class="fix-width-100 middle text-center">สถานะ</th>
 					<th class="fix-width-150 middle sorting <?php echo $sort_code; ?>" id="sort-code" onclick="sort('code')">รหัส</th>
 					<th class="fix-width-200 middle sorting <?php echo $sort_name; ?>" id="sort-name" onclick="sort('name')">ชื่อ</th>
 					<th class="fix-width-150 middle sorting <?php echo $sort_group; ?>" id="sort-group_name" onclick="sort('group_name')">กลุ่ม</th>
@@ -109,12 +109,15 @@
 
 <script id="inline-edit-template" type="text/x-handlebarsTemplate">
 	<tr id="edit-row-{{id}}">
-		<td class="middle text-center">
+		<td colspan="2" class="middle text-center">
 			<button type="button" class="btn btn-minier btn-success" onclick="update({{id}})">
 				<i class="fa fa-save"></i> Save
 			</button>
+      <button type="button" class="btn btn-minier btn-default" onclick="cancel({{id}})">
+        <i class="fa fa-close"></i>
+      </button>
 		</td>
-		<td colspan="2" class="middle text-center">
+		<td class="middle text-center">
 			<label style="padding-top: 5px;">
 				<input class="ace ace-switch ace-switch-6" id="active-{{id}}" type="checkbox" value="1" {{isChecked}} data-id="{{id}}" />
 				<span class="lbl"></span>

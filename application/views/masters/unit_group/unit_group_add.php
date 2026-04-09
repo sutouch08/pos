@@ -2,13 +2,11 @@
 <?php $this->load->view('masters/unit_group/style'); ?>
 
 <div class="row">
-  <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 padding-5 padding-top-5">
-    <h3 class="title"><?php echo $this->title; ?></h3>
-  </div>
-  <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 padding-5 text-right">
-    <button type="button" class="btn btn-default btn-white top-btn" onclick="goBack()">
-      <i class="fa fa-arrow-left"></i>&nbsp; กลับ
-    </button>
+  <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 padding-5">
+    <h3 class="title">
+      <a href="javascript:goBack()" class="pull-left margin-right-15"><i class="fa fa-chevron-left"></i></a>
+      <?php echo $this->title; ?>
+    </h3>
   </div>
 </div>
 <hr>
@@ -36,7 +34,7 @@
       </select>
     </div>
     <div class="help-block col-lg-9 col-lg-offset-3 col-md-9 col-md-offset-3 col-sm-9 col-sm-offset-3" id="unit-error"></div>
-  </div>  
+  </div>
   <div class="divider-hidden"></div>
   <div class="divider-hidden"></div>
   <div class="form-group">

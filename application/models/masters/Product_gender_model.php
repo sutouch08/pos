@@ -1,7 +1,7 @@
 <?php
-class Product_group_model extends CI_Model
+class Product_gender_model extends CI_Model
 {
-  private $tb = "product_group";
+  private $tb = "product_gender";
 
   public function __construct()
   {
@@ -221,7 +221,7 @@ class Product_group_model extends CI_Model
 
   public function count_members($id)
   {
-    return $this->db->where('group_id', $id)->count_all_results('products');
+    return $this->db->where('gender_id', $id)->count_all_results('products');
   }
 
 

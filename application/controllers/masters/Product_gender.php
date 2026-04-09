@@ -1,30 +1,30 @@
 <?php
-defined('BASEPATH') OR exit('No direct script access allowed');
+defined('BASEPATH') or exit('No direct script access allowed');
 
-class Product_type extends PS_Controller
+class Product_gender extends PS_Controller
 {
-  public $menu_code = 'DBPDTY';
-	public $menu_group_code = 'DB';
+  public $menu_code = 'DBPDGD';
+  public $menu_group_code = 'DB';
   public $menu_sub_group_code = 'PRODUCT';
-	public $title = 'เพิ่ม/แก้ไข ชนิดสินค้า';
+  public $title = 'เพิ่ม/แก้ไข เพศ';
   public $segment = 4;
 
   public function __construct()
   {
     parent::__construct();
-    $this->home = base_url().'masters/product_type';
-    $this->load->model('masters/product_type_model');
+    $this->home = base_url() . 'masters/product_gender';
+    $this->load->model('masters/product_gender_model');
   }
 
 
   public function index()
   {
     $filter = array(
-      'code' => get_filter('code', 'product_type_code', ''),
-      'name' => get_filter('name', 'product_type_name', ''),
-      'active' => get_filter('active', 'product_type_active', 'all'),
-      'order_by' => get_filter('order_by', 'product_type_order_by', 'code'),
-      'sort_by' => get_filter('sort_by', 'product_type_sort_by', 'ASC')
+      'code' => get_filter('code', 'product_gender_code', ''),
+      'name' => get_filter('name', 'product_gender_name', ''),
+      'active' => get_filter('active', 'product_gender_active', 'all'),
+      'order_by' => get_filter('order_by', 'product_gender_order_by', 'code'),
+      'sort_by' => get_filter('sort_by', 'product_gender_sort_by', 'ASC')
     );
 
     if ($this->input->post('search'))
@@ -34,11 +34,11 @@ class Product_type extends PS_Controller
     else
     {
       $perpage = get_rows();
-      $rows = $this->product_type_model->count_rows($filter);
-      $filter['data'] = $this->product_type_model->get_list($filter, $perpage, $this->uri->segment($this->segment));
+      $rows = $this->product_gender_model->count_rows($filter);
+      $filter['data'] = $this->product_gender_model->get_list($filter, $perpage, $this->uri->segment($this->segment));
       $init = pagination_config($this->home . '/index/', $rows, $perpage, $this->segment);
       $this->pagination->initialize($init);
-      $this->load->view('masters/product_type/product_type_list', $filter);
+      $this->load->view('masters/product_gender/product_gender_list', $filter);
     }
   }
 
@@ -53,13 +53,13 @@ class Product_type extends PS_Controller
     {
       if (! empty($ds) && ! empty($ds->code) && ! empty($ds->name))
       {
-        if ($this->product_type_model->is_exists_code($ds->code))
+        if ($this->product_gender_model->is_exists_code($ds->code))
         {
           $sc = FALSE;
           set_error('exists', $ds->code);
         }
 
-        if ($sc === TRUE && $this->product_type_model->is_exists_name($ds->name))
+        if ($sc === TRUE && $this->product_gender_model->is_exists_name($ds->name))
         {
           $sc = FALSE;
           set_error('exists', $ds->name);
@@ -73,7 +73,7 @@ class Product_type extends PS_Controller
             'active' => $ds->active
           );
 
-          $id = $this->product_type_model->add($arr);
+          $id = $this->product_gender_model->add($arr);
 
           if (! $id)
           {
@@ -83,7 +83,7 @@ class Product_type extends PS_Controller
 
           if ($sc === TRUE)
           {
-            $res = $this->product_type_model->get($id);
+            $res = $this->product_gender_model->get($id);
 
             if (! empty($res))
             {
@@ -122,7 +122,7 @@ class Product_type extends PS_Controller
 
     if (! empty($ds) && ! empty($ds->id))
     {
-      $res = $this->product_type_model->get($ds->id);
+      $res = $this->product_gender_model->get($ds->id);
 
       if (! empty($res))
       {
@@ -160,13 +160,13 @@ class Product_type extends PS_Controller
     {
       if (! empty($ds) && ! empty($ds->id) && ! empty($ds->code) && ! empty($ds->name))
       {
-        if ($this->product_type_model->is_exists_code($ds->code, $ds->id))
+        if ($this->product_gender_model->is_exists_code($ds->code, $ds->id))
         {
           $sc = FALSE;
           set_error('exists', $ds->code);
         }
 
-        if ($sc === TRUE && $this->product_type_model->is_exists_name($ds->name, $ds->id))
+        if ($sc === TRUE && $this->product_gender_model->is_exists_name($ds->name, $ds->id))
         {
           $sc = FALSE;
           set_error('exists', $ds->name);
@@ -178,10 +178,10 @@ class Product_type extends PS_Controller
             'code' => $ds->code,
             'name' => $ds->name,
             'active' => $ds->active,
-            'member' => $this->product_type_model->count_members($ds->id)
+            'member' => $this->product_gender_model->count_members($ds->id)
           );
 
-          if (! $this->product_type_model->update($ds->id, $arr))
+          if (! $this->product_gender_model->update($ds->id, $arr))
           {
             $sc = FALSE;
             set_error('update');
@@ -189,7 +189,7 @@ class Product_type extends PS_Controller
 
           if ($sc === TRUE)
           {
-            $res = $this->product_type_model->get($ds->id);
+            $res = $this->product_gender_model->get($ds->id);
 
             if (! empty($res))
             {
@@ -229,7 +229,7 @@ class Product_type extends PS_Controller
     {
       if ($this->pm->can_delete)
       {
-        $member = $this->product_type_model->count_members($ds->id);
+        $member = $this->product_gender_model->count_members($ds->id);
 
         if ($member > 0)
         {
@@ -239,7 +239,7 @@ class Product_type extends PS_Controller
 
         if ($sc === TRUE)
         {
-          if (! $this->product_type_model->delete($ds->id))
+          if (! $this->product_gender_model->delete($ds->id))
           {
             $sc = FALSE;
             set_error('delete');
@@ -268,7 +268,7 @@ class Product_type extends PS_Controller
 
     if (! empty($ds->code))
     {
-      if ($this->product_type_model->is_exists_code($ds->code, $ds->id))
+      if ($this->product_gender_model->is_exists_code($ds->code, $ds->id))
       {
         echo 'exists';
       }
@@ -286,7 +286,7 @@ class Product_type extends PS_Controller
 
     if (! empty($ds->name))
     {
-      if ($this->product_type_model->is_exists_name($ds->name, $ds->id))
+      if ($this->product_gender_model->is_exists_name($ds->name, $ds->id))
       {
         echo 'exists';
       }
@@ -301,15 +301,13 @@ class Product_type extends PS_Controller
   public function clear_filter()
   {
     $filter = array(
-      'product_type_code',
-      'product_type_name',
-      'product_type_active',
-      'product_type_order_by',
-      'product_type_sort_by'
+      'product_gender_code',
+      'product_gender_name',
+      'product_gender_active',
+      'product_gender_order_by',
+      'product_gender_sort_by'
     );
 
     return clear_filter($filter);
   }
-
-}//--- end class
- ?>
+} //--- end class
