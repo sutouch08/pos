@@ -205,12 +205,12 @@ function confirmDelete(id, name) {
   },
   function(isConfirm) {
     if (isConfirm) {
-      deleteBrand(id);
+      deleteItem(id);
     }
   });
 }
 
-async function deleteBrand(id) {
+async function deleteItem(id) {
   const url = `${HOME}delete`;
   const data = { id: id };  
   try {

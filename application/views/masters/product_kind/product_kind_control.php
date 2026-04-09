@@ -13,7 +13,7 @@
       <input type="text" class="form-control input-sm" id="name" maxlength="50" value="" autocomplete="off" />
     </div>
     <div class="error-block" id="name-error"></div>
-  </div>  
+  </div>
   <div class="col-lg-1 col-md-1-harf col-sm-1-harf col-xs-4 padding-5 text-center">
     <label style="padding-top: 5px; margin-bottom: 0px; height: 30px;">
       <input class="ace ace-switch ace-switch-6" id="status" type="checkbox" value="1" checked />
@@ -25,7 +25,7 @@
     <button type="button" class="btn btn-white btn-sm btn-success btn-block" onclick="add()">
       <i class="fa fa-plus"></i>&nbsp; Add
     </button>
-  </div>  
+  </div>
 </div>
 <hr class="margin-top-10" />
 
