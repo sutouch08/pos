@@ -11,8 +11,50 @@ function select_unit($id = NULL)
   {
     foreach($units as $unit)
     {
-      $selected = ($id == $unit->id) ? 'selected' : '';
-      $ds .= '<option value="'.$unit->id.'" data-code="'.$unit->code.'" '.$selected.'>'.$unit->code.' | '.$unit->name.'</option>';
+      $selected = strval($id) == strval($unit->id) ? 'selected' : '';
+      $ds .= '<option value="'.$unit->id.'" data-code="'.$unit->code.'" '.$selected.'>'.$unit->name.'</option>';
+    }
+  }
+
+  return $ds;
+}
+
+
+function select_unit_group($id = NULL)
+{
+  $ds = "";
+
+  $ci =& get_instance();
+  $ci->load->model('masters/unit_group_model');
+  $groups = $ci->unit_group_model->get_all();
+
+  if(!empty($groups))
+  {
+    foreach($groups as $group)
+    {
+      $selected = strval($id) == strval($group->id) ? 'selected' : '';
+      $ds .= '<option value="'.$group->id.'" '.$selected.'>'.$group->name.'</option>';
+    }
+  }
+
+  return $ds;
+}
+
+
+function select_unit_by_group ($group_id, $id = NULL)
+{
+  $ds = "";
+
+  $ci =& get_instance();
+  $ci->load->model('masters/unit_model');
+  $units = $ci->unit_model->get_all_by_group($group_id);
+
+  if(!empty($units))
+  {
+    foreach($units as $unit)
+    {
+      $selected = strval($id) == strval($unit->id) ? 'selected' : '';
+      $ds .= '<option value="'.$unit->id.'" data-code="'.$unit->code.'" '.$selected.'>'.$unit->name.'</option>';
     }
   }
 

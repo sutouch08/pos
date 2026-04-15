@@ -1,20 +1,22 @@
 <?php
-function select_product_type($code = '')
-{
-  $CI =& get_instance();
-  $CI->load->model('masters/product_type_model');
-  $result = $CI->product_type_model->get_data();
-  $ds = '';
-  if(!empty($result))
+  function select_product_type($id = NULL)
   {
-    foreach($result as $rs)
-    {
-      $ds .= '<option value="'.$rs->code.'" '.is_selected($rs->code, $code).'>'.$rs->name.'</option>';
-    }
-  }
+    $ds = '';
+    $ci =& get_instance();
+    $ci->load->model('masters/product_type_model');
+    $list = $ci->product_type_model->get_all();
 
-  return $ds;
-}
+    if(!empty($list))
+    {
+      foreach($list as $rs)
+      {
+        $selected = strval($id) === strval($rs->id) ? 'selected' : '';
+        $ds .= '<option value="'.$rs->id.'" '.$selected.'>'.$rs->code.' | '.$rs->name.'</option>';
+      }
+    }
+    
+    return $ds;
+  }
 
 
  ?>

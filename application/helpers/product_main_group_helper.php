@@ -1,20 +1,21 @@
 <?php
-function select_product_main_group($code = '')
+function select_product_main_group($id = NULL)
 {
-  $CI =& get_instance();
-  $CI->load->model('masters/product_main_group_model');
-  $result = $CI->product_main_group_model->get_data();
   $ds = '';
-  if(!empty($result))
+  $ci =& get_instance();
+  $ci->load->model('masters/product_main_group_model');
+  $list = $ci->product_main_group_model->get_all();
+
+  if(!empty($list))
   {
-    foreach($result as $rs)
+    foreach($list as $rs)
     {
-      $ds .= '<option value="'.$rs->code.'" '.is_selected($rs->code, $code).'>'.$rs->name.'</option>';
+      $selected = strval($id) === strval($rs->id) ? 'selected' : '';
+      $ds .= '<option value="'.$rs->id.'" '.$selected.'>'.$rs->code.' | '.$rs->name.'</option>';
     }
   }
-
+  
   return $ds;
 }
 
-
- ?>
+?>

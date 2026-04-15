@@ -67,6 +67,30 @@ class Unit_model extends CI_Model
   }
 
 
+  public function get_all_by_group($group_id, $active = TRUE)
+  {
+    $this->db
+    ->select('u.*')
+    ->from($this->tb.' AS u')
+    ->join($this->td.' AS d', 'u.id = d.unitId', 'inner')
+    ->where('d.unitGroupId', $group_id);
+
+    if( $active )
+    {
+      $this->db->where('u.active', 1);
+    }
+
+    $rs = $this->db->get();
+
+    if ($rs->num_rows() > 0)
+    {
+      return $rs->result();
+    }
+
+    return NULL;
+  }
+
+
   public function get_name($id)
   {
     $rs = $this->db->select('name')->where('id', $id)->get($this->tb);

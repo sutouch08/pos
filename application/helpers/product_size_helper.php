@@ -1,40 +1,40 @@
 <?php
-function select_size_group($id = NULL)
+function select_size($id = NULL)
 {
-  $ds = "";
+  $ds = '';
   $ci =& get_instance();
   $ci->load->model('masters/product_size_model');
-  $groups = $ci->product_size_model->get_all_group();
+  $list = $ci->product_size_model->get_all();
 
-  if(! empty($groups))
+  if(!empty($list))
   {
-    foreach($groups as $group)
+    foreach($list as $rs)
     {
-      $selected = $id == $group->id ? 'selected' : '';
-      $ds .= '<option value="'.$group->id.'" '.$selected.'>'.$group->name.'</option>';
+      $selected = strval($id) === strval($rs->id) ? 'selected' : '';
+      $ds .= '<option value="'.$rs->id.'" '.$selected.'>'.$rs->code.' | '.$rs->name.'</option>';
     }
   }
-
-  return $ds;  
+  
+  return $ds;
 }
 
 
-function select_size($id = NULL)
+function select_size_group($id = NULL)
 {
-  $ds = "";
+  $ds = '';
   $ci =& get_instance();
-  $ci->load->model('masters/product_size_model');
-  $sizes = $ci->product_size_model->get_all();
+  $ci->load->model('masters/product_size_group_model');
+  $list = $ci->product_size_group_model->get_all();
 
-  if(! empty($sizes))
+  if(!empty($list))
   {
-    foreach($sizes as $size)
+    foreach($list as $rs)
     {
-      $selected = $id == $size->id ? 'selected' : '';
-      $ds .= '<option value="'.$size->id.'" '.$selected.'>'.$size->name.'</option>';
+      $selected = strval($id) === strval($rs->id) ? 'selected' : '';
+      $ds .= '<option value="'.$rs->id.'" '.$selected.'>'.$rs->name.'</option>';
     }
   }
-
+  
   return $ds;
 }
 

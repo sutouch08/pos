@@ -142,7 +142,7 @@ function select_years($se = '')
 	$length	= 5;
 	$startYear = getConfig('START_YEAR');
   $y = ($se === '' OR $sc === NULL) ? $startYear : $se;
-	$year = ($y - $length) < $startYear ? $startYear : $y - $length;
+	$year = (intval($y) - $length) < intval($startYear) ? intval($startYear) : intval($y) - $length;
 	$lastYear = date('Y') + $length;
 	while( $year <= $lastYear )
 	{

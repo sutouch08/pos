@@ -1,248 +1,291 @@
-var HOME = BASE_URL + 'masters/items/';
+let click = 0;
 
-function addNew(){
-  window.location.href = HOME + 'add_new';
+const inputCode = document.getElementById("code");
+const inputName = document.getElementById("name");
+const inputBarcode = document.getElementById("barcode");
+const inputCost = document.getElementById("cost");
+const inputPrice = document.getElementById("price");
+const regex = /[^a-zA-Z0-9-_.@\/]+/gi;
+
+if (inputCode) {
+  inputCode.addEventListener("input", () => validInput(inputCode, regex));
+  inputCode.addEventListener("blur", () => validateCode());
 }
 
-function goBack(){
-  window.location.href = HOME;
+if(inputName) {  
+  inputName.addEventListener("blur", () => validateName());
 }
 
-function getEdit(id){
-  window.location.href = HOME + 'edit/'+id;
+if(inputBarcode) {
+  inputBarcode.addEventListener("blur", () => validateBarcode());
 }
 
-function duplicate(id){
-  window.location.href = HOME + 'duplicate/'+id;
+if(inputCost) {
+  inputCost.addEventListener("blur", () => {
+    value = parseDefaultFloat(removeCommas(inputCost.value.trim()), 0);
+    inputCost.value = addCommas(value);
+  });
+
+  inputCost.addEventListener("focus", () => {
+    const value = inputCost.value;
+    inputCost.value = "";
+    setTimeout(() => inputCost.value = value, 10);    
+  });
 }
 
-function viewDetail(id) {
-  window.location.href = HOME + 'view_detail/'+id;
-}
+if(inputPrice) {
+  inputPrice.addEventListener("blur", () => {
+    value = parseDefaultFloat(removeCommas(inputPrice.value.trim()), 0);
+    inputPrice.value = addCommas(value);
+  });
 
-
-function update() {
-	let error = 0;
-
-	let data = {};
-
-  data.id = $('#id').val();
-	data.code = $('#code').val().trim();
-	data.old_code = $('#old_code').val().trim();
-	data.name = $('#name').val().trim(); // required
-	data.style = $('#style').val().trim();
-	data.old_style = $('#old_style').val().trim();
-	data.color = $('#color').val().trim();
-	data.size = $('#size').val().trim();
-	data.barcode = $('#barcode').val().trim();
-	data.cost = parseDefault(parseFloat($('#cost').val()), 0);
-	data.price = parseDefault(parseFloat($('#price').val()), 0);
-	data.unit_code = $('#unit_code').val();
-  data.unit_id = $('#unit_code option:selected').data('id');
-  data.unit_group = $('#unit_code option:selected').data('groupid');
-  data.sale_vat_code = $('#sale-vat-code').val();
-  data.sale_vat_rate = parseDefault(parseFloat($('#sale-vat-code option:selected').data('rate')), 0.00);
-  data.purchase_vat_code = $('#purchase-vat-code').val();
-  data.purchase_vat_rate = parseDefault(parseFloat($('#purchase-vat-code option:selected').data('rate')), 0.00);
-	data.brand_code = $('#brand').val();
-	data.group_code = $('#group').val();
-	data.main_group_code = $('#mainGroup').val();
-	data.sub_group_code = $('#subGroup').val();
-	data.category_code = $('#category').val();
-	data.kind_code = $('#kind').val();
-	data.type_code = $('#type').val();
-	data.year = $('#year').val();
-	data.count_stock = $('#count_stock').is(':checked') ? 1 : 0;
-	data.can_sell = $('#can_sell').is(':checked') ? 1 : 0;
-	data.is_api = $('#is_api').is(':checked') ? 1 : 0;
-	data.active = $('#active').is(':checked') ? 1 : 0;
-
-	if(data.name.length === 0) {
-		set_error($('#name'), $('#name-error'), "required");
-		error++;
-	}
-	else {
-		clear_error($('#name'), $('#name-error'));
-	}
-
-	if(error > 0) {
-		return false;
-	}
-
-	load_in();
-
-	$.ajax({
-		url:HOME + 'update',
-		type:'POST',
-		cache:false,
-		data:{
-			"data" : JSON.stringify(data)
-		},
-		success:function(rs) {
-			load_out();
-			var rs = rs.trim();
-			if(rs == 'success') {
-				swal({
-					title:"Success",
-					type:'success',
-					timer:1000
-				});
-			}
-			else {
-				swal({
-					title:'Error!',
-					text:rs,
-					type:'error'
-				})
-			}
-		},
-		error:function(xhr) {
-			load_out();
-			swal({
-				title:"Error!",
-				text:'Error : '+xhr.responseText,
-				type:'error',
-				html:true
-			})
-		}
-	})
-}
-
-
-
-$('#style').autocomplete({
-  source: BASE_URL + 'auto_complete/get_style_code',
-  autoFocus:true,
-  close:function() {
-    let rs = $(this).val();
-    let arr = rs.split(' | ');
-    if(arr.length == 2) {
-      $(this).val(arr[0]);
-    }
-    else {
-      $(this).val('');
-    }
-  }
-});
-
-$('#color').autocomplete({
-  source: BASE_URL + 'auto_complete/get_color_code_and_name',
-  autoFocus:true,
-  close:function(){
-    var rs = $(this).val();
-    var err = rs.split(' | ');
-    if(err.length == 2){
-      $(this).val(err[0]);
-    }else{
-      $(this).val('');
-    }
-  }
-});
-
-
-$('#size').autocomplete({
-  source:BASE_URL + 'auto_complete/get_size_code_and_name',
-  autoFocus:true,
-  close:function(){
-    var rs = $(this).val();
-    var err = rs.split(' | ');
-    if(err.length == 2){
-      $(this).val(err[0]);
-    }else{
-      $(this).val('');
-    }
-  }
-});
-
-
-function checkAdd(){
-  var code = $('#code').val();
-  if(code.length > 0){
-    $.ajax({
-      url:HOME + 'is_exists_code/'+code,
-      type:'GET',
-      cache:false,
-      success:function(rs){
-        if(rs != 'ok'){
-          set_error($('#code'), $('#code-error'), rs);
-          return false;
-        }else{
-          clear_error($('#code'), $('#code-error'));
-          $('#btn-submit').click();
-        }
-      }
-    })
-  }
-}
-
-
-
-function clearFilter(){
-  var url = HOME + 'clear_filter';
-  var page = BASE_URL + 'masters/products';
-  $.get(url, function(){
-    goBack();
+  inputPrice.addEventListener("focus", () => {
+    const value = inputPrice.value;
+    inputPrice.value = "";
+    setTimeout(() => inputPrice.value = value, 10);    
   });
 }
 
 
-function getDelete(id, code, no){
-  let url = BASE_URL + 'masters/items/delete_item/';// + encodeURIComponent(code);
-  swal({
-    title:'Are sure ?',
-    text:'ต้องการลบ ' + code + ' หรือไม่ ?',
-    type:'warning',
-    showCancelButton: true,
-		confirmButtonColor: '#FA5858',
-		confirmButtonText: 'ใช่, ฉันต้องการลบ',
-		cancelButtonText: 'ยกเลิก',
-		closeOnConfirm: false
-  },function(){
-    $.ajax({
-      url: url,
-      type:'GET',
-      cache:false,
-      data:{
-        'id' : id
-      },
-      success:function(rs){
-        if(rs === 'success'){
-          swal({
-            title:'Deleted',
-            type:'success',
-            timer:1000
-          });
+const addNew = () => {
+  window.location.href = `${HOME}add_new`;
+}
 
-          $('#row-'+no).remove();
-        }else{
-          swal({
-            title:'Error!',
-            text:rs,
-            type:'error'
-          });
-        }
+
+const edit = (id) => {
+  window.location.href = `${HOME}edit/${id}`;
+}
+
+
+const viewDetail = (id) => {
+  const url = `${HOME}view_detail/${id}`;
+  const width = 800;
+  const height = 900;
+  const left = (window.screen.width / 2) - (width / 2);
+  const top = 30;
+  window.open(url, '_blank', `width=${width},height=${height},left=${left},top=${top}`);
+}
+
+
+async function validateCode() {
+  const inputCode = document.getElementById('code');
+  const codeError = document.getElementById('code-error');
+  const value = inputCode.value.trim();
+
+  if (!value) {
+    setError(inputCode, codeError, "Code is Required");
+    return false;
+  }
+
+  //--- check duplicated  
+  const url = `${HOME}is_exists_code`;
+  const res = await validateRemote(url, { code: value });
+
+  if (res === 'exists') {
+    setError(inputCode, codeError, 'Code already exists');
+    return false;
+  }
+
+  clearError(inputCode, codeError);
+  return true;
+}
+
+
+async function validateName(id = null) {
+  const inputName = document.getElementById('name');
+  const nameError = document.getElementById('name-error');
+  const value = inputName.value.trim();
+
+  if (!value) {
+    setError(inputName, nameError, "Name is Required");
+    return false;
+  }
+
+  //--- check duplicated  
+  const url = `${HOME}is_exists_name`;
+  const res = await validateRemote(url, { name: value, id: id });
+
+  if (res === 'exists') {
+    setError(inputName, nameError, 'Name already exists');
+    return false;
+  }
+
+  clearError(inputName, nameError);
+  return true;
+}
+
+
+async function validateBarcode(id = null) {
+  const inputBarcode = document.getElementById('barcode');
+  const barcodeError = document.getElementById('barcode-error');
+  const value = inputBarcode.value.trim();
+
+  if(value) {
+    //--- check duplicated
+    const url = `${HOME}is_exists_barcode`;
+    const res = await validateRemote(url, { barcode: value, id: id });
+
+    if (res === 'exists') {
+      setError(inputBarcode, barcodeError, 'Barcode already exists');
+      return false;
+    }
+
+    clearError(inputBarcode, barcodeError);
+    return true;
+  }
+
+  clearError(inputBarcode, barcodeError);
+  return true;
+}
+
+
+async function add() {
+  if (click !== 0) {
+    return false;
+  }
+
+  click = 1;
+
+  if (!await validateCode()) {
+    click = 0;
+    return false;
+  }
+
+  if (!await validateName()) {
+    click = 0;
+    return false;
+  }
+
+  const selectUnit = document.getElementById('unit');
+  const unitError = document.getElementById('unit-error');
+  clearError(selectUnit, unitError);
+
+  if (!selectUnit.value) {
+    setError(selectUnit, unitError, 'Unit is Required');
+    click = 0;
+    return false;
+  }
+
+  const puVat = document.getElementById('purchase-vat-code');
+  const saVat = document.getElementById('sale-vat-code');
+
+  const data = {
+    code: document.getElementById('code').value.trim(),
+    name: document.getElementById('name').value.trim(),
+    style: document.getElementById('style').value.trim(),    
+    barcode: document.getElementById('barcode').value.trim(),
+    cost: parseDefaultFloat(removeCommas(document.getElementById('cost').value.trim()), 0),
+    price: parseDefaultFloat(removeCommas(document.getElementById('price').value.trim()), 0),
+    unit_group: document.getElementById('unit-group').value.trim(),
+    unit: document.getElementById('unit').value.trim(),
+    purchase_vat_code: puVat.value.trim(),
+    purchase_vat_rate: parseDefaultFloat(puVat.options[puVat.selectedIndex].getAttribute('data-rate'), 0),
+    sale_vat_code: saVat.value.trim(),
+    sale_vat_rate: parseDefaultFloat(saVat.options[saVat.selectedIndex].getAttribute('data-rate'), 0),
+    count_stock: document.getElementById('count-stock').checked ? 1 : 0,
+    can_sell: document.getElementById('can-sell').checked ? 1 : 0,
+    active: document.querySelector('input[name="active"]:checked').value,
+    color: document.getElementById('color').value.trim(),
+    size: document.getElementById('size').value.trim(),
+    main_group: document.getElementById('main-group').value.trim(),
+    group: document.getElementById('group').value.trim(),
+    gender: document.getElementById('gender').value.trim(),
+    category: document.getElementById('category').value.trim(),
+    kind: document.getElementById('kind').value.trim(),
+    type: document.getElementById('type').value.trim(),
+    brand: document.getElementById('brand').value.trim(),
+    year: document.getElementById('year').value.trim()
+  };
+
+  loadIn();
+
+  try {
+    const url = `${HOME}add`;
+    const response = await postData(url, data);
+    const res = await response.text();
+
+    loadOut();
+
+    if(isJson(res)) {
+      const ds = JSON.parse(res);
+
+      if(ds.status === 'success') {
+        swal({
+          title: 'Success',
+          text: 'Item has been added successfully<br/>Do you want to add new item ?',
+          type: 'success',
+          html: true,
+          showCancelButton: true,
+          confirmButtonText: 'Yes',
+          cancelButtonText: 'No'
+        }, function (isConfirm) {
+          if (isConfirm) {
+            window.location.href = `${HOME}add_new`;
+          }
+          else {
+            window.location.href = `${HOME}`;
+          }
+        });
       }
-    })
+      else {
+        showError(ds.message);
+      }
+    }
+    else {
+      showError(res);
+    }
 
-  })
+    click = 0;
+  }
+  catch (error) {    
+    showError(error);
+    click = 0;
+  } 
 }
 
 
-function updateUnit() {
-  let unit_id = $('#unit_code option:selected').data('id');
-  let unit_group = $('#unit_code option:selected').data('groupid');
+$('#style').autocomplete({
+  source: `${BASE_URL}auto_complete/get_style_code_and_name`,
+  autoFocus: true,
+  close: function () {
+    const arr = $(this).val().trim().split(' | ');
 
-  $('#unit_id').val(unit_id);
-  $('#unit_group').val(unit_group);
+    if(arr.length === 2) {
+      const code = arr[0];
+      $(this).val(code);
+    }
+    else {
+      $(this).val('');
+    }   
+  }
+});
+
+
+async function genUnitSelection() {
+  const groupId = $('#unit-group').val();
+  const unitId = $('#unit').val();
+  
+  if (!groupId) {
+    $('#unit').select2('destroy');
+    $('#unit').html('<option value="">เลือก</option>');
+    $('#unit').select2();
+    return false;
+  }
+
+  const url = `${HOME}get_units_by_group`;
+  const data = { group_id: groupId, unit_id: unitId };
+  const response = await postData(url, data);
+  const res = await response.json();
+
+  if(res.status === 'success') {
+    $('#unit').select2('destroy');
+    $('#unit').html(res.options);
+    $('#unit').select2();    
+  }
+  else {
+    $('#unit').select2('destroy');
+    $('#unit').html('<option value="">เลือก</option>');
+    $('#unit').select2();
+  }
 }
-
-
-function getTemplate(){
-  var token	= new Date().getTime();
-	get_download(token);
-	window.location.href = BASE_URL + 'masters/items/download_template/'+token;
-}
-
-function getSearch(){
-  $('#searchForm').submit();
-}
+    
