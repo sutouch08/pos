@@ -42,7 +42,7 @@
 <?php echo $this->pagination->create_links(); ?>
 
 <?php if ($this->pm->can_add) : ?>
-	<?php $this->load->view('masters/bank_code/bank_code_add_control'); ?>
+	<?php $this->load->view('masters/channels/channels_add_control'); ?>
 <?php endif; ?>
 
 <div class="row">
@@ -138,6 +138,6 @@
 	<td class="middle">{{date_upd}}</td>
 </script>
 
-<script src="<?php echo base_url(); ?>scripts/masters/bank_code.js?v=<?php echo date('Ymd'); ?>"></script>
+<script src="<?php echo base_url(); ?>scripts/masters/channels.js?v=<?php echo date('Ymd'); ?>"></script>
 
 <?php $this->load->view('include/footer'); ?>

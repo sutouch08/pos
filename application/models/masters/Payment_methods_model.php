@@ -13,7 +13,10 @@ class Payment_methods_model extends CI_Model
   {
     if(!empty($ds))
     {
-      return  $this->db->insert($this->tb, $ds);
+      if($this->db->insert($this->tb, $ds))
+      {
+        return $this->db->insert_id();
+      }
     }
 
     return FALSE;
@@ -21,12 +24,11 @@ class Payment_methods_model extends CI_Model
 
 
 
-  public function update($code, array $ds = array())
+  public function update($id, array $ds = array())
   {
     if(!empty($ds))
     {
-      $this->db->where('code', $code);
-      return $this->db->update($this->tb, $ds);
+      return $this->db->where('id', $id)->update($this->tb, $ds);
     }
 
     return FALSE;
@@ -44,9 +46,32 @@ class Payment_methods_model extends CI_Model
   }
 
 
-  public function delete($code)
+  public function update_by_code($code, array $ds = array())
+  {
+    if( ! empty($ds))
+    {
+      return $this->db->where('code', $code)->update($this->tb, $ds);
+    }
+
+    return FALSE;
+  }
+
+
+  public function delete($id)
+  {
+    return $this->db->where('id', $id)->delete($this->tb);
+  }
+
+
+  public function delete_by_code($code)
   {
     return $this->db->where('code', $code)->delete($this->tb);
+  }
+
+
+  public function delete_by_id($id)
+  {
+    return $this->db->where('id', $id)->delete($this->tb);
   }
 
 
@@ -68,7 +93,25 @@ class Payment_methods_model extends CI_Model
   }
 
 
-  public function get($code)
+  public function get($id)
+  {
+    $rs = $this->db
+      ->select('pm.*, pr.name AS payment_role')
+      ->from('payment_method AS pm')
+      ->join('payment_role AS pr', 'pm.role = pr.id', 'left')
+      ->where('pm.id', $id)
+      ->get();
+
+    if ($rs->num_rows() == 1)
+    {
+      return $rs->row();
+    }
+
+    return NULL;
+  }
+
+
+  public function get_by_code($code)
   {
     $rs = $this->db
     ->select('pm.*, pr.name AS payment_role')
@@ -113,7 +156,7 @@ class Payment_methods_model extends CI_Model
       return $rs->result();
     }
 
-    return FALSE;
+    return NULL;
   }
 
 
@@ -142,12 +185,32 @@ class Payment_methods_model extends CI_Model
     return NULL;
   }
 
+
+  public function get_all($active = TRUE)
+  {
+    if($active === TRUE)
+    {
+      $this->db->where('active', 1);
+    }
+
+    $rs = $this->db->get($this->tb);
+
+    if($rs->num_rows() > 0)
+    {
+      return $rs->result();
+    }
+
+    return NULL;
+  }
+
+
   public function get_list(array $ds = array(), $perpage = 20, $offset = 0)
   {
     $this->db
-    ->select('pm.*, pr.name AS role_name')
+    ->select('pm.*, pr.name AS role_name, ba.acc_name AS account_name, ba.acc_no AS account_no')
     ->from('payment_method AS pm')
-    ->join('payment_role AS pr', 'pm.role = pr.id', 'left');
+    ->join('payment_role AS pr', 'pm.role = pr.id', 'left')
+    ->join('bank_account AS ba', 'pm.account_id = ba.id', 'left');
 
     if(isset($ds['code']) && $ds['code'] != "" && $ds['code'] != NULL)
     {
@@ -167,6 +230,11 @@ class Payment_methods_model extends CI_Model
     if(isset($ds['has_term']) && $ds['has_term'] != "all")
     {
       $this->db->where('pm.has_term', $ds['has_term']);
+    }
+
+    if(isset($ds['active']) && $ds['active'] != "all")
+    {
+      $this->db->where('pm.active', $ds['active']);
     }
 
     $rs = $this->db->limit($perpage, $offset)->get();
@@ -203,33 +271,23 @@ class Payment_methods_model extends CI_Model
       $this->db->where('has_term', $ds['has_term']);
     }
 
+    if(isset($ds['active']) && $ds['active'] != "all")
+    {
+      $this->db->where('active', $ds['active']);
+    }
+
     return $this->db->count_all_results($this->tb);
   }
 
 
-  public function get_all()
-  {
-    $rs = $this->db->get($this->tb);
-
-    if($rs->num_rows() > 0)
-    {
-      return $rs->result();
-    }
-
-    return NULL;
-  }
-
-
-  public function is_exists($code, $id = NULL)
+  public function is_exists_code($code, $id = NULL)
   {
     if( ! empty($id))
     {
       $this->db->where('id !=', $id);
     }
 
-    $count = $this->db->where('code', $code)->count_all_results($this->tb);
-
-    return $count > 0 ? TRUE : FALSE;
+    return $this->db->where('code', $code)->count_all_results($this->tb) > 0 ? TRUE : FALSE;
   }
 
 
@@ -240,15 +298,37 @@ class Payment_methods_model extends CI_Model
       $this->db->where('id !=', $id);
     }
 
-    $count = $this->db->where('name', $name)->count_all_results($this->tb);
-
-    return $count > 0 ? TRUE : FALSE;
+    return $this->db->where('name', $name)->count_all_results($this->tb) > 0 ? TRUE : FALSE;
   }
 
 
-  public function get_name($code)
+  public function get_name($id)
+  {
+    $rs = $this->db->select('name')->where('id', $id)->get($this->tb);
+    if($rs->num_rows() == 1)
+    {
+      return $rs->row()->name;
+    }
+
+    return NULL;
+  }
+
+
+  public function get_name_by_code($code)
   {
     $rs = $this->db->select('name')->where('code', $code)->get($this->tb);
+    if($rs->num_rows() == 1)
+    {
+      return $rs->row()->name;
+    }
+
+    return NULL;
+  }
+
+
+  public function get_name_by_id($id)
+  {
+    $rs = $this->db->select('name')->where('id', $id)->get($this->tb);
     if($rs->num_rows() == 1)
     {
       return $rs->row()->name;
@@ -281,6 +361,7 @@ class Payment_methods_model extends CI_Model
 		return NULL;
 	}
 
+
   public function get_list_by_role($role = 2)
   {
     $rs = $this->db->where('role', $role)->order_by('position', 'ASC')->get($this->tb);
@@ -291,6 +372,13 @@ class Payment_methods_model extends CI_Model
     }
 
     return NULL;
+  }
+
+
+  public function has_transaction($id)
+  {
+    
+    return FALSE;
   }
 
 }

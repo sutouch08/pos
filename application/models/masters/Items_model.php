@@ -8,6 +8,73 @@ class Items_model extends CI_Model
     parent::__construct();
   }
 
+  public function add(array $ds = array())
+  {
+    if( ! empty($ds))
+    {      
+      if($this->db->insert($this->tb, $ds))
+      {
+        return $this->db->insert_id();
+      }
+    }
+
+    return FALSE;
+  }
+
+
+  public function update($id, array $ds = array())
+  {
+    if( ! empty($ds))
+    {
+      return $this->db->where('id', $id)->update($this->tb, $ds);
+    }
+
+    return FALSE;
+  }
+
+
+  public function update_by_code($code, array $ds = array())
+  {
+    if( ! empty($ds))
+    {
+      return $this->db->where('code', $code)->update($this->tb, $ds);
+    }
+
+    return FALSE;
+  }
+
+
+  public function delete($id)
+  {
+    return $this->db->where('id', $id)->delete($this->tb);
+  }
+
+
+  public function get($id)
+  {
+    $rs = $this->db->where('id', $id)->get($this->tb);
+
+    if($rs->num_rows() === 1)
+    {
+      return $rs->row();
+    }
+
+    return NULL;
+  }
+
+
+  public function get_by_code($code)
+  {
+    $rs = $this->db->where('code', $code)->get($this->tb);
+
+    if($rs->num_rows() === 1)
+    {
+      return $rs->row();
+    }
+
+    return NULL;
+  }
+
 
   public function count_rows(array $ds = array())
   {
@@ -254,6 +321,38 @@ class Items_model extends CI_Model
     }
 
     return FALSE;
+  }
+
+
+  public function is_exists_transaction($product_code)
+  {
+    $exists = FALSE;
+
+    //--- check in order details
+    if($this->db->where('product_code', $product_code)->count_all_results('order_details') > 0)
+    {
+      $exists = TRUE;
+    }
+    
+    //--- check in order pos details
+    if(! $exists && $this->db->where('product_code', $product_code)->count_all_results('order_pos_details') > 0)
+    {
+      $exists = TRUE;
+    }
+
+    //--- check in purchase details
+    if(! $exists && $this->db->where('product_code', $product_code)->count_all_results('po_details') > 0)
+    {
+      $exists = TRUE;
+    }
+    
+    //--- check in stock movement
+    if(! $exists && $this->db->where('product_code', $product_code)->count_all_results('stock_movement') > 0)
+    {
+      $exists = TRUE;
+    }
+    
+    return $exists;
   }
 
 } 

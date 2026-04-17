@@ -19,30 +19,30 @@ class Bank extends PS_Controller
   }
 
 
-
   public function index()
   {
     $filter = array(
       'account_name' => get_filter('account_name', 'account_name', ''),
       'account_no' => get_filter('account_no', 'account_no', ''),
-      'branch' => get_filter('branch', 'branch', ''),
-      'bank_code' => get_filter('bank_code', 'bank_code', 'all')
+      'branch' => get_filter('branch', 'account_branch', ''),
+      'bank_code' => get_filter('bank_code', 'account_bank', 'all'),
+      'active' => get_filter('active', 'account_status', 'all')
     );
 
-		//--- แสดงผลกี่รายการต่อหน้า
-		$perpage = get_rows();
-
-		$rows     = $this->bank_model->count_rows($filter);
-		//--- ส่งตัวแปรเข้าไป 4 ตัว base_url ,  total_row , perpage = 20, segment = 3
-		$init	    = pagination_config($this->home.'/index/', $rows, $perpage, $this->segment);
-    $filter['data'] = $this->bank_model->get_list($filter, $perpage, $this->uri->segment($this->segment));
-
-		$this->pagination->initialize($init);
-
-    $this->load->view('masters/bank/bank_account_list', $filter);
+    if($this->input->get('search'))
+    {
+      redirect($this->home);
+    }
+    else 
+    {      
+      $perpage = get_rows();
+      $rows = $this->bank_model->count_rows($filter);
+      $filter['data'] = $this->bank_model->get_list($filter, $perpage, $this->uri->segment($this->segment));
+      $init = pagination_config($this->home.'/index/', $rows, $perpage, $this->segment);
+      $this->pagination->initialize($init);
+      $this->load->view('masters/bank/bank_account_list', $filter);
+    }		
   }
-
-
 
 
   public function add_new()
@@ -52,47 +52,48 @@ class Bank extends PS_Controller
 
 
 	public function add()
-	{
-		$sc = TRUE;
+  {
+    $sc = TRUE;
 
-		if($this->pm->can_add)
-		{
-      $ds = json_decode($this->input->post('data'));
+    if($this->pm->can_add)
+    {
+      $ds = json_decode(file_get_contents('php://input'));
 
-      if( ! empty($ds))
+      if( ! empty($ds) && $ds->bank_code && $ds->account_no && $ds->account_name)
       {
         $bank = $this->bank_code_model->get_by_code($ds->bank_code);
 
         if( ! empty($bank))
         {
-          if( ! $this->bank_model->is_exists($ds->account_no))
+          if($this->bank_model->is_exists_account_no($ds->account_no))
+          {
+            $sc = FALSE;
+            set_error('exists', $ds->account_no);
+          }
+
+          if($sc === TRUE)
           {
             $arr = array(
-              'bank_code' => $bank->code,
-              'bank_name' => $bank->name,
+              'bank_id' => $bank->id,
+              'bank_code' => $bank->code,              
               'branch' => $ds->branch,
               'acc_name' => $ds->account_name,
-              'acc_no' => $ds->account_no,
-              'sapAcctCode' => get_null($ds->sap_code),
-              'active' => $ds->active == 1 ? 1 : 0
+              'acc_no' => $ds->account_no,            
+              'active' => $ds->active,
+              'user' => $this->_user->uname
             );
 
             if( ! $this->bank_model->add($arr))
             {
               $sc = FALSE;
-              $this->error = "เพิ่มบัญชีธนาคารไม่สำเร็จ";
+              set_error('insert');
             }
-          }
-          else
-          {
-            $sc = FALSE;
-            $this->error = "เลขที่บัญชีซ้ำ";
-          }
+          }          
         }
         else
         {
           $sc = FALSE;
-          $this->error = "กรุณาเลือกธนาคาร";
+          set_error('Please select a valid bank');
         }
       }
       else
@@ -100,28 +101,90 @@ class Bank extends PS_Controller
         $sc = FALSE;
         set_error('required');
       }
-		}
-		else
-		{
-			$sc = FALSE;
-			set_error('permission');
-		}
+    }
+    else
+    {
+      $sc = FALSE;
+      set_error('permission');
+    }
 
     $this->_response($sc);
-	}
+  }
 
+  
+  public function update()
+  {
+    $sc = TRUE;
 
-	public function edit($id)
-	{
     if($this->pm->can_edit)
     {
-      $account = $this->bank_model->get($id);
+      $ds = json_decode(file_get_contents('php://input'));
 
-      if( ! empty($account))
+      if( ! empty($ds) && $ds->id && $ds->bank_code && $ds->account_no && $ds->account_name)
       {
-        $this->load->view('masters/bank/bank_account_edit', ['data' => $account]);
+        $bank = $this->bank_code_model->get_by_code($ds->bank_code);
+
+        if( ! empty($bank))
+        {
+          if($this->bank_model->is_exists_account_no($ds->account_no, $ds->id))
+          {
+            $sc = FALSE;
+            set_error('exists', $ds->account_no);
+          }
+
+          if($sc === TRUE)
+          {
+            $arr = array(
+              'bank_id' => $bank->id,
+              'bank_code' => $bank->code,              
+              'branch' => $ds->branch,
+              'acc_name' => $ds->account_name,
+              'acc_no' => $ds->account_no,            
+              'active' => $ds->active,
+              'update_user' => $this->_user->uname
+            );
+
+            if( ! $this->bank_model->update($ds->id, $arr))
+            {
+              $sc = FALSE;
+              set_error('update');
+            }
+          }          
+        }
+        else
+        {
+          $sc = FALSE;
+          set_error('Please select a valid bank');
+        }
       }
       else
+      {
+        $sc = FALSE;
+        set_error('required');
+      }
+    }
+    else
+    {
+      $sc = FALSE;
+      set_error('permission');
+    }
+
+    $this->_response($sc);
+  }
+
+
+  public function edit($id)
+  {
+    if($this->pm->can_edit)
+    {
+      $data = $this->bank_model->get($id);
+
+      if( ! empty($data))
+      {
+        $ds['data'] = $data;
+        $this->load->view('masters/bank/bank_account_edit', $ds);
+      }
+      else 
       {
         $this->page_error();
       }
@@ -129,61 +192,49 @@ class Bank extends PS_Controller
     else
     {
       $this->deny_page();
+    }    
+  }
+
+
+  public function view_detail($id)
+  {
+    $data = $this->bank_model->get($id);
+
+    if( ! empty($data))
+    {
+      $ds['data'] = $data;
+      $this->load->view('masters/bank/bank_account_detail', $ds);
     }
-	}
+    else 
+    {
+      $this->page_error();
+    }
+  }
 
 
+  public function delete()
+  {
+    $sc = TRUE;
 
-	public function update()
-	{
-		$sc = TRUE;
-
-		if($this->pm->can_edit)
-		{
-      $ds = json_decode($this->input->post('data'));
-
-      if( ! empty($ds))
+    if($this->pm->can_delete)
+    {
+      $ds = json_decode(file_get_contents('php://input'));
+      
+      if( ! empty($ds) && $ds->id)
       {
-        $bank = $this->bank_code_model->get_by_code($ds->bank_code);
-
-        if( ! empty($bank))
-        {
-          if( ! empty($ds->id))
-          {
-            if( ! $this->bank_model->is_exists($ds->account_no, $ds->id))
-            {
-              $arr = array(
-                'bank_code' => $bank->code,
-                'bank_name' => $bank->name,
-                'branch' => $ds->branch,
-                'acc_name' => $ds->account_name,
-                'acc_no' => $ds->account_no,
-                'sapAcctCode' => get_null($ds->sap_code),
-                'active' => $ds->active == 1 ? 1 : 0
-              );
-
-              if( ! $this->bank_model->update($ds->id, $arr))
-              {
-                $sc = FALSE;
-                $this->error = "แก้ไขบัญชีธนาคารไม่สำเร็จ";
-              }
-            }
-            else
-            {
-              $sc = FALSE;
-              $this->error = "เลขที่บัญชีซ้ำ";
-            }
-          }
-          else
-          {
-            $sc = FALSE;
-            set_error('required');
-          }
-        }
-        else
+        if($this->bank_model->has_transection($ds->id))
         {
           $sc = FALSE;
-          $this->error = "กรุณาเลือกธนาคาร";
+          set_error('transection');
+        }
+
+        if($sc === TRUE)
+        {
+          if( ! $this->bank_model->delete($ds->id))
+          {
+            $sc = FALSE;
+            set_error('delete');
+          }
         }
       }
       else
@@ -191,84 +242,42 @@ class Bank extends PS_Controller
         $sc = FALSE;
         set_error('required');
       }
-		}
-		else
-		{
-			$sc = FALSE;
-			set_error('permission');
-		}
+    }
+    else
+    {
+      $sc = FALSE;
+      set_error('permission');
+    }
 
-		$this->_response($sc);
-	}
+    $this->_response($sc);
+  }
 
 
-	public function delete()
-	{
-		$sc = TRUE;
+  public function is_exists_account_no()
+  {
+    $exists = FALSE;
+    $ds = json_decode(file_get_contents('php://input'));
 
-		if($this->pm->can_delete)
-		{
-      $id = $this->input->post('id');
+    if( ! empty($ds) && $ds->account_no)
+    {
+      $exists = $this->bank_model->is_exists_account_no($ds->account_no, $ds->id);
+    }
 
-			if( ! empty($id))
-			{
-
-        $account = $this->bank_model->get($id);
-
-        if( ! empty($account))
-        {
-          //--- check transection
-  				$this->load->model('orders/order_payment_model');
-
-  				if($this->order_payment_model->has_account_transection($id))
-  				{
-  					$sc = FALSE;
-  					set_error('transection', $account->acc_no);
-  				}
-  				else
-  				{
-  					if(! $this->bank_model->delete($id))
-  					{
-  						$sc = FALSE;
-  						set_error('delete', $account->acc_no);
-  					}
-  				}
-        }
-        else
-        {
-          $sc = FALSE;
-          set_error('notfound');
-        }
-			}
-			else
-			{
-				$sc = FALSE;
-				set_error('required');
-			}
-		}
-		else
-		{
-			$sc = FALSE;
-			set_error('permission');
-		}
-
-		$this->_response($sc);
-	}
-
+    echo $exists === TRUE ? 'exists' : 'not exists';
+  }
 
 
   public function clear_filter()
   {
     $filter = array(
-      'account_name',
-      'account_no',
-      'branch',
-      'bank_code'
+      'account_name', 
+      'account_no', 
+      'account_branch', 
+      'account_bank', 
+      'account_status'
     );
 
-    clear_filter($filter);
-
-    echo "done!";
+    return clear_filter($filter);
   }
 
 

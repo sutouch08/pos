@@ -12,3 +12,4 @@ index.php
 /application/config/config.php
 /application/config/database.php
 /application/sessions/*
+/node_modules/*

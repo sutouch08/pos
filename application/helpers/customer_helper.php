@@ -151,6 +151,7 @@ function customer_attribute_name_array($table = NULL)
 
 function customer_attribute_name($code, array $ds = array())
 {
+  $code = empty($code) ? '' : $code;
   return empty($ds[$code]) ? $code : $ds[$code];
 }
 

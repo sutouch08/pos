@@ -7,22 +7,7 @@ const inputName = document.getElementById('name');
 const regex = /[^a-zA-Z0-9-_.@]+/gi;
 
 if(inputCode) {
-  inputCode.addEventListener('keyup', () => validInput(inputCode, regex));
-  inputCode.addEventListener('focusout', () => validateCode());
-}
-
-if(inputName) {
-  inputName.addEventListener('focusout', () => validateName());
-}
-
-
-function addNew() {
-  window.location.href = `${HOME}add_new`;
-}
-
-
-function edit(id) {
-  window.location.href = `${HOME}edit/${id}`;
+  inputCode.addEventListener('input', () => validInput(inputCode, regex));  
 }
 
 
@@ -33,23 +18,20 @@ async function add() {
 
   click = 1;
 
-  if(!validCode || !validName) {
+  if(! await validateCode() || ! await validateName()) {
     click = 0;
     return false;
   }
 
-  clearErrorByClass('e');
-
   const inputCode = document.getElementById('code');
   const inputName = document.getElementById('name');
+    
   const url = `${HOME}add`;
   const data = {
     code : inputCode.value.trim(),
     name : inputName.value.trim()
   };
-
-  loadIn();
-
+  
   try {
     const response = await fetch(url, {
       method:'POST',
@@ -57,52 +39,73 @@ async function add() {
       body:JSON.stringify(data)
     });
 
-    const text = await response.text();
+    const res = await response.text();
     
-    setTimeout(() => {
-      loadOut();
-
-      if(text.trim() === 'success') {
-        swal({
-          title:'Success',
-          type:'success',
-          timer:1000
-        });
-
-        setTimeout(() => { addNew() }, 1200);
+    if(isJson(res)) {
+      const ds = JSON.parse(res);
+      if(ds.status === 'success') {
+        const template = $('#new-row-template').html();
+        const output = $('#data-table');
+        renderPrepend(template, ds.data, output);
+        reIndex();
+        clearFields();
       }
       else {
-        showError(text);
+        showError(ds.message);
       }
-    }, 500);
+    }
+    else {
+      showError(res);
+    }
 
     click = 0;
   }
   catch (err) {
-    click = 0;
-    loadOut();
-    showError(err);
+    click = 0;    
+    showError(err.message);
   }  
 }
 
 
-async function update() {
-  if (click !== 0) {
+async function edit(id) {
+  const url = `${HOME}get_data`;
+  const data = { id: id };
+  try {
+    const response = await postData(url, data);
+    const res = await response.text();
+
+    if (isJson(res)) {
+      const ds = JSON.parse(res);
+      if (ds.status === 'success') {
+        const template = $('#edit-row-template').html();
+        const output = $(`#row-${id}`);
+
+        renderAfter(template, ds.data, output);
+
+        $(`#row-${id}`).addClass('hide');
+      }
+      else {
+        showError(ds.message);
+      }
+    }
+    else {
+      showError(res);
+    }
+  }
+  catch (error) {
+    showError(error.message);
+  }
+}
+
+
+async function update(id) {
+  const inputCode = document.getElementById(`code-${id}`);
+  const inputName = document.getElementById(`name-${id}`);  
+
+  if (! await validateCode(id) || ! await validateName(id)) {
     return false;
   }
 
-  click = 1;
-
-  if (!validCode || !validName) {
-    click = 0;
-    return false;
-  }
-
-  clearErrorByClass('e');
-
-  const id = document.getElementById('id').value;
-  const inputCode = document.getElementById('code');
-  const inputName = document.getElementById('name');
   const url = `${HOME}update`;
   const data = {
     id: id,
@@ -110,140 +113,129 @@ async function update() {
     name: inputName.value.trim()
   };
 
-  loadIn();
-
   try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
+    const response = await postData(url, data);
+    const res = await response.text();
 
-    const text = await response.text();
-
-    setTimeout(() => {
-      loadOut();
-      click = 0;
-
-      if (text.trim() === 'success') {
-        swal({
-          title: 'Success',
-          type: 'success',
-          timer: 1000
-        });        
+    if (isJson(res)) {
+      const ds = JSON.parse(res);
+      if (ds.status === 'success') {
+        const template = $('#row-template').html();
+        const output = $(`#row-${id}`);
+        render(template, ds.data, output);
+        $(`#edit-row-${id}`).remove();
+        $(`#row-${id}`).removeClass('hide');
+        reIndex();
       }
       else {
-        showError(text);
+        showError(ds.message);
       }
-    }, 500);
-
-    click = 0;
+    }
+    else {
+      showError(res);
+    }
   }
-  catch (err) {
-    click = 0;
-    loadOut();
-    showError(err);
+  catch (error) {
+    showError(error.message);
   }
 }
 
 
-async function validateCode() {
-  const input = document.getElementById('code');
-  const errorBox = document.getElementById('code-error');
-  const id = document.getElementById('id').value.trim();
-  const value = input.value.trim();
-
-  if(!value) {
-    setError(input, errorBox, 'Code is Required');
-    validCode = false;
-    return false;
-  }
-
-  const url = `${HOME}is_exists_code`;
-  const result = await validateRemote(url, {code : value, id : id});
-
-  if (result === 'exists') {
-    setError(input, errorBox, 'Code already exists!');
-    validCode = false;
-    return false;
-  }
-
-  clearError(input, errorBox);
-  validCode = true;
-  return true;
+function cancel(id) {
+  $(`#edit-row-${id}`).remove();
+  $(`#row-${id}`).removeClass('hide');
 }
 
 
-async function validateName() {
-  const input = document.getElementById('name');
-  const errorBox = document.getElementById('name-error');
-  const id = document.getElementById('id').value.trim();
-  const value = input.value.trim();
-
+async function validateCode(id = null) {
+  const inputCode = id === null ? document.getElementById("code") : document.getElementById(`code-${id}`);
+  const codeError = id === null ? document.getElementById("code-error") : document.getElementById(`error-${id}`);
+  const value = inputCode.value.trim();
   if (!value) {
-    setError(input, errorBox, 'Name is Required');
-    validName = false;
+    setError(inputCode, codeError, "Code is Required");
     return false;
   }
 
-  const url = `${HOME}is_exists_name`;
-  const result = await validateRemote(url, { name: value, id: id });
+  //--- check duplicated
+  const url = `${HOME}is_exists_code`;
+  const res = await validateRemote(url, { code: value, id: id });
 
-  if (result === 'exists') {
-    setError(input, errorBox, 'Name already exists!');
-    validName = false;
+  if (res === "exists") {
+    setError(inputCode, codeError, "Code already exists");
     return false;
   }
 
-  clearError(input, errorBox);
-  validName = true;
+  clearError(inputCode, codeError);
   return true;
 }
 
 
-function getDelete(id, code, name){
+async function validateName(id = null) {
+  const inputName = id === null ? document.getElementById("name") : document.getElementById(`name-${id}`);
+  const nameError = id === null ? document.getElementById("name-error") : document.getElementById(`error-${id}`);
+  const value = inputName.value.trim();
+  if (!value) {
+    setError(inputName, nameError, "Name is Required");
+    return false;
+  }
+
+  //--- check duplicated
+  const url = `${HOME}is_exists_name`;
+  const res = await validateRemote(url, { name: value, id: id });
+
+  if (res === "exists") {
+    setError(inputName, nameError, "Name already exists");
+    return false;
+  }
+  clearError(inputName, nameError);
+  return true;
+}
+
+function clearFields() {
+  $('#name').val('');  
+  $('#code').val('').focus();
+}
+
+function confirmDelete(id, name) {
   swal({
-    title:'Are sure ?',
-    text:`ต้องการลบ ${code} : ${name} หรือไม่ ?`,
-    type:'warning',
+    title: `Are you sure ?`,
+    text: `Do you want to delete "${name}" ?`,
+    type: "warning",
     showCancelButton: true,
-		confirmButtonColor: '#FA5858',
-		confirmButtonText: 'ใช่, ฉันต้องการลบ',
-		cancelButtonText: 'ยกเลิก',
-		closeOnConfirm: true
-  },function() {
-    
-    load_in();
+    confirmButtonColor: "#DD6B55",
+    confirmButtonText: "Yes, delete it!",
+    cancelButtonText: "No, cancel",
+    closeOnConfirm: true
+  },
+    function (isConfirm) {
+      if (isConfirm) {
+        deleteItem(id);
+      }
+    });
+}
 
-    setTimeout(() => {
-      $.ajax({
-        url:`${HOME}delete`,
-        type:'POST',
-        cache:false,
-        data:{
-          'id' : id
-        },
-        success:function(rs) {
-          load_out();
+async function deleteItem(id) {
+  const url = `${HOME}delete`;
+  const data = { id: id };
+  try {
+    const response = await postData(url, data);
+    const res = await response.text();
 
-          if(rs.trim() === 'success') {
-            swal({
-              title:'Success',
-              type:'success',
-              timer:1000
-            });
+    if (res === 'success') {
+      swal({
+        title: 'Success',
+        type: 'success',
+        timer: 1000
+      });
 
-            $(`#row-${id}`).remove();
-            reIndex();
-          }
-          else {
-            showError(rs);
-          }
-        },
-        error:function(rs) {
-          showError(rs);
-        }
-      })
-    }, 500);    
-  })
+      $(`#row-${id}`).remove();
+      reIndex();
+    }
+    else {
+      showError(res);
+    }
+  }
+  catch (error) {
+    showError(error.message);
+  }
 }

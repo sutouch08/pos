@@ -35,22 +35,27 @@ class Bank_code_model extends CI_Model
   }
 
 
-  public function get_all()
-  {
-    $rs = $this->db->get($this->tb);
+  public function get_name($id)
+  {    
+    $rs = $this->db->select('name')->where('id', $id)->get($this->tb);
 
-    if($rs->num_rows() > 0)
+    if($rs->num_rows() === 1)
     {
-      return $rs->result();
+      return $rs->row()->name;
     }
 
     return NULL;
   }
 
 
-  public function get_all_active()
+  public function get_all($active = TRUE)
   {
-    $rs = $this->db->where('active', 1)->get($this->tb);
+    if($active)
+    {
+      $this->db->where('active', 1);
+    }
+
+    $rs = $this->db->get($this->tb);
 
     if($rs->num_rows() > 0)
     {
@@ -83,15 +88,7 @@ class Bank_code_model extends CI_Model
     }
 
     return FALSE;
-  }
-
-
-  public function transection_exists($code)
-  {
-    $count = $this->db->where('bank_code', $code)->count_all_results('bank_account');
-
-    return $count > 0 ? TRUE : FALSE;
-  }
+  }  
 
 
   public function delete($id)
@@ -104,11 +101,12 @@ class Bank_code_model extends CI_Model
   {
     if( ! empty($ds['code']))
     {
-      $this->db
-      ->group_start()
-      ->like('code', $ds['code'])
-      ->or_like('name', $ds['code'])
-      ->group_end();
+      $this->db->like('code', $ds['code']);
+    }
+
+    if( ! empty($ds['name']))
+    {
+      $this->db->like('name', $ds['name']);
     }
 
     if( isset($ds['active']) && $ds['active'] != 'all')
@@ -124,11 +122,12 @@ class Bank_code_model extends CI_Model
   {
     if( ! empty($ds['code']))
     {
-      $this->db
-      ->group_start()
-      ->like('code', $ds['code'])
-      ->or_like('name', $ds['code'])
-      ->group_end();
+      $this->db->like('code', $ds['code']);
+    }
+
+    if( ! empty($ds['name']))
+    {
+      $this->db->like('name', $ds['name']);
     }
 
     if( isset($ds['active']) && $ds['active'] != 'all')
@@ -154,9 +153,24 @@ class Bank_code_model extends CI_Model
       $this->db->where('id !=', $id);
     }
 
-    $count = $this->db->where('code', $code)->count_all_results($this->tb);
+    return $this->db->where('code', $code)->count_all_results($this->tb) > 0 ? TRUE : FALSE;
+  }
 
-    return $count > 0 ? TRUE : FALSE;
+
+  public function is_exists_name($name, $id = NULL)
+  {
+    if( ! empty($id))
+    {
+      $this->db->where('id !=', $id);
+    }
+
+    return $this->db->where('name', $name)->count_all_results($this->tb) > 0 ? TRUE : FALSE;
+  }
+
+
+  public function has_transection($code)
+  {
+    return $this->db->where('bank_code', $code)->count_all_results('bank_account') > 0 ? TRUE : FALSE;
   }
 
 

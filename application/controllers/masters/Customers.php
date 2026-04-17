@@ -11,6 +11,7 @@ class Customers extends PS_Controller
   public function __construct()
   {
     parent::__construct();
+    
     $this->home = base_url() . 'masters/customers';
     $this->load->model('masters/customers_model');
     $this->load->model('masters/customer_group_model');

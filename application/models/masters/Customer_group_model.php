@@ -9,9 +9,9 @@ class Customer_group_model extends CI_Model
   }
 
 
-  public function get($code)
+  public function get($id)
   {
-    $rs = $this->db->where('code', $code)->get($this->tb);
+    $rs = $this->db->where('id', $id)->get($this->tb);
 
     if ($rs->num_rows() === 1)
     {
@@ -35,6 +35,19 @@ class Customer_group_model extends CI_Model
   }
 
 
+  public function get_by_code($code)
+  {
+    $rs = $this->db->where('code', $code)->get($this->tb);
+
+    if ($rs->num_rows() === 1)
+    {
+      return $rs->row();
+    }
+
+    return NULL;
+  }
+
+
   public function add(array $ds = array())
   {
     if (!empty($ds))
@@ -46,11 +59,11 @@ class Customer_group_model extends CI_Model
   }
 
 
-  public function update($code, array $ds = array())
+  public function update($id, array $ds = array())
   {
     if (!empty($ds))
     {
-      return $this->db->where('code', $code)->update($this->tb, $ds);
+      return $this->db->where('id', $id)->update($this->tb, $ds);
     }
 
     return FALSE;
@@ -68,15 +81,32 @@ class Customer_group_model extends CI_Model
   }
 
 
-  public function delete($code)
+  public function update_by_code($code, array $ds = array())
   {
-    return $this->db->where('code', $code)->delete($this->tb);
+    if (! empty($ds))
+    {
+      return $this->db->where('code', $code)->update($this->tb, $ds);
+    }
+
+    return FALSE;
+  }
+
+
+  public function delete($id)
+  {
+    return $this->db->where('id', $id)->delete($this->tb);
   }
 
 
   public function delete_by_id($id)
   {
     return $this->db->where('id', $id)->delete($this->tb);
+  }
+
+
+  public function delete_by_code($code)
+  {
+    return $this->db->where('code', $code)->delete($this->tb);
   }
 
 
@@ -130,7 +160,20 @@ class Customer_group_model extends CI_Model
   }
   
 
-  public function get_name($code)
+  public function get_name($id)
+  {
+    $rs = $this->db->select('name')->where('id', $id)->get($this->tb);
+
+    if ($rs->num_rows() === 1)
+    {
+      return $rs->row()->name;
+    }
+
+    return NULL;
+  }
+
+
+  public function get_name_by_code($code)
   {
     if ($code === NULL or $code === '')
     {
@@ -148,10 +191,27 @@ class Customer_group_model extends CI_Model
   }
 
 
-  public function is_exists($code)
+  public function get_name_by_id($id)
+  {    
+    $rs = $this->db->select('name')->where('id', $id)->get($this->tb);
+
+    if ($rs->num_rows() === 1)
+    {
+      return $rs->row()->name;
+    }
+
+    return NULL;
+  }
+
+
+  public function is_exists_code($code, $id = NULL)
   {
-    $count = $this->db->where('code', $code)->count_all_results($this->tb);
-    return $count > 0 ? TRUE : FALSE;    
+    if (! empty($id))
+    {
+      $this->db->where('id !=', $id);
+    }
+
+    return $this->db->where('code', $code)->count_all_results($this->tb) > 0 ? TRUE : FALSE;
   }
 
 
@@ -162,7 +222,12 @@ class Customer_group_model extends CI_Model
       $this->db->where('id !=', $id);
     }
 
-    $count = $this->db->where('name', $name)->count_all_results($this->tb);
-    return $count > 0 ? TRUE : FALSE;
+    return $this->db->where('name', $name)->count_all_results($this->tb) > 0 ? TRUE : FALSE;
+  }
+
+
+  public function count_members($id)
+  {
+    return $this->db->where('group_id', $id)->count_all_results('customers');
   }
 }

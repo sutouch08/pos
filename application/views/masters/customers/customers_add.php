@@ -1,5 +1,4 @@
 <?php $this->load->view('include/header'); ?>
-<?php $this->load->view('masters/customers/style'); ?>
 <div class="row">
 	<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 padding-5 padding-top-5">
 		<h3 class="title"><?php echo $this->title; ?></h3>
@@ -22,7 +21,7 @@
 			<div class="col-lg-1 col-md-1-harf col-sm-1-harf col-xs-3 padding-5">
 				<button type="button" class="btn btn-sm btn-white btn-success btn-block" onclick="genCustomerCode()">Generate</button>
 			</div>
-			<div class="help-block col-lg-9 col-lg-offset-3 col-md-9 col-md-offset-3 col-sm-9 col-sm-offset-3" id="prefix-error"></div>
+			<div class="error-block col-lg-9 col-lg-offset-3 col-md-9 col-md-offset-3 col-sm-9 col-xs-12" id="prefix-error"></div>
 		</div>
 	<?php endif; ?>
 	<?php $attr = $auto_gen == 'force' ? 'disabled' : ''; ?>
@@ -34,7 +33,7 @@
 		<div class="col-lg-1 col-md-1 col-sm-1 col-xs-3 padding-5">
 			<button type="button" class="btn btn-sm btn-white btn-default" title="Clear" onclick="clearInputCode()"><i class="fa fa-refresh"></i></button>
 		</div>
-		<div class="help-block col-lg-9 col-lg-offset-3 col-md-9 col-md-offset-3 col-sm-9 col-sm-offset-3" id="code-error"></div>
+		<div class="error-block col-lg-9 col-lg-offset-3 col-md-9 col-md-offset-3 col-sm-9 col-sm-offset-3 col-xs-12" id="code-error"></div>
 	</div>
 
 	<div class="form-group">
@@ -42,7 +41,7 @@
 		<div class="col-lg-5 col-md-5 col-sm-6 col-xs-12">
 			<input type="text" id="name" class="form-control input-sm" maxlength="100" value="" autocomplete="off" />
 		</div>
-		<div class="help-block col-lg-9 col-lg-offset-3 col-md-9 col-md-offset-3 col-sm-9 col-sm-offset-3" id="name-error"></div>
+		<div class="error-block col-lg-9 col-lg-offset-3 col-md-9 col-md-offset-3 col-sm-9 col-sm-offset-3 col-xs-12" id="name-error"></div>
 	</div>
 
 	<div class="form-group">
@@ -65,7 +64,7 @@
 				<button type="button" class="btn btn-sm btn-white btn-success" title="create new group" onclick="newGroup()"><i class="fa fa-plus"></i></button>
 			</div>
 		<?php endif; ?>
-		<div class="help-block col-xs-12 col-sm-reset inline red" id="group-error"></div>
+		<div class="error-block col-xs-12 col-sm-reset inline red" id="group-error"></div>
 	</div>
 
 	<div class="form-group">

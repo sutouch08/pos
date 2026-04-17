@@ -15,6 +15,7 @@ class Items extends PS_Controller
 
     //--- load model
     $this->load->model('masters/items_model');
+    $this->load->model('users/permission_model', 'perm');
 
     $this->load->helper('product_color');
     $this->load->helper('product_size');
@@ -55,6 +56,20 @@ class Items extends PS_Controller
     }
     else
     {
+      $filter['perm'] = array(
+        'can_add_color' => $this->perm->can_add('DBPDCL', $this->_user->id_profile),
+        'can_add_size' => $this->perm->can_add('DBPDSI', $this->_user->id_profile),
+        'can_add_group' => $this->perm->can_add('DBPDGP', $this->_user->id_profile),
+        'can_add_main_group' => $this->perm->can_add('DBPDMG', $this->_user->id_profile),
+        'can_add_gender' => $this->perm->can_add('DBPDGD', $this->_user->id_profile),
+        'can_add_kind' => $this->perm->can_add('DBPDKN', $this->_user->id_profile),
+        'can_add_type' => $this->perm->can_add('DBPDTY', $this->_user->id_profile),
+        'can_add_category' => $this->perm->can_add('DBPDCR', $this->_user->id_profile),
+        'can_add_brand' => $this->perm->can_add('DBPDBR', $this->_user->id_profile),
+        'can_add_unit' => $this->perm->can_add('DBPUOM', $this->_user->id_profile),
+        'default_unit_group' => getConfig('DEFAULT_UNIT_GROUP')
+      );
+
       $perpage = get_rows();
       $rows = $this->items_model->count_rows($filter);
       $filter['data'] = $this->items_model->get_list($filter, $perpage, $this->uri->segment($this->segment));
@@ -114,14 +129,14 @@ class Items extends PS_Controller
           $sc = FALSE;
           set_error('exists', $ds->barcode);
         }
-
-        $this->load->model('masters/product_style_model');
-
-        $style = ! empty($ds->style) ? $ds->style : NULL;
-        $style_id = empty($style) ? NULL : $this->items_model->get_id($style);
-
+      
         if ($sc === TRUE)
         {
+          $this->load->model('masters/product_style_model');
+
+          $style = ! empty($ds->style) ? $ds->style : NULL;
+          $style_id = empty($style) ? NULL : $this->product_style_model->get_id($style);
+
           $arr = array(
             'code' => $ds->code,
             'name' => $ds->name,
@@ -158,20 +173,235 @@ class Items extends PS_Controller
             set_error('insert');
           }
         }
-        else
+      }
+      else
+      {
+        $sc = FALSE;
+        set_error('required');
+      }
+    }
+    else
+    {
+      $sc = FALSE;
+      set_error('permission');
+    }
+    
+    $this->_response($sc);
+  }
+
+
+  public function edit($id)
+  {
+    if($this->pm->can_edit)
+    {
+      $item = $this->items_model->get($id);
+
+      if( ! empty($item))
+      {
+        $this->load->model('users/permission_model', 'perm');
+
+        $ds = array(
+          'can_add_color' => $this->perm->can_add('DBPDCL', $this->_user->id_profile),
+          'can_add_size' => $this->perm->can_add('DBPDSI', $this->_user->id_profile),
+          'can_add_group' => $this->perm->can_add('DBPDGP', $this->_user->id_profile),
+          'can_add_main_group' => $this->perm->can_add('DBPDMG', $this->_user->id_profile),
+          'can_add_gender' => $this->perm->can_add('DBPDGD', $this->_user->id_profile),
+          'can_add_kind' => $this->perm->can_add('DBPDKN', $this->_user->id_profile),
+          'can_add_type' => $this->perm->can_add('DBPDTY', $this->_user->id_profile),
+          'can_add_category' => $this->perm->can_add('DBPDCR', $this->_user->id_profile),
+          'can_add_brand' => $this->perm->can_add('DBPDBR', $this->_user->id_profile),
+          'can_add_unit' => $this->perm->can_add('DBPUOM', $this->_user->id_profile),
+          'default_unit_group' => getConfig('DEFAULT_UNIT_GROUP'),
+          'item' => $item
+        );
+
+        $this->load->view('masters/items/items_edit', $ds);
+      }
+      else 
+      {
+        $this->page_error();
+      }            
+    }
+    else
+    {
+      $this->deny_page();
+    }
+  }
+
+
+  public function get_item_data($id)
+  {
+    $sc = TRUE;
+
+    $item = $this->items_model->get($id);
+
+    if( ! empty($item))
+    {
+      $item->price = number($item->price, 2);
+      $item->cost = number($item->cost, 2);
+    }
+    else
+    {
+      $sc = FALSE;
+      set_error('not_found');
+    }
+
+    $arr = array(
+      'status' => $sc === TRUE ? 'success' : 'error',
+      'message' => $sc === TRUE ? 'success' : $this->error,
+      'item' => $item
+    );
+
+    echo json_encode($arr);
+  }
+
+
+  public function update()
+  {
+    $sc = TRUE;
+    $ds = json_decode(file_get_contents('php://input'));
+
+    if($this->pm->can_edit)
+    {
+      if(!empty($ds) && ! empty($ds->id) && ! empty($ds->name) && ! empty($ds->unit))
+      {
+        $id = $ds->id;
+
+        if ($sc === TRUE && $this->items_model->is_exists_name($ds->name, $id))
         {
           $sc = FALSE;
-          set_error('required');
+          set_error('exists', $ds->name);
+        }
+
+        if ($sc === TRUE && ! empty($ds->barcode) && $this->items_model->is_exists_barcode($ds->barcode, $id))
+        {
+          $sc = FALSE;
+          set_error('exists', $ds->barcode);
+        }
+
+        if ($sc === TRUE)
+        {
+          $this->load->model('masters/product_style_model');
+
+          $style = ! empty($ds->style) ? $ds->style : NULL;
+          $style_id = empty($style) ? NULL : $this->product_style_model->get_id($style);
+
+          $arr = array(            
+            'name' => $ds->name,
+            'style_id' => get_null($style_id),
+            'style_code' => empty($style_id) ? NULL : $style,
+            'barcode' => get_null($ds->barcode),
+            'cost' => $ds->cost,
+            'price' => $ds->price,
+            'unit_group_id' => get_null($ds->unit_group),
+            'unit_id' => $ds->unit,
+            'purchase_vat_code' => $ds->purchase_vat_code,
+            'purchase_vat_rate' => $ds->purchase_vat_rate,
+            'sale_vat_code' => $ds->sale_vat_code,
+            'sale_vat_rate' => $ds->sale_vat_rate,
+            'count_stock' => $ds->count_stock,
+            'can_sell' => $ds->can_sell,
+            'active' => $ds->active,
+            'color_id' => get_null($ds->color),
+            'size_id' => get_null($ds->size),
+            'main_group_id' => get_null($ds->main_group),
+            'group_id' => get_null($ds->group),
+            'gender_id' => get_null($ds->gender),
+            'kind_id' => get_null($ds->kind),
+            'type_id' => get_null($ds->type),
+            'category_id' => get_null($ds->category),
+            'brand_id' => get_null($ds->brand),
+            'year' => get_null($ds->year),
+            'date_upd' => now(),
+            'update_user' => $this->_user->uname
+          );
+
+          if (! $this->items_model->update($id, $arr))
+          {
+            $sc = FALSE;
+            set_error('update');
+          }
         }
       }
       else
       {
         $sc = FALSE;
-        set_error('permission');
+        set_error('required');
       }
-
-      $this->_response($sc);
     }
+    else
+    {
+      $sc = FALSE;
+      set_error('permission');
+    }
+
+    $this->_response($sc);
+  }
+
+
+  public function view_detail($id)
+  {
+    $item = $this->items_model->get($id);
+
+    if ( ! empty($item))
+    {      
+      $this->load->view('masters/items/items_view_detail', array('item' => $item));
+    }
+    else
+    {
+      $this->page_error();
+    }
+  }
+
+
+  public function delete()
+  {
+    $sc = TRUE;
+    $ds = json_decode(file_get_contents('php://input'));
+
+    if($this->pm->can_delete)
+    {
+      if(!empty($ds) && ! empty($ds->id))
+      {
+        $item = $this->items_model->get($ds->id);
+
+        if( ! empty($item))
+        {
+          //--- check transaction exists ?
+          if ($this->items_model->is_exists_transaction($item->code))
+          {
+            $sc = FALSE;
+            set_error('transaction');
+          }
+
+          if ($sc === TRUE)
+          {
+            if (! $this->items_model->delete($item->id))
+            {
+              $sc = FALSE;
+              set_error('delete');
+            }
+          }
+        }
+        else
+        {
+          $sc = FALSE;
+          set_error('not_found');
+        }               
+      }
+      else
+      {
+        $sc = FALSE;
+        set_error('required');
+      }
+    }
+    else
+    {
+      $sc = FALSE;
+      set_error('permission');
+    }
+
+    $this->_response($sc);
   }
 
 
@@ -196,9 +426,8 @@ class Items extends PS_Controller
     $ds = json_decode(file_get_contents('php://input'));
 
     if (!empty($ds) && !empty($ds->name))
-    {
-      $name = $ds->name;
-      $exists = $this->items_model->is_exists_name($name);
+    {     
+      $exists = $this->items_model->is_exists_name($ds->name, $ds->id);
     }
 
     echo $exists === TRUE ? 'exists' : 'not_exists';
@@ -211,9 +440,8 @@ class Items extends PS_Controller
     $ds = json_decode(file_get_contents('php://input'));
 
     if (!empty($ds) && isset($ds->barcode) && $ds->barcode != '')
-    {
-      $barcode = $ds->barcode;
-      $exists = $this->items_model->is_exists_barcode($barcode);
+    {      
+      $exists = $this->items_model->is_exists_barcode($ds->barcode, $ds->id);
     }
 
     echo $exists === TRUE ? 'exists' : 'not_exists';

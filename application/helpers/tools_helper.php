@@ -145,10 +145,10 @@ function is_checked($val1, $val2)
 }
 
 
-function is_active($val)
+function is_active($val, $showIcon = TRUE)
 {
 	$val = strtolower(strval($val));
-	return ($val === '1' || $val === 'y') || $val ? '<i class="fa fa-check green"></i>' : '<i class="fa fa-times red"></i>';
+	return ($val === '1' || $val === 'y') || $val ? '<i class="fa fa-check green"></i>' : ($showIcon ? '<i class="fa fa-times red"></i>' : '');
 }
 
 
@@ -351,8 +351,10 @@ function set_error($key, $name = "data")
 		'status' => "Invalid document status",
 		'notfound' => "Data or document number not found",
 		'not_found' => "Data or document number not found",
-		'transection' => "Unable to delete {$name} because transections exists or link to other module.",
-		'transections' => "Unable to delete {$name} because transections exists or link to other module."
+		'transection' => "Unable to delete {$name} because transactions exists or link to other module.",
+		'transections' => "Unable to delete {$name} because transactions exists or link to other module.",
+		'transaction' => "Unable to delete {$name} because transactions exists or link to other module.",
+		'transactions' => "Unable to delete {$name} because transactions exists or link to other module."
 	);
 
 	$ci = &get_instance();

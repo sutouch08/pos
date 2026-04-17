@@ -16,41 +16,40 @@ function bankLogoUrl($code)
 }
 
 
-function select_bank_account($id = '')
+function select_bank_account($id = NULL)
 {
-  $sc = '';
-  $CI =& get_instance();
-  $CI->load->model('masters/bank_model');
-  $banks = $CI->bank_model->get_data();
-  if(!empty($banks))
+  $ds = '';
+  $ci =& get_instance();
+  $ci->load->model('masters/bank_model');
+  $list = $ci->bank_model->get_all(TRUE);
+
+  if( ! empty($list))
   {
-    foreach($banks as $rs)
+    foreach($list as $rs)
     {
-      $sc .= '<option value="'.$rs->id.'" '.is_selected($rs->id, $id).'>'.$rs->acc_name.'#'.$rs->acc_no.'</option>';
+      $ds .= '<option value="'.$rs->id.'" '.is_selected($id, $rs->id).'>'.$rs->acc_name.'#'.$rs->acc_no.'</option>';
     }
   }
 
-  return $sc;
+  return $ds;
 }
 
 
 function select_bank($code = NULL)
 {
-  $sc = "";
-  $CI =& get_instance();
-  $CI->load->model('masters/bank_code_model');
-
-  $bank = $CI->bank_code_model->get_all_active();
-
-  if( ! empty($bank))
+  $ds = '';
+  $ci =& get_instance();
+  $ci->load->model('masters/bank_code_model');
+  $list = $ci->bank_code_model->get_all(TRUE);
+  if( ! empty($list))
   {
-    foreach($bank as $rs)
+    foreach($list as $rs)
     {
-      $sc .= '<option value="'.$rs->code.'" '.is_selected($code, $rs->code).'>'.$rs->code.' - '.$rs->name.'</option>';
+      $ds .= '<option value="'.$rs->code.'" '.is_selected($code, $rs->code).'>'.$rs->code.' - '.$rs->name.'</option>';
     }
   }
 
-  return $sc;
+  return $ds;
 }
 
 
@@ -73,4 +72,26 @@ function account_name_array()
   return $ds;
 }
 
- ?>
+
+function get_account_text($id)
+{
+  $name = "";
+  $ci =& get_instance();
+  $ci->load->model('masters/bank_model');
+  $rs = $ci->bank_model->get($id);
+  if( ! empty($rs))
+  {
+    $name = $rs->acc_name.'#'.$rs->acc_no;
+  }
+
+  return $name;
+}
+
+
+function bank_name($id)
+{
+  $ci =& get_instance();
+  $ci->load->model('masters/bank_code_model');
+  return $ci->bank_code_model->get_name($id);
+}
+

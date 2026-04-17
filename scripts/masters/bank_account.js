@@ -1,226 +1,266 @@
-var HOME = BASE_URL + 'masters/bank/';
+let click = 0;
+const regex = /[^a-zA-Z0-9\-_.@]/g;
+const inputCode = document.getElementById('code');
+if (inputCode) {
+  inputCode.addEventListener('input', () => validInput(inputCode, regex));
+}
 
-function addNew(){
-  window.location.href = HOME + 'add_new';
+async function validateCode() {
+  const id = document.getElementById("id") ? document.getElementById("id").value : null;
+  const inputCode = document.getElementById("acc-no");
+  const codeError = document.getElementById("acc-no-error");
+  const value = inputCode.value.trim();
+  if (!value) {
+    setError(inputCode, codeError, "Account number is required");
+    return false;
+  }
+  //--- check duplicated
+  const url = `${HOME}is_exists_account_no`;
+  const res = await validateRemote(url, { account_no: value, id: id });
+  if (res === 'exists') {
+    setError(inputCode, codeError, "Account No already exists");
+    return false;
+  }
+  else {
+    clearError(inputCode, codeError);
+  }
+
+  return true;
+}
+
+async function validateName() {  
+  const inputName = document.getElementById("acc-name");
+  const nameError = document.getElementById("acc-name-error");
+  const value = inputName.value.trim();
+  if (!value) {
+    setError(inputName, nameError, "Account name is required");
+    return false;
+  }  
+  else {
+    clearError(inputName, nameError);
+  }
+
+  return true;
 }
 
 
-
-function goBack(){
-  window.location.href = HOME;
+const addNew = () => {
+  window.location.href = `${HOME}add_new`;
 }
 
 
-function getEdit(code){
-  window.location.href = HOME + 'edit/'+code;
+const edit = (id) => {
+  window.location.href = `${HOME}edit/${id}`;
 }
 
 
-function clearFilter(){
-  var url = HOME + 'clear_filter';
-  $.get(url, function(){
-      goBack();
-  });
-
+const viewDetail = (id) => {
+  const width = 800;
+  const height = 600;
+  const left = (screen.width - width) / 2;
+  const top = 50;
+  const options = `width=${width},height=${height},top=${top},left=${left}`;
+  const url = `${HOME}view_detail/${id}?nomenu`;
+  window.open(url, '_blank', options);  
 }
 
 
-$('.search').keyup(function(e){
-	if(e.keyCode == 13){
-		getSearch();
-	}
-});
+async function add() {
+  if (click !== 0) {
+    return false;
+  }
 
+  click = 1;
 
-function getSearch()
-{
-	$('#searchForm').submit();
-}
-
-
-function add() {
   clearErrorByClass('e');
 
-  let d = {
-    'bank_code' : $('#bank-code').val(),
-    'account_name' : $('#acc-name').val().trim(),
-    'account_no' : $('#acc-no').val(),
-    'branch' : $('#branch').val().trim(),
-    'sap_code' : $('#sap-code').val().trim(),
-    'active' : $('#active').is(':checked') ? 1 : 0
+  if (! await validateCode() || ! await validateName()) {
+    click = 0;
+    return false;
+  }
+
+  const bank = document.getElementById("bank");
+  const bankError = document.getElementById("bank-error");  
+  const accountNo = document.getElementById("acc-no");
+  const accNoError = document.getElementById("acc-no-error");
+  const accountName = document.getElementById("acc-name");
+  const accNameError = document.getElementById("acc-name-error");
+  const branch = document.getElementById("branch");
+  const active = document.querySelector('input[name="status"]:checked').value;
+
+  if(!bank.value) {
+    setError(bank, bankError, "Please select a bank");
+    click = 0;
+    return false;
+  }
+
+  if(!accountNo.value) {
+    setError(accountNo, accNoError, "Account number is required");
+    click = 0;
+    return false;
+  }
+
+  if(!accountName.value) {
+    setError(accountName, accNameError, "Account name is required");
+    click = 0;
+    return false;
+  }
+
+  const data = {    
+    bank_code: bank.value,
+    account_no: accountNo.value.trim(),
+    account_name: accountName.value.trim(),
+    branch: branch.value.trim(),
+    active: active
   };
 
-  if(d.bank_code == "") {
-    $('#bank-code').hasError('โปรดเลือกธนาคาร');
-    return false;
-  }
+  const url = `${HOME}add`;
 
-  if(d.account_name.length == 0) {
-    $('#acc-name').hasError('โปรดระบุชื่อบัญชี');
-    return false;
-  }
+  loadIn();
 
-	if(d.account_no.length == 0) {
-    $('#acc-no').hasError('โปรดระบุเลขที่บัญชี');
-    return false;
-  }
+  try {
+    const res = await postData(url, data);
+    const rs = await res.text();
 
-	if(d.branch === ""){
-		$('#branch').hasError('โปรดระบุสาขา');
-		return false;
-	}
-
-  if(d.sap_code.length == 0) {
-    $('#sap-code').hasError('โปรดระบุเลขผังบัญชี');
-    return false;
-  }
-
-	load_in();
-
-	$.ajax({
-		url:HOME + 'add',
-		type:'POST',
-		cache:false,
-		data:{
-			'data' : JSON.stringify(d)
-		},
-		success:function(rs){
-			load_out();
-
-			if(rs.trim() === 'success') {
-				swal({
-					title:'Success',
-					type:'success',
-					timer:1000
-				});
-
-				setTimeout(function(){
-					addNew();
-				}, 1200);
-			}
-      else {
-				showError(rs);
-			}
-		},
-    error:function(rs) {
-      showError(rs);
-    }
-	});
-}
-
-
-function update() {
-  clearErrorByClass('e');
-
-  let d = {
-    'id' : $('#id').val(),
-    'bank_code' : $('#bank-code').val(),
-    'account_name' : $('#acc-name').val().trim(),
-    'account_no' : $('#acc-no').val(),
-    'branch' : $('#branch').val().trim(),
-    'sap_code' : $('#sap-code').val().trim(),
-    'active' : $('#active').is(':checked') ? 1 : 0
-  };
-
-  if(d.bank_code == "") {
-    $('#bank-code').hasError('โปรดเลือกธนาคาร');
-    return false;
-  }
-
-  if(d.account_name.length == 0) {
-    $('#acc-name').hasError('โปรดระบุชื่อบัญชี');
-    return false;
-  }
-
-	if(d.account_no.length == 0) {
-    $('#acc-no').hasError('โปรดระบุเลขที่บัญชี');
-    return false;
-  }
-
-	if(d.branch === ""){
-		$('#branch').hasError('โปรดระบุสาขา');
-		return false;
-	}
-
-  if(d.sap_code.length == 0) {
-    $('#sap-code').hasError('โปรดระบุเลขผังบัญชี');
-    return false;
-  }
-
-	load_in();
-
-	$.ajax({
-		url:HOME + 'update',
-		type:'POST',
-		cache:false,
-		data:{
-			'data' : JSON.stringify(d)
-		},
-		success:function(rs){
-			load_out();
-
-			if(rs.trim() === 'success') {
-				swal({
-					title:'Success',
-					type:'success',
-					timer:1000
-				});
-			}
-      else {
-				showError(rs);
-			}
-		},
-    error:function(rs) {
-      showError(rs);
-    }
-	});
-}
-
-
-function getDelete(id, name){
-  swal({
-    title:'Are sure ?',
-    text:'ต้องการลบ ' + name + ' หรือไม่ ?',
-    type:'warning',
-    showCancelButton: true,
-		confirmButtonColor: '#FA5858',
-		confirmButtonText: 'ใช่, ฉันต้องการลบ',
-		cancelButtonText: 'ยกเลิก',
-		closeOnConfirm: true
-  },
-  function() {
     setTimeout(() => {
-      load_in();
+      loadOut();
+      if(rs.trim() === 'success') {
+        swal({
+          title: 'Success',
+          type: 'success',
+          timer: 1000
+        });
 
-      $.ajax({
-        url:HOME + 'delete',
-        type:'POST',
-        cache:false,
-        data:{
-          'id' : id
-        },
-        success:function(rs) {
-          load_out();
+        setTimeout(() => { addNew(); }, 1200);
+      }
+      else {
+        showError(rs);
+      }      
+    }, 500);
+  }
+  catch (error) {    
+    click = 0;
+    showError(error.message);
+  }
+  finally {
+    click = 0;
+  }
+}
 
-          if(rs.trim() === 'success') {
-            swal({
-              title:'Deleted',
-              type:'success',
-              timer:1000
-            });
 
-            setTimeout(() => {
-              window.location.reload();
-            }, 1100);
-          }
-          else {
-            showError(rs);
-          }
-        },
-        error:function(rs) {
-          showError(rs);
-        }
-      })
-    }, 100);
-  })
+async function update() {
+  clearErrorByClass('e');
+  const id = document.getElementById("id").value;
+  const bank = document.getElementById("bank");  
+  const accountNo = document.getElementById("acc-no");
+  const accNoError = document.getElementById("acc-no-error");
+  const accountName = document.getElementById("acc-name");
+  const accNameError = document.getElementById("acc-name-error");
+  const branch = document.getElementById("branch");
+  const active = document.querySelector('input[name="status"]:checked').value;
+
+  if( ! await validateCode() || ! await validateName()) {
+     return false;
+  }
+
+  if(!bank.value) {
+    setError(bank, document.getElementById("bank-error"), "Please select a bank");
+    return false;
+  }
+
+  if(!accountNo.value) {
+    setError(accountNo, accNoError, "Account No is required");
+    return false;
+  }
+
+  if(!accountName.value) {
+    setError(accountName, accNameError, "Account name is required");
+    return false;
+  }
+
+  const data = {
+    id: id,    
+    bank_code: bank.value,
+    account_no: accountNo.value.trim(),
+    account_name: accountName.value.trim(),
+    branch: branch.value.trim(),
+    active: active
+  };
+
+  const url = `${HOME}update`;
+
+  loadIn();
+
+  try {
+    const res = await postData(url, data);
+    const rs = await res.text();
+    setTimeout(() => {
+      loadOut();
+      if(rs.trim() === 'success') {
+        swal({
+          title: 'Success',
+          type: 'success',
+          timer: 1000
+        });
+
+        setTimeout(() => { window.location.reload(); }, 1200);
+      }
+      else {
+        showError(rs);
+      }
+    }, 500);
+  }
+  catch (error) {        
+    showError(error.message);
+  }  
+}
+
+
+confirmDelete = (id, name) => {
+  swal({
+    title: "Are you sure?",
+    text: `Do you want to delete ${name} ?`,
+    type: "warning",
+    html: true,
+    showCancelButton: true,
+    confirmButtonColor: "#DD6B55",
+    confirmButtonText: "Yes, delete it!",
+    cancelButtonText: "No, cancel!",
+    closeOnConfirm: true
+  }, function (isConfirm) {
+    if (isConfirm) {
+      deleteItem(id);
+    }
+  });
+}
+
+
+async function deleteItem(id) {
+  const url = `${HOME}delete`;
+  const data = { id: id };
+  loadIn();
+
+  try {
+    const response = await postData(url, data);
+    const res = await response.text();
+    setTimeout(() => {
+      loadOut();
+      if (res === 'success') {
+        swal({
+          title: 'Deleted',
+          type: 'success',
+          timer: 1000
+        });
+        
+        $(`#row-${id}`).remove();
+        reIndex();
+      }
+      else {
+        showError(res);
+      }
+    }, 500);
+  }
+  catch (error) {        
+    showError(error.message);
+  }  
 }

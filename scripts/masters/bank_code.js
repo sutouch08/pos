@@ -1,326 +1,253 @@
-var HOME = BASE_URL + 'masters/bank_code/';
+let click = 0;
+const regex = /[^a-zA-Z0-9\-_.@]/g;
+const inputCode = document.getElementById('code');
 
-function goBack(){
-  window.location.href = HOME;
+if (inputCode) {
+  inputCode.addEventListener('input', () => validInput(inputCode, regex));
 }
 
-function addNew(){
-  $('#addModal').modal('show');
-  $('#addModal').on('shown.bs.modal', function() {
-    $('#add-bank-code').focus();
-  });
-}
-
-
- async function add() {
-  clearErrorByClass('e');
-
-  let error = 0;
-  let code = $('#add-bank-code').val().trim();
-  let name = $('#add-bank-name').val().trim();
-  let active = $('#add-bank-active').is(':checked') ? 1 : 0;
-
-  if(code.length == 0) {
-    $('#add-bank-code').hasError('Required');
-    error++;
-  }
-
-  if(name.length == 0) {
-    $('#add-bank-name').hasError('Required');
-    error++;
-  }
-
-  if(error > 0) {
+async function validateCode(id = null) {
+  const inputCode = id === null ? document.getElementById("code") : document.getElementById(`code-${id}`);
+  const codeError = id === null ? document.getElementById("code-error") : document.getElementById(`error-${id}`);
+  const value = inputCode.value.trim();
+  if (!value) {
+    setError(inputCode, codeError, "Code is Required");
     return false;
   }
 
-  let exists = await is_exists(code);
-
-  if(exists) {
-    $('#add-bank-code').hasError('Duplicated bank code');
+  //--- check duplicated
+  const url = `${HOME}is_exists_code`;
+  const res = await validateRemote(url, { code: value, id: id });
+  if (res === 'exists') {
+    setError(inputCode, codeError, "Code already exists");
     return false;
   }
   else {
-    closeModal('addModal');
-    load_in();
-
-    $.ajax({
-      url:HOME + 'add',
-      type:'POST',
-      cache:false,
-      data:{
-        'code' : code,
-        'name' : name,
-        'active' : active
-      },
-      success:function(rs) {
-        load_out();
-
-        if(rs.trim() == 'success') {
-          swal({
-            title:'Success',
-            type:'success',
-            timer:1000
-          });
-
-          setTimeout(() => {
-            window.location.reload();
-          }, 1200);
-        }
-        else {
-          swal({
-            title:'Error!',
-            text:rs,
-            type:'error',
-            html:true
-          }, function() {
-            $('#addModal').modal('show');
-          });
-        }
-      },
-      error:function(rs) {
-        load_out();
-        swal({
-          title:'Error!',
-          text:rs.responseText,
-          type:'error',
-          html:true
-        }, function() {
-          $('#addModal').modal('show');
-        })
-      }
-    })
+    clearError(inputCode, codeError);
   }
+  return true; 
 }
 
-
-function is_exists(code) {
-  return new Promise((resolve) => {
-    let uri = HOME + 'is_exists_code';
-    let option = new FormData();
-    option.append('code', code);
-
-    let request = {
-      method:'POST',
-      body:option
-    };
-
-    fetch(uri, request)
-    .then(response => response.text())
-    .then((ds) => {
-      if(ds == 'exists') {
-        resolve(true);
-      }
-      else {
-        resolve(false);
-      }
-    })
-  });
+async function validateName(id = null) {
+  const inputName = id === null ? document.getElementById("name") : document.getElementById(`name-${id}`);
+  const nameError = id === null ? document.getElementById("name-error") : document.getElementById(`error-${id}`);
+  const value = inputName.value.trim();
+  if (!value) {
+    setError(inputName, nameError, "Name is Required");
+    return false;
+  }
+  
+  //--- check duplicated
+  const url = `${HOME}is_exists_name`;
+  const res = await validateRemote(url, { name: value, id: id });
+  if (res === 'exists') {
+    setError(inputName, nameError, "Name already exists");
+    return false;
+  }
+  else {
+    clearError(inputName, nameError);
+  }
+  return true;
 }
 
-
-function getEdit(id) {
-  load_in();
-
-  $.ajax({
-    url:HOME + 'get/'+id,
-    type:'GET',
-    cache:false,
-    success:function(rs) {
-      load_out();
-
-      if(isJson(rs)) {
-        let data = JSON.parse(rs);
-
-        if(data.status === 'success') {
-          let ds = data.data;
-          $('#edit-bank-id').val(ds.id);
-          $('#edit-bank-code').val(ds.code);
-          $('#edit-bank-name').val(ds.name);
-
-          if(ds.active == 1) {
-            $('#edit-bank-active').prop('checked', true);
-          }
-          else {
-            $('#edit-bank-active').prop('checked', false);
-          }
-
-          $('#editModal').on('shown.bs.modal', () => { $('#edit-bank-name').focus();});
-          $('#editModal').modal('show');
-        }
-        else {
-          showError(data.message);
-        }
-      }
-      else {
-        showError(rs);
-      }
-    },
-    error:function(rs) {
-      showError(rs);
-    }
-  })
+function clearFields() {
+  $('#code').val('').clearError();
+  $('#name').val('').clearError();  
+  $('#status').prop('checked', true);
 }
 
-
-function update() {
-  clearErrorByClass('e');
-  let d = {
-    'id' : $('#edit-bank-id').val(),
-    'code' : $('#edit-bank-code').val(),
-    'name' : $('#edit-bank-name').val().trim(),
-    'active' : $('#edit-bank-active').is(':checked') ? 1 : 0
-  };
-
-  if(d.name.length == 0) {
-    $('#edit-bank-name').hasError('Required');
+async function add() {
+  if (click !== 0) {
     return false;
   }
 
-  $('#editModal').modal('hide');
+  click = 1;
 
-  load_in();
-
-  reqUri = HOME + 'update';
-  header = new Headers();
-  header.append('Content-type', 'application/json');
-
-  options = {
-    method : 'POST',
-    headers : new Headers(),
-    body: JSON.stringify(d)
+  if (! await validateCode() || ! await validateName()) {
+    click = 0;
+    return false;
   }
 
-  fetch(reqUri, options)
-  .then(response => response.text())
-  .then((rs) => {
-    load_out();
-    if(isJson(rs)) {
-      let ds = JSON.parse(rs);
+  const inputCode = document.getElementById('code');
+  const inputName = document.getElementById('name');
+  const inputStatus = document.getElementById('status');
+  const active = inputStatus.checked ? 1 : 0;
 
-      if(ds.status === 'success') {
-        swal({
-          title:'Success',
-          type:'success',
-          timer:1000
-        });
+  const url = `${HOME}add`;
+  const data = {
+    code: inputCode.value.trim(),
+    name: inputName.value.trim(),
+    active: active
+  };
 
-        setTimeout(() => {
-          window.location.reload();
-        }, 1200);
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+
+    const res = await response.text();
+
+    if (isJson(res)) {
+      const ds = JSON.parse(res);
+      if (ds.status === 'success') {
+        const template = $('#new-row-template').html();
+        const output = $('#data-table');
+        renderPrepend(template, ds.data, output);
+        reIndex();
+        clearFields();
       }
       else {
         showError(ds.message);
       }
     }
     else {
-      showError(rs);
+      showError(res);
     }
-  })
-  .catch(error => {
-    showError(error);
-  })
+
+    click = 0;
+  }
+  catch (err) {
+    click = 0;
+    showError(err.message);
+  }
 }
 
 
-function clearFilter(){
-  var url = HOME + 'clear_filter';
-  $.get(url, function(){
-      goBack();
+async function edit(id) {
+  const url = `${HOME}get_data`;
+  const data = { id: id };
+
+  try {
+    const response = await postData(url, data);
+    const res = await response.text();
+    if (isJson(res)) {
+      const ds = JSON.parse(res);
+      if (ds.status === 'success') {
+        const template = $('#edit-row-template').html();
+        const output = $(`#row-${id}`);
+        renderAfter(template, ds.data, output);
+        $(`#row-${id}`).addClass('hide');
+        $('#status-' + id).prop('checked', ds.data.active == 1);
+      }
+      else {
+        showError(ds.message);
+      }
+    }
+    else {
+      showError(res);
+    }
+  }
+  catch (err) {
+    showError(err.message);
+  }
+}
+
+
+function cancel(id) {
+  $(`#edit-row-${id}`).remove();
+  $(`#row-${id}`).removeClass('hide');
+}
+
+
+async function update(id) {
+  if (! await validateName(id)) {
+    return false;
+  }
+
+  const inputName = document.getElementById(`name-${id}`);
+  const inputStatus = document.getElementById(`status-${id}`);
+  const active = inputStatus.checked ? 1 : 0;
+
+  const url = `${HOME}update`;
+  const data = {
+    id: id,
+    name: inputName.value.trim(),
+    active: active
+  };
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+
+    const res = await response.text();
+
+    if (isJson(res)) {
+      const ds = JSON.parse(res);
+      if (ds.status === 'success') {
+        const template = $('#row-template').html();
+        const output = $(`#row-${id}`);
+        render(template, ds.data, output);
+        $(`#edit-row-${id}`).remove();
+        $(`#row-${id}`).removeClass('hide');
+        reIndex();
+      }
+      else {
+        showError(ds.message);
+      }
+    }
+    else {
+      showError(res);
+    }
+  }
+  catch (err) {
+    showError(err.message);
+  }
+}
+
+
+function confirmDelete(id, name) {
+  swal({
+    title: "Are you sure?",
+    text: `Do you want to delete ${name} ?`,
+    type: "warning",
+    html: true,
+    showCancelButton: true,
+    confirmButtonColor: "#DD6B55",
+    confirmButtonText: "Yes, delete it!",
+    cancelButtonText: "No, cancel!",
+    closeOnConfirm: true
+  }, function (isConfirm) {
+    if (isConfirm) {
+      deleteItem(id);
+    }
   });
 }
 
 
-$('.search').keyup(function(e){
-	if(e.keyCode == 13){
-		getSearch();
-	}
-});
+async function deleteItem(id) {
+  const url = `${HOME}delete`;
+  const data = { id: id };
 
+  loadIn();
 
-function getSearch()
-{
-	$('#searchForm').submit();
-}
-
-
-
-function delete_bank(id) {
-
-	$.ajax({
-		url:HOME + 'delete/'+id,
-		type:'POST',
-		cache:false,
-		success:function(rs){
-			var rs = $.trim(rs);
-			if(rs === 'success'){
-				swal({
-					title:'Deleted',
-					type:'success',
-					timer:1000
-				});
-
-				setTimeout(function(){
-					goBack();
-				}, 1300);
-			}
-			else
-			{
-				swal({
-					title:'Error!',
-					text:rs,
-					type:'error'
-				})
-			}
-		}
-	})
-}
-
-
-function getDelete(id, name){
-  swal({
-    title:'Are sure ?',
-    text:'ต้องการลบ ' + name + ' หรือไม่ ?',
-    type:'warning',
-    showCancelButton: true,
-		confirmButtonColor: '#FA5858',
-		confirmButtonText: 'ใช่, ฉันต้องการลบ',
-		cancelButtonText: 'ยกเลิก',
-		closeOnConfirm: false
-  },function() {
+  try {
+    const response = await postData(url, data);
+    const res = await response.text();
 
     setTimeout(() => {
-      load_in();
+      loadOut();
 
-      $.ajax({
-        url:HOME + 'delete',
-        type:'POST',
-        cache:false,
-        data:{
-          'id' : id
-        },
-        success:function(rs) {
-          load_out();
+      if (res === 'success') {
+        swal({
+          title: 'Deleted',
+          type: 'success',
+          timer: 1000
+        });
 
-          if(rs.trim() === 'success') {
-            swal({
-              title:'Success',
-              type:'success',
-              timer:1000
-            });
-
-            setTimeout(() => {
-              window.location.reload();
-            }, 1200);
-          }
-          else {
-            showError(rs);
-          }
-        },
-        error:function(rs) {
-          showError(rs);
-        }
-      })
-    }, 100);
-  })
+        $(`#row-${id}`).remove();
+        reIndex();
+      }
+      else {
+        showError(res);
+      }
+    }, 500);
+  }
+  catch (err) {
+    showError(err.message);
+  }
 }

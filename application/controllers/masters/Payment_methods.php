@@ -6,7 +6,8 @@ class Payment_methods extends PS_Controller
   public $menu_code = 'DBPAYM';
 	public $menu_group_code = 'DB';
 	public $title = 'ช่องทางการชำระเงิน';
-
+  public $segment = 4;
+  
   public function __construct()
   {
     parent::__construct();
@@ -23,25 +24,23 @@ class Payment_methods extends PS_Controller
       'code' => get_filter('code', 'pm_code', ''),
       'name' => get_filter('name', 'pm_name', ''),
       'role' => get_filter('role', 'pm_role', 'all'),
-      'has_term' => get_filter('has_term', 'pm_term', 'all')
+      'has_term' => get_filter('has_term', 'pm_term', 'all'),
+      'active' => get_filter('active', 'pm_active', 'all')
     );
 
-		//--- แสดงผลกี่รายการต่อหน้า
-		$perpage = get_filter('set_rows', 'rows', 20);
-		//--- หาก user กำหนดการแสดงผลมามากเกินไป จำกัดไว้แค่ 300
-		if($perpage > 300)
-		{
-			$perpage = get_filter('rows', 'rows', 300);
-		}
-
-		$segment = 4; //-- url segment
-		$rows = $this->payment_methods_model->count_rows($filter);
-		//--- ส่งตัวแปรเข้าไป 4 ตัว base_url ,  total_row , perpage = 20, segment = 3
-		$init	= pagination_config($this->home.'/index/', $rows, $perpage, $segment);
-    $filter['data'] = $this->payment_methods_model->get_list($filter, $perpage, $this->uri->segment($segment));
-
-		$this->pagination->initialize($init);
-    $this->load->view('masters/payment_methods/payment_methods_list', $filter);
+    if($this->input->post('search'))
+    {
+      redirect($this->home);
+    }
+    else 
+    {
+      $perpage = get_rows();
+      $rows = $this->payment_methods_model->count_rows($filter);
+      $filter['data'] = $this->payment_methods_model->get_list($filter, $perpage, $this->uri->segment($this->segment));
+      $init = pagination_config($this->home.'/index/', $rows, $perpage, $this->segment);
+      $this->pagination->initialize($init);
+      $this->load->view('masters/payment_methods/payment_methods_list', $filter);
+    }				
   }
 
 
@@ -50,46 +49,105 @@ class Payment_methods extends PS_Controller
     $this->load->view('masters/payment_methods/payment_methods_add');
   }
 
-
   public function add()
   {
     $sc = TRUE;
+    $res = NULL;
+    $ds = json_decode(file_get_contents('php://input'));
 
-    if($this->input->post('code'))
+    if($this->pm->can_add)
     {
-      $code = $this->input->post('code');
-      $name = $this->input->post('name');
-      $role = $this->input->post('role');
-      $account_id = get_null($this->input->post('account'));
-      $has_term = ($role == 4 OR $role == 5) ? 1 : 0;
-
-      $ds = array(
-        'code' => $code,
-        'name' => $name,
-        'has_term' => $has_term,
-        'role' => $role,
-        'account_id' => $account_id
-      );
-
-      if($sc === TRUE && $this->payment_methods_model->is_exists($code))
+      if( ! empty($ds) && ! empty($ds->code) && ! empty($ds->name) && $ds->role != '')
       {
-        $sc = FALSE;
-        set_error('exists', $code);
-      }
-
-      if($sc === TRUE && $this->payment_methods_model->is_exists_name($name))
-      {
-        $sc = FALSE;
-        set_error('exists', $name);
-      }
-
-      if($sc === TRUE)
-      {
-        if( ! $this->payment_methods_model->add($ds))
+        
+        if($sc === TRUE && $this->payment_methods_model->is_exists_code($ds->code))
         {
           $sc = FALSE;
-          set_error('insert');
+          set_error('exists', $ds->code);
         }
+
+        if($sc === TRUE && $this->payment_methods_model->is_exists_name($ds->name))
+        {
+          $sc = FALSE;
+          set_error('exists', $ds->name);
+        }
+
+        if($sc === TRUE)
+        {
+          $arr = array(
+            'code' => $ds->code,
+            'name' => $ds->name,
+            'has_term' => ($ds->role == 4 || $ds->role == 5) ? 1 : 0,
+            'role' => $ds->role,
+            'account_id' => get_null($ds->account_id),
+            'active' => $ds->active,
+            'user' => $this->_user->uname
+          );
+
+          $id = $this->payment_methods_model->add($arr);
+          if( ! $id)
+          {
+            $sc = FALSE;
+            set_error('insert');
+          }
+
+          if($sc === TRUE)          
+          {
+            $res = $this->payment_methods_model->get($id);
+
+            if( ! empty($res))
+            {
+              $this->load->model('masters/bank_model');
+              $account = $this->bank_model->get_account_detail($res->account_id);
+              $res->is_active = is_active($res->active);              
+              $res->has_term = is_active($res->has_term, FALSE);
+              $res->account = empty($res->account_id) ? '' : (empty($account) ? 'ไม่พบข้อมูลบัญชีธนาคาร' : '# '.$account->acc_no.'<br/>'.$account->acc_name);
+              $res->role_name = payment_role_name($res->role);
+              $res->date_upd = thai_date($res->date_upd, TRUE, '/');
+            }
+          }
+        }
+      }
+      else
+      {
+        $sc = FALSE;
+        set_error('required');
+      }
+    }
+    else 
+    {
+      $sc = FALSE;
+      set_error('permission');
+    }
+
+    $arr = array(
+      'status' => $sc === TRUE ? 'success' : 'error',
+      'message' => get_error(),
+      'data' => $res
+    );
+
+    echo json_encode($arr);
+  }
+
+  
+  public function get_data()
+  {
+    $sc = TRUE;
+    $res = NULL;
+    $ds = json_decode(file_get_contents('php://input'));
+    
+    if( ! empty($ds) && ! empty($ds->id))
+    {
+      $res = $this->payment_methods_model->get($ds->id);
+
+      if(empty($res))
+      {
+        $sc = FALSE;
+        set_error('not_found');
+      }
+      else 
+      {
+        $res->accountDisabled = ($res->role == 2 && ! empty($res->account_id)) ? '' : 'disabled';
       }
     }
     else
@@ -98,98 +156,151 @@ class Payment_methods extends PS_Controller
       set_error('required');
     }
 
-    $this->_response($sc);
+    $arr = array(
+      'status' => $sc === TRUE ? 'success' : 'error',
+      'message' => get_error(),
+      'data' => $res
+    );
+
+    echo json_encode($arr);
   }
-
-
-  public function edit($code)
-  {
-    $data = $this->payment_methods_model->get_payment_methods($code);
-
-    if( ! empty($data))
-    {
-      $this->load->view('masters/payment_methods/payment_methods_edit', $data);
-    }
-    else
-    {
-      $this->error_page();
-    }
-  }
-
 
 
   public function update()
   {
     $sc = TRUE;
+    $res = NULL;
+    $ds = json_decode(file_get_contents('php://input'));
 
-    if($this->input->post('id'))
+    if($this->pm->can_edit)
     {
-      $id = $this->input->post('id');
-      $code = $this->input->post('code');
-      $name = trim($this->input->post('name'));
-      $role = $this->input->post('role');
-      $account_id = get_null($this->input->post('account'));
-      $has_term = ($role == 4 OR $role == 5) ? 1 : 0;
-
-      $ds = array(
-        'code' => $code,
-        'name' => $name,
-        'role' => $role,
-        'account_id' => $account_id,
-        'has_term' => $has_term
-      );
-
-      if($sc === TRUE && $this->payment_methods_model->is_exists($code, $id))
-      {
-        $sc = FALSE;
-        set_error('exists', $code);
-      }
-
-      if($sc === TRUE && $this->payment_methods_model->is_exists_name($name, $id))
-      {
-        $sc = FALSE;
-        set_error('exists', $name);
-      }
-
-      if($sc === TRUE)
-      {
-        if( ! $this->payment_methods_model->update_by_id($id, $ds))
+      if( ! empty($ds) && ! empty($ds->id) && ! empty($ds->name) && $ds->role != '')
+      {        
+        if($sc === TRUE && $this->payment_methods_model->is_exists_name($ds->name, $ds->id))
         {
           $sc = FALSE;
-          set_error('update');
+          set_error('exists', $ds->name);
         }
+
+        if($sc === TRUE)
+        {
+          $arr = array(            
+            'name' => $ds->name,
+            'has_term' => ($ds->role == 4 || $ds->role == 5) ? 1 : 0,
+            'role' => $ds->role,
+            'account_id' => get_null($ds->account_id),
+            'active' => $ds->active,
+            'date_upd' => now(),
+            'update_user' => $this->_user->uname
+          );
+
+          if( ! $this->payment_methods_model->update_by_id($ds->id, $arr))
+          {
+            $sc = FALSE;
+            set_error('update');
+          }
+
+          if($sc === TRUE)
+          {
+            $res = $this->payment_methods_model->get($ds->id);
+
+            if( ! empty($res))
+            {
+              $this->load->model('masters/bank_model');
+              $account = $this->bank_model->get_account_detail($res->account_id);
+              $res->is_active = is_active($res->active);              
+              $res->has_term = is_active($res->has_term, FALSE);
+              $res->account = empty($res->account_id) ? '' : (empty($account) ? 'ไม่พบข้อมูลบัญชีธนาคาร' : '# '.$account->acc_no.'<br/>'.$account->acc_name);
+              $res->role_name = payment_role_name($res->role);
+              $res->date_upd = thai_date($res->date_upd, TRUE, '/');
+            }
+          }
+        }
+      }
+      else
+      {
+        $sc = FALSE;
+        set_error('required');
       }
     }
     else
     {
       $sc = FALSE;
-      set_error('required');
+      set_error('permission');
     }
 
-    $this->_response($sc);
+    $arr = array(
+      'status' => $sc === TRUE ? 'success' : 'error',
+      'message' => get_error(),
+      'data' => $res
+    );
+
+    echo json_encode($arr);
   }
 
 
-
-  public function delete($code)
+  public function is_exists_code()
   {
-    if($code != '')
+    $exists = FALSE;
+    $ds = json_decode(file_get_contents('php://input'));
+
+    if(! empty($ds) && ! empty($ds->code))
     {
-      if($this->payment_methods_model->delete($code))
+      $exists = $this->payment_methods_model->is_exists_code($ds->code, $ds->id);
+    }
+
+    echo $exists ? 'exists' : 'not_exists';
+  }
+
+
+  public function is_exists_name()
+  {
+    $exists = FALSE;
+    $ds = json_decode(file_get_contents('php://input'));
+
+    if(! empty($ds) && ! empty($ds->name))
+    {
+      $exists = $this->payment_methods_model->is_exists_name($ds->name, $ds->id);
+    }
+
+    echo $exists ? 'exists' : 'not_exists';
+  }
+
+
+  public function delete()
+  {
+    $sc = TRUE;
+    $ds = json_decode(file_get_contents('php://input'));
+
+    if($this->pm->can_delete)
+    {
+      if( ! empty($ds) && ! empty($ds->id))
       {
-        set_message('Payment channels deleted');
+        if($this->payment_methods_model->has_transaction($ds->id))
+        {
+          $sc = FALSE;
+          set_error('has_transaction');
+        }
+
+        if($sc === TRUE && ! $this->payment_methods_model->delete($ds->id))
+        {
+          $sc = FALSE;
+          set_error('delete');
+        }
       }
       else
       {
-        set_error('Cannot delete payment channels');
+        $sc = FALSE;
+        set_error('required');
       }
     }
     else
     {
-      set_error('payment channels not found');
+      $sc = FALSE;
+      set_error('permission');
     }
 
-    redirect($this->home);
+    $this->_response($sc);
   }
 
 
@@ -205,9 +316,7 @@ class Payment_methods extends PS_Controller
 
   public function clear_filter()
 	{
-
-		return clear_filter(array('pm_code', 'pm_name', 'pm_role', 'pm_term'));
-
+		return clear_filter(array('pm_code', 'pm_name', 'pm_role', 'pm_term', 'pm_active'));
 	}
 
 }//--- end class

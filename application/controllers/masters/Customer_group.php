@@ -1,18 +1,18 @@
 <?php
-defined('BASEPATH') OR exit('No direct script access allowed');
+defined('BASEPATH') or exit('No direct script access allowed');
 
 class Customer_group extends PS_Controller
 {
   public $menu_code = 'DBCGRP';
-	public $menu_group_code = 'DB';
+  public $menu_group_code = 'DB';
   public $menu_sub_group_code = 'CUSTOMER';
-	public $title = 'เพิ่ม/แก้ไข กลุ่มลูกค้า';
+  public $title = 'เพิ่ม/แก้ไข กลุ่มลูกค้า';
   public $segment = 4;
 
   public function __construct()
   {
     parent::__construct();
-    $this->home = base_url().'masters/customer_group';
+    $this->home = base_url() . 'masters/customer_group';
     $this->load->model('masters/customer_group_model');
   }
 
@@ -23,25 +23,19 @@ class Customer_group extends PS_Controller
       'code' => get_filter('code', 'customer_group_code', '')
     );
 
-    if($this->input->post('search'))
+    if ($this->input->post('search'))
     {
       redirect($this->home);
     }
-    else 
+    else
     {
       $perpage = get_rows();
       $rows = $this->customer_group_model->count_rows($filter);
       $filter['data'] = $this->customer_group_model->get_list($filter, $perpage, $this->uri->segment($this->segment));
-      $init = pagination_config($this->home.'/index/', $rows, $perpage, $this->segment);
+      $init = pagination_config($this->home . '/index/', $rows, $perpage, $this->segment);
       $this->pagination->initialize($init);
       $this->load->view('masters/customer_group/customer_group_list', $filter);
-    }			
-  }
-
-
-  public function add_new()
-  {
-    $this->load->view('masters/customer_group/customer_group_add');    
+    }
   }
 
 
@@ -51,7 +45,7 @@ class Customer_group extends PS_Controller
 
     if (! empty($ds))
     {
-      if ($this->customer_group_model->is_exists($ds->code, $ds->id))
+      if ($this->customer_group_model->is_exists_code($ds->code, $ds->id))
       {
         echo 'exists';
       }
@@ -84,91 +78,89 @@ class Customer_group extends PS_Controller
   public function add()
   {
     $sc = TRUE;
+    $res = NULL;
     $ds = json_decode(file_get_contents('php://input'));
 
-    if( ! empty($ds) && ! empty($ds->code) && ! empty($ds->name))
+    if ($this->pm->can_add)
     {
-      if($this->customer_group_model->is_exists($ds->code))
+      if (! empty($ds) && ! empty($ds->code) && ! empty($ds->name))
+      {
+        if ($this->customer_group_model->is_exists_code($ds->code))
+        {
+          $sc = FALSE;
+          set_error('exists', $ds->code);
+        }
+
+        if ($sc === TRUE)
+        {
+          if ($this->customer_group_model->is_exists_name($ds->name))
+          {
+            $sc = FALSE;
+            set_error('exists', $ds->name);
+          }
+        }
+
+        if ($sc === TRUE)
+        {
+          $arr = array(
+            'code' => $ds->code,
+            'name' => $ds->name
+          );
+
+          if (! $this->customer_group_model->add($arr))
+          {
+            $sc = FALSE;
+            set_error('insert');
+          }
+        }
+
+        if ($sc === TRUE)
+        {
+          $res = $this->customer_group_model->get_by_code($ds->code);
+
+          if (! empty($res))
+          {
+            $res->date_update = thai_date($res->date_upd, TRUE, '/');
+          }
+        }
+      }
+      else
       {
         $sc = FALSE;
-        set_error('exists', $ds->code);
+        set_error('required');
       }
-
-      if($sc === TRUE)
-      {
-        if($this->customer_group_model->is_exists_name($ds->name))
-        {
-          $sc = FALSE;
-          set_error('exists', $ds->name);
-        }
-      }
-
-      if($sc === TRUE)
-      {
-        $arr = array(
-          'code' => $ds->code,
-          'name' => $ds->name
-        );
-
-        if( ! $this->customer_group_model->add($arr))
-        {
-          $sc = FALSE;
-          set_error('insert');
-        }
-      }      
     }
-    else 
+    else
     {
       $sc = FALSE;
-      set_error('required');
+      set_error('permission');
     }
 
-    $this->_response($sc);    
+
+    $arr = array(
+      'status' => $sc === TRUE ? 'success' : 'error',
+      'message' => $sc === TRUE ? 'success' : get_error(),
+      'data' => $res
+    );
+
+    echo json_encode($arr);
   }
 
 
-
-  public function edit($id)
-  {
-    if($this->pm->can_edit)
-    {
-      $ds['data'] = $this->customer_group_model->get_by_id($id);
-      $this->load->view('masters/customer_group/customer_group_edit', $ds);
-    }
-    else 
-    {
-      $this->deny_page();
-    }    
-  }
-
-
-  public function update()
+  public function get_data()
   {
     $sc = TRUE;
+    $res = NULL;
     $ds = json_decode(file_get_contents('php://input'));
 
-    if (! empty($ds) && ! empty($ds->id) && ! empty($ds->code) && ! empty($ds->name))
-    {      
-      if ($sc === TRUE)
-      {
-        if ($this->customer_group_model->is_exists_name($ds->name, $ds->id))
-        {
-          $sc = FALSE;
-          set_error('exists', $ds->name);
-        }
-      }
+    if (! empty($ds) && ! empty($ds->id))
+    {
+      $res = $this->customer_group_model->get_by_id($ds->id);
 
-      if ($sc === TRUE)
+      if (empty($res))
       {
-        $arr = array(          
-          'name' => $ds->name
-        );
-
-        if (! $this->customer_group_model->update_by_id($ds->id, $arr))
-        {
-          $sc = FALSE;
-          set_error('update');
-        }
+        $sc = FALSE;
+        set_error('not_found');
       }
     }
     else
@@ -177,24 +169,117 @@ class Customer_group extends PS_Controller
       set_error('required');
     }
 
-    $this->_response($sc);
+    $arr = array(
+      'status' => $sc === TRUE ? 'success' : 'error',
+      'message' => $sc === TRUE ? 'success' : get_error(),
+      'data' => $res
+    );
+
+    echo json_encode($arr);
+  }
+
+
+  public function update()
+  {
+    $sc = TRUE;
+    $ds = json_decode(file_get_contents('php://input'));
+
+    if ($this->pm->can_edit)
+    {
+      if (! empty($ds) && ! empty($ds->id) && ! empty($ds->code) && ! empty($ds->name))
+      {
+        if ($this->customer_group_model->is_exists_name($ds->name, $ds->id))
+        {
+          $sc = FALSE;
+          set_error('exists', $ds->name);
+        }
+
+        if ($sc === TRUE)
+        {
+          $arr = array(
+            'name' => $ds->name
+          );
+
+          if (! $this->customer_group_model->update($ds->id, $arr))
+          {
+            $sc = FALSE;
+            set_error('update');
+          }
+        }
+
+        if ($sc === TRUE)
+        {
+          $res = $this->customer_group_model->get_by_id($ds->id);
+
+          if (! empty($res))
+          {
+            $res->date_update = thai_date($res->date_upd, TRUE, '/');
+          }
+        }
+      }
+      else
+      {
+        $sc = FALSE;
+        set_error('required');
+      }
+    }
+    else
+    {
+      $sc = FALSE;
+      set_error('permission');
+    }
+
+    $arr = array(
+      'status' => $sc === TRUE ? 'success' : 'error',
+      'message' => $sc === TRUE ? 'success' : get_error(),
+      'data' => $res
+    );
+
+    echo json_encode($arr);
   }
 
 
   public function delete()
   {
     $sc = TRUE;
-    $id = $this->input->post('id');
+    $ds = json_decode(file_get_contents('php://input'));
 
-    if($this->pm->can_delete)
+    if ($this->pm->can_delete)
     {
-      if( ! $this->customer_group_model->delete_by_id($id))
+      if (! empty($ds) && ! empty($ds->id))
+      {
+        $item = $this->customer_group_model->get_by_id($ds->id);
+
+        if (! empty($item))
+        {
+          if ($this->customer_group_model->count_members($ds->id) > 0)
+          {
+            $sc = FALSE;
+            set_error('transaction');
+          }
+
+          if ($sc === TRUE)
+          {
+            if (! $this->customer_group_model->delete($ds->id))
+            {
+              $sc = FALSE;
+              set_error('delete');
+            }
+          }
+        }
+        else
+        {
+          $sc = FALSE;
+          set_error('not_found');
+        }
+      }
+      else
       {
         $sc = FALSE;
-        set_error('delete');
+        set_error('required');
       }
     }
-    else 
+    else
     {
       $sc = FALSE;
       set_error('permission');
@@ -205,10 +290,8 @@ class Customer_group extends PS_Controller
 
 
   public function clear_filter()
-	{
-		$filter = ['customer_group_code', 'customer_group_name'];
-    return clear_filter($filter);		
-	}
-
-}//--- end class
- ?>
+  {
+    $filter = ['customer_group_code', 'customer_group_name'];
+    return clear_filter($filter);
+  }
+} //--- end class

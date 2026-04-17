@@ -1,31 +1,39 @@
 <?php
-function select_channels($code = '')
+
+function select_channels($code = NULL)
 {
-  $sc = '';
-  $CI =& get_instance();
-  $CI->load->model('masters/channels_model');
-  $channels = $CI->channels_model->get_data();
-  if(!empty($channels))
+  $ds = '';
+  $ci =& get_instance();
+  $ci->load->model('masters/channels_model');
+  $list = $ci->channels_model->get_all();
+
+  if(!empty($list))
   {
-    foreach($channels as $rs)
+    foreach($list as $rs)
     {
-      $sc .= '<option value="'.$rs->code.'" '.is_selected($rs->code, $code).'>'.$rs->name.'</option>';
+      $ds .= '<option value="'.$rs->code.'" data-id="'.$rs->id.'" '.is_selected($rs->code, $code).'>'.$rs->name.'</option>';
     }
   }
 
-  return $sc;
+  return $ds;
 }
 
 
-function select_channels_type($is_online = NULL)
+function channels_name_by_id($id)
 {
-	$sc  = '<option value="0" '.is_selected('0', $is_online).'>Offline</option>';
-	$sc .= '<option value="1" '.is_selected('1', $is_online).'>Online</option>';
+  $ci =& get_instance();
+  $rs = $ci->db->select('name')->where('id', $id)->get('channels');
 
-	return $sc;
+  if($rs->num_rows() === 1)
+  {
+    return $rs->row()->name;
+  }
+
+  return NULL;
 }
 
-function channels_name($code)
+
+function channels_name_by_code($code)
 {
   $ci =& get_instance();
   $rs = $ci->db->select('name')->where('code', $code)->get('channels');
@@ -37,6 +45,7 @@ function channels_name($code)
 
   return NULL;
 }
+
 
 function channels_array()
 {
@@ -56,4 +65,4 @@ function channels_array()
 
   return $ds;
 }
- ?>
+

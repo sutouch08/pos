@@ -1,84 +1,255 @@
-function addNew(){
-  window.location.href = BASE_URL + 'masters/channels/add_new';
+let click = 0;
+const regex = /[^a-zA-Z0-9\-_.@]/g;
+const inputCode = document.getElementById('code');
+
+if (inputCode) {
+  inputCode.addEventListener('input', () => validInput(inputCode, regex));
+}
+
+async function validateCode(id = null) {
+  const inputCode = id === null ? document.getElementById("code") : document.getElementById(`code-${id}`);
+  const codeError = id === null ? document.getElementById("code-error") : document.getElementById(`error-${id}`);
+  const value = inputCode.value.trim();
+  if (!value) {
+    setError(inputCode, codeError, "Code is Required");
+    return false;
+  }
+
+  //--- check duplicated
+  const url = `${HOME}is_exists_code`;
+  const res = await validateRemote(url, { code: value, id: id });
+
+  if (res === "exists") {
+    setError(inputCode, codeError, "Code already exists");
+    return false;
+  }
+
+  clearError(inputCode, codeError);
+  return true;
 }
 
 
+async function validateName(id = null) {
+  const inputName = id === null ? document.getElementById("name") : document.getElementById(`name-${id}`);
+  const nameError = id === null ? document.getElementById("name-error") : document.getElementById(`error-${id}`);
+  const value = inputName.value.trim();
+  if (!value) {
+    setError(inputName, nameError, "Name is Required");
+    return false;
+  }
 
-function goBack(){
-  window.location.href = BASE_URL + 'masters/channels';
+  //--- check duplicated
+  const url = `${HOME}is_exists_name`;
+  const res = await validateRemote(url, { name: value, id: id });
+
+  if (res === "exists") {
+    setError(inputName, nameError, "Name already exists");
+    return false;
+  }
+  clearError(inputName, nameError);
+  return true;
 }
 
 
-function getEdit(code){
-  window.location.href = BASE_URL + 'masters/channels/edit/'+code;
+function clearFields() {
+  $('#code').val('').clearError();
+  $('#name').val('').clearError();  
+  $('#status').prop('checked', true);
 }
 
 
-function clearFilter(){
-  var url = BASE_URL + 'masters/channels/clear_filter';
-  var page = BASE_URL + 'masters/channels';
-  $.get(url, function(rs){
-    window.location.href = page;
+async function add() {
+  if (click !== 0) {
+    return false;
+  }
+
+  click = 1;
+
+  if (! await validateCode() || ! await validateName()) {
+    click = 0;
+    return false;
+  }
+
+  const inputCode = document.getElementById('code');
+  const inputName = document.getElementById('name');  
+  const inputStatus = document.getElementById('status');
+  const active = inputStatus.checked ? 1 : 0;  
+
+  const url = `${HOME}add`;
+  const data = {
+    code: inputCode.value.trim(),
+    name: inputName.value.trim(),    
+    active: active
+  };
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+
+    const res = await response.text();
+
+    if (isJson(res)) {
+      const ds = JSON.parse(res);
+      if (ds.status === 'success') {
+        const template = $('#new-row-template').html();
+        const output = $('#data-table');
+        renderPrepend(template, ds.data, output);
+        reIndex();
+        clearFields();
+      }
+      else {
+        showError(ds.message);
+      }
+    }
+    else {
+      showError(res);
+    }
+
+    click = 0;
+  }
+  catch (err) {
+    click = 0;
+    showError(err.message);
+  }
+}
+
+
+async function edit(id) {
+  const url = `${HOME}get_data`;
+  const data = { id: id };
+
+  try {
+    const response = await postData(url, data);
+    const res = await response.text();
+    if (isJson(res)) {
+      const ds = JSON.parse(res);
+      if (ds.status === 'success') {
+        const template = $('#edit-row-template').html();
+        const output = $(`#row-${id}`);
+        renderAfter(template, ds.data, output);
+        $(`#row-${id}`).addClass('hide');
+        $('#status-' + id).prop('checked', ds.data.active == 1);
+      }
+      else {
+        showError(ds.message);
+      }
+    }
+    else {
+      showError(res);
+    }
+  }
+  catch (err) {
+    showError(err.message);
+  }
+}
+
+
+function cancel(id) {
+  $(`#edit-row-${id}`).remove();
+  $(`#row-${id}`).removeClass('hide');
+}
+
+
+async function update(id) {
+  if (! await validateName(id)) {
+    return false;
+  }
+
+  const inputName = document.getElementById(`name-${id}`);  
+  const inputStatus = document.getElementById(`status-${id}`);
+  const active = inputStatus.checked ? 1 : 0;
+  
+  const url = `${HOME}update`;
+  const data = {
+    id: id,
+    name: inputName.value.trim(),    
+    active: active
+  };
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+
+    const res = await response.text();
+
+    if (isJson(res)) {
+      const ds = JSON.parse(res);
+      if (ds.status === 'success') {
+        const template = $('#row-template').html();
+        const output = $(`#row-${id}`);
+        render(template, ds.data, output);
+        $(`#edit-row-${id}`).remove();
+        $(`#row-${id}`).removeClass('hide');
+        reIndex();
+      }
+      else {
+        showError(ds.message);
+      }
+    }
+    else {
+      showError(res);
+    }
+  }
+  catch (err) {
+    showError(err.message);
+  }
+}
+
+
+function confirmDelete(id, name) {
+  swal({
+    title: "Are you sure?",
+    text: `Do you want to delete ${name} ?`,
+    type: "warning",
+    html: true,
+    showCancelButton: true,
+    confirmButtonColor: "#DD6B55",
+    confirmButtonText: "Yes, delete it!",
+    cancelButtonText: "No, cancel!",
+    closeOnConfirm: true
+  }, function (isConfirm) {
+    if (isConfirm) {
+      deleteItem(id);
+    }
   });
 }
 
 
-function getDelete(code, name){
-  swal({
-    title:'Are sure ?',
-    text:'ต้องการลบ ' + name + ' หรือไม่ ?',
-    type:'warning',
-    showCancelButton: true,
-		confirmButtonColor: '#FA5858',
-		confirmButtonText: 'ใช่, ฉันต้องการลบ',
-		cancelButtonText: 'ยกเลิก',
-		closeOnConfirm: false
-  },function(){
-    window.location.href = BASE_URL + 'masters/channels/delete/' + code;
-  })
-}
+async function deleteItem(id) {
+  const url = `${HOME}delete`;
+  const data = { id: id };
 
+  loadIn();
 
-$('#customer_name').autocomplete({
-  source:BASE_URL + 'auto_complete/get_customer_code_and_name',
-  autoFocus: true,
-	close: function(){
-		var rs = $.trim($(this).val());
-		var arr = rs.split(' | ');
-		if( arr.length == 2 ){
-			var code = arr[0];
-			var name = arr[1];
-			$("#customer_code").val(code);
-			$("#customer_name").val(name);
-		}else{
-			$("#customer_code").val('');
-			$(this).val('');
-		}
-	}
-})
+  try {
+    const response = await postData(url, data);
+    const res = await response.text();
 
+    setTimeout(() => {
+      loadOut();
 
-function toggleOnline(code){
-  var option = $('#online-'+code).val();
-  $.ajax({
-    url:BASE_URL + 'masters/channels/toggle_online',
-    type:'POST',
-    cache:false,
-    data:{
-      'code' : code,
-      'is_online' : option
-    },
-    success:function(rs){
-      var rs = $.trim(rs);
-      if(rs == '1'){
-        $('#online-label-'+code).html('<i class="fa fa-check green"></i>');
-        $('#online-'+code).val(rs);
-      }else if(rs == '0'){
-        $('#online-label-'+code).html('<i class="fa fa-times"></i>');
-        $('#online-'+code).val(rs);
-      }else{
-        swal('Error', rs, 'error');
+      if (res === 'success') {
+        swal({
+          title: 'Deleted',
+          type: 'success',
+          timer: 1000
+        });
+
+        $(`#row-${id}`).remove();
+        reIndex();
       }
-    }
-  })
+      else {
+        showError(res);
+      }
+    }, 500);
+  }
+  catch (err) {
+    showError(err.message);
+  }
 }
