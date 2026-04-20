@@ -1,32 +1,31 @@
 let click = 0;
 
-async function validateEmployee(id = null) {
-  const selectEmployee = id === null ? document.getElementById("employee") : document.getElementById(`employee-${id}`);
-  const employeeError = id === null ? document.getElementById("employee-error") : document.getElementById(`error-${id}`);
-  const value = selectEmployee.value;
-
+async function validateName(id = null) {
+  const nameInput = id === null ? document.getElementById("name") : document.getElementById(`name-${id}`);
+  const nameError = id === null ? document.getElementById("name-error") : document.getElementById(`error-${id}`);
+  const value = nameInput.value.trim();
   if (!value) {
-    setError(selectEmployee, employeeError, "Employee is Required");
+    setError(nameInput, nameError, "Name is Required");
     return false;
   }
 
-  const url = `${HOME}is_exists_employee`;
-  const res = await validateRemote(url, { emp_id: value, id: id });
-
+  // Check for duplicate name
+  const url = `${HOME}is_exists_name`;
+  const res = await validateRemote(url, { name: value, id: id });
   if (res === "exists") {
-    setError(selectEmployee, employeeError, "Employee already assigned");
+    setError(nameInput, nameError, "Name already exists");
     return false;
   }
-
-  clearError(selectEmployee, employeeError);
+  clearError(nameInput, nameError);
   return true;
 }
 
 
 function clearFields() {
-  $('#employee').val('').change();
-  $('#status').prop('checked', true);  
+  $('#status').prop('checked', true);
+  $('#name').val('').focus();
 }
+
 
 async function add() {
   if (click !== 0) {
@@ -35,14 +34,14 @@ async function add() {
 
   click = 1;
 
-  if (! await validateEmployee()) {
+  if (! await validateName()) {
     click = 0;
     return false;
   }
 
   const url = `${HOME}add`;
   const data = {
-    emp_id: $('#employee').val(),
+    name: $('#name').val().trim(),
     active: $('#status').is(':checked') ? 1 : 0
   };
 
@@ -91,8 +90,7 @@ async function edit(id) {
         const template = $('#edit-row-template').html();
         const output = $(`#row-${id}`);
 
-        renderAfter(template, ds.data, output);
-        $(`#employee-${id}`).select2().val(ds.data.emp_id).change();
+        renderAfter(template, ds.data, output);        
         $(`#row-${id}`).addClass('hide');
       }
       else {
@@ -110,21 +108,21 @@ async function edit(id) {
 
 
 async function update(id) {
-  if (! await validateEmployee(id)) {
+  if (! await validateName(id)) {
     return false;
   }
 
   const url = `${HOME}update`;
   const data = {
     id: id,
-    emp_id: $(`#employee-${id}`).val(),
+    name: $(`#name-${id}`).val().trim(),
     active: $(`#status-${id}`).is(':checked') ? 1 : 0
   };
 
   try {
     const response = await postData(url, data);
     const res = await response.text();
-    if(isJson(res)) {
+    if (isJson(res)) {
       const ds = JSON.parse(res);
       if (ds.status === 'success') {
         const template = $('#row-template').html();

@@ -211,7 +211,7 @@ function is_valid_date($date)
   $M = intval(date('m', strtotime($date)));
   $D = intval(date('d', strtotime($date)));
 
-  if($Y > 2500 OR $Y < 2000)
+  if($Y >= 2400)
   {
     return FALSE;
   }
@@ -243,6 +243,7 @@ function is_valid_date($date)
 
   return TRUE;
 }
+
 
 function convert_date($date)
 {
@@ -292,4 +293,87 @@ function convert_date($date)
 
   return date('Y-m-d', strtotime("$Y-$M-$D"));
 }
- ?>
+
+//--- convert date to database format (Y-m-d) and add 543 years if the year is less than 2400
+function ce_date($date, $format = 'Y-m-d')
+{
+  $date = convert_date($date);
+  $Y = intval(date('Y', strtotime($date)));
+  $M = intval(date('m', strtotime($date)));
+  $D = intval(date('d', strtotime($date)));
+
+  $Y = $Y > 2400 ? $Y - 543 : $Y; //--- convert year to gregorian if the year is greater than 2400
+  $isLeapYear = is_leap_year($Y);  
+
+  $M = $M > 12 ? 12 : ($M < 1 ? 1 : $M); //--- set month to 12 if the month is greater than 12
+
+  if($M == 1 OR $M == 3 OR $M == 5 OR $M == 7 OR $M == 8 OR $M == 10 OR $M == 12)
+  {
+    $D = $D > 31 ? 31 : ($D < 1 ? 1 : $D); //--- set day to 31 if the day is greater than 31
+  }
+  else if($M == 2)
+  {
+    if($isLeapYear)
+    {
+      $D = $D > 29 ? 29 : ($D < 1 ? 1 : $D); //--- set day to 29 if the day is greater than 29
+    }
+    else
+    {
+      $D = $D > 28 ? 28 : ($D < 1 ? 1 : $D); //--- set day to 28 if the day is greater than 28
+    }    
+  }
+  else
+  {
+    $D = $D > 30 ? 30 : ($D < 1 ? 1 : $D); //--- set day to 30 if the day is greater than 30
+  }
+  
+  return date($format, strtotime("$Y-$M-$D"));
+}
+
+
+function be_date($date, $format = 'd-m-Y')
+{
+  $date = convert_date($date);
+  $Y = intval(date('Y', strtotime($date)));
+  $M = intval(date('m', strtotime($date)));
+  $D = intval(date('d', strtotime($date)));
+
+  $Y = $Y < 2400 ? $Y + 543 : $Y; //--- convert year to buddhist if the year is less than 2400
+
+  return date($format, strtotime("$Y-$M-$D"));
+}
+
+function is_leap_year($year)
+{
+  $year = intval($year);
+  $year = $year > 2400 ? $year - 543 : $year; //--- convert year to gregorian if the year is greater than 2400
+  //--- check if the year is a leap year
+  return ($year % 4 == 0 && $year % 100 != 0) || ($year % 400 == 0);
+}
+
+
+function is_ce_date($date)
+{
+  if(empty($date))
+  {
+    return FALSE;
+  }
+
+  $Y = intval(date('Y', strtotime($date)));
+
+  return $Y > 2400 ? FALSE : TRUE;
+}
+
+
+function is_be_date($date)
+{
+  if(empty($date))
+  {
+    return FALSE;
+  }
+
+  $Y = intval(date('Y', strtotime($date)));
+
+  return $Y < 2400 ? FALSE : TRUE;
+}
+

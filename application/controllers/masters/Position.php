@@ -1,0 +1,274 @@
+<?php
+defined('BASEPATH') or exit('No direct script access allowed');
+
+class Position extends PS_Controller
+{
+  public $menu_code = 'DBEMPT';
+  public $menu_group_code = 'DB';
+  public $menu_sub_group_code = '';
+  public $title = 'เพิ่ม/แก้ไข ตำแหน่งงาน';
+  public $segment = 4;
+
+  public function __construct()
+  {
+    parent::__construct();
+    $this->home = base_url() . 'masters/position';
+    $this->load->model('masters/position_model');
+  }
+
+
+  public function index()
+  {
+    $filter = array(
+      'name' => get_filter('name', 'position_name', ''),
+      'active' => get_filter('active', 'position_active', 'all')
+    );
+
+    if ($this->input->post('search'))
+    {
+      redirect($this->home);
+    }
+    else
+    {
+      $perpage = get_rows();
+      $rows = $this->position_model->count_rows($filter);
+      $filter['data'] = $this->position_model->get_list($filter, $perpage, $this->uri->segment($this->segment));
+      $init = pagination_config($this->home . '/index/', $rows, $perpage, $this->segment);
+      $this->pagination->initialize($init);
+      $this->load->view('masters/position/position_list', $filter);
+    }
+  }
+
+
+  public function add()
+  {
+    $sc = TRUE;
+    $res = NULL;
+    $ds = json_decode(file_get_contents('php://input'));
+
+    if ($this->pm->can_add)
+    {
+      if (! empty($ds) && ! empty($ds->name))
+      {
+        if ($sc === TRUE && $this->position_model->is_exists_name($ds->name))
+        {
+          $sc = FALSE;
+          set_error('exists', $ds->name);
+        }
+
+        if ($sc === TRUE)
+        {
+          $arr = array(
+            'name' => $ds->name,
+            'active' => $ds->active,
+            'user' => $this->_user->uname
+          );
+
+          $id = $this->position_model->add($arr);
+
+          if (! $id)
+          {
+            $sc = FALSE;
+            set_error('insert');
+          }
+
+          if ($sc === TRUE)
+          {
+            $res = $this->position_model->get($id);
+
+            if (! empty($res))
+            {
+              $res->is_active = is_active($res->active);
+            }
+          }
+        }
+      }
+      else
+      {
+        $sc = FALSE;
+        set_error('required');
+      }
+    }
+    else
+    {
+      $sc = FALSE;
+      set_error('permission');
+    }
+
+    $arr = array(
+      'status' => $sc === TRUE ? 'success' : 'error',
+      'message' => $sc === TRUE ? 'success' : $this->error,
+      'data' => $res
+    );
+
+    echo json_encode($arr);
+  }
+
+
+  public function get_data()
+  {
+    $sc = TRUE;
+    $res = NULL;
+    $ds = json_decode(file_get_contents('php://input'));
+
+    if (! empty($ds) && ! empty($ds->id))
+    {
+      $res = $this->position_model->get($ds->id);
+
+      if (! empty($res))
+      {
+        $res->isChecked = $res->active == 1 ? 'checked' : '';
+      }
+      else
+      {
+        $sc = FALSE;
+        set_error('not_found');
+      }
+    }
+    else
+    {
+      $sc = FALSE;
+      set_error('required');
+    }
+
+    $arr = array(
+      'status' => $sc === TRUE ? 'success' : 'error',
+      'message' => $sc === TRUE ? 'success' : $this->error,
+      'data' => $res
+    );
+
+    echo json_encode($arr);
+  }
+
+
+  public function update()
+  {
+    $sc = TRUE;
+    $res = NULL;
+    $ds = json_decode(file_get_contents('php://input'));
+
+    if ($this->pm->can_edit)
+    {
+      if (! empty($ds) && ! empty($ds->id) && ! empty($ds->name))
+      {
+        if ($sc === TRUE && $this->position_model->is_exists_name($ds->name, $ds->id))
+        {
+          $sc = FALSE;
+          set_error('exists', $ds->name);
+        }
+
+        if ($sc === TRUE)
+        {
+          $arr = array(
+            'name' => $ds->name,
+            'active' => $ds->active,
+            'update_user' => $this->_user->uname
+          );
+
+          if (! $this->position_model->update($ds->id, $arr))
+          {
+            $sc = FALSE;
+            set_error('update');
+          }
+
+          if ($sc === TRUE)
+          {
+            $res = $this->position_model->get($ds->id);
+
+            if (! empty($res))
+            {
+              $res->is_active = is_active($res->active);
+            }
+          }
+        }
+      }
+      else
+      {
+        $sc = FALSE;
+        set_error('required');
+      }
+    }
+    else
+    {
+      $sc = FALSE;
+      set_error('permission');
+    }
+
+    $arr = array(
+      'status' => $sc === TRUE ? 'success' : 'error',
+      'message' => $sc === TRUE ? 'success' : $this->error,
+      'data' => $res
+    );
+
+    echo json_encode($arr);
+  }
+
+
+  public function delete()
+  {
+    $sc = TRUE;
+    $ds = json_decode(file_get_contents('php://input'));
+
+    if (! empty($ds) && ! empty($ds->id))
+    {
+      if ($this->pm->can_delete)
+      {
+        if ($this->position_model->has_transaction($ds->id))
+        {
+          $sc = FALSE;
+          set_error('transaction');
+        }
+
+        if ($sc === TRUE)
+        {
+          if (! $this->position_model->delete($ds->id))
+          {
+            $sc = FALSE;
+            set_error('delete');
+          }
+        }
+      }
+      else
+      {
+        $sc = FALSE;
+        set_error('permission');
+      }
+    }
+    else
+    {
+      $sc = FALSE;
+      set_error('required');
+    }
+
+    $this->_response($sc);
+  }
+
+
+  public function is_exists_name()
+  {
+    $ds = json_decode(file_get_contents('php://input'));
+
+    if (! empty($ds->name))
+    {
+      if ($this->position_model->is_exists_name($ds->name, $ds->id))
+      {
+        echo 'exists';
+      }
+      else
+      {
+        echo 'not_exists';
+      }
+    }
+  }
+
+
+  public function clear_filter()
+  {
+    $filter = array(
+      'position_name',
+      'position_active'
+    );
+
+    return clear_filter($filter);
+  }
+} //--- end class
