@@ -42,12 +42,11 @@ function thai_short_text_date($date, $time = FALSE)
 }
 
 
-
-function now()
+function now($millisec = FALSE)
 {
-  return date('Y-m-d H:i:s');
+  $date = new DateTime();
+  return $millisec === TRUE ? $date->format('Y-m-d H:i:s.v') : $date->format('Y-m-d H:i:s');
 }
-
 
 
 function today()

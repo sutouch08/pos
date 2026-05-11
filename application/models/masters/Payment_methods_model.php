@@ -206,6 +206,9 @@ class Payment_methods_model extends CI_Model
 
   public function get_list(array $ds = array(), $perpage = 20, $offset = 0)
   {
+    $order_by = isset($ds['order_by']) ? 'pm.'.$ds['order_by'] : 'pm.code';
+    $sort_by = isset($ds['sort_by']) ? $ds['sort_by'] : 'ASC';
+
     $this->db
     ->select('pm.*, pr.name AS role_name, ba.acc_name AS account_name, ba.acc_no AS account_no')
     ->from('payment_method AS pm')
@@ -237,7 +240,7 @@ class Payment_methods_model extends CI_Model
       $this->db->where('pm.active', $ds['active']);
     }
 
-    $rs = $this->db->limit($perpage, $offset)->get();
+    $rs = $this->db->order_by($order_by, $sort_by)->limit($perpage, $offset)->get();
 
     if($rs->num_rows() > 0)
     {
@@ -250,7 +253,6 @@ class Payment_methods_model extends CI_Model
 
   public function count_rows(array $ds = array())
   {
-
     if(isset($ds['code']) && $ds['code'] != "" && $ds['code'] != NULL)
     {
       $this->db->like('code', $ds['code']);

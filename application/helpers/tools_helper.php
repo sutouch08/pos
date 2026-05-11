@@ -1,7 +1,7 @@
 <?php
 function setToken($token)
 {
-	$CI = &get_instance();
+	$ci = &get_instance();
 	$cookie = array(
 		'name' => 'file_download_token',
 		'value' => $token,
@@ -9,7 +9,7 @@ function setToken($token)
 		'path' => '/'
 	);
 
-	return $CI->input->set_cookie($cookie);
+	return $ci->input->set_cookie($cookie);
 }
 
 
@@ -21,7 +21,7 @@ function parsePhoneNumber($phone, $length = 10)
 
 	if ($phone != "")
 	{
-		$phone = trim($phone);
+		$phone = trim((string)$phone);
 		$phone = str_replace($find, $rep, $phone);
 		$phone = substr($phone, $length);
 
@@ -36,7 +36,14 @@ function parseSubDistrict($ad, $province)
 {
 	if (! empty($ad))
 	{
-		if ($province === "จ. กรุงเทพมหานคร" or $province === 'จังหวัดกรุงเทพมหานคร' or $province === 'กรุงเทพ' or $province === 'กรุงเทพฯ' or $province == 'กรุงเทพมหานคร' or $province == 'กทม' or $province == 'กทม.' or $province == 'ก.ท.ม.')
+		if ($province === "จ. กรุงเทพมหานคร" 
+				OR $province === 'จังหวัดกรุงเทพมหานคร' 
+				OR $province === 'กรุงเทพ' 
+				OR $province === 'กรุงเทพฯ' 
+				OR $province == 'กรุงเทพมหานคร' 
+				OR $province == 'กทม' 
+				OR $province == 'กทม.' 
+				OR $province == 'ก.ท.ม.')
 		{
 			$find = [' ', 'แขวง'];
 			$rep = ['', ''];
@@ -68,7 +75,14 @@ function parseDistrict($ad, $province)
 {
 	if (! empty($ad))
 	{
-		if ($province === "จ. กรุงเทพมหานคร" or $province === 'จังหวัดกรุงเทพมหานคร' or $province === 'กรุงเทพ' or $province === 'กรุงเทพฯ' or $province == 'กรุงเทพมหานคร' or $province == 'กทม' or $province == 'กทม.' or $province == 'ก.ท.ม.')
+		if ($province === "จ. กรุงเทพมหานคร" 
+				OR $province === 'จังหวัดกรุงเทพมหานคร' 
+				OR $province === 'กรุงเทพ' 
+				OR $province === 'กรุงเทพฯ' 
+				OR $province == 'กรุงเทพมหานคร' 
+				OR $province == 'กทม' 
+				OR $province == 'กทม.' 
+				OR $province == 'ก.ท.ม.')
 		{
 			$find = [' ', 'เขต'];
 			$rep = ['', ''];
@@ -96,7 +110,7 @@ function parseProvince($ad)
 		$rep = ['', '', '', '.'];
 		$ad = str_replace($find, $rep, $ad);
 
-		if ($ad == 'จังหวัดกรุงเทพ' or $ad == 'จังหวัดกรุงเทพฯ' or $ad == 'จังหวัดกทม')
+		if ($ad == 'จังหวัดกรุงเทพ' OR $ad == 'จังหวัดกรุงเทพฯ' OR $ad == 'จังหวัดกทม')
 		{
 			$ad = 'กรุงเทพมหานคร';
 		}
@@ -110,7 +124,7 @@ function parseProvince($ad)
 
 function escapeQuote($text)
 {
-	return trim(str_replace('"', '&quot;', $text));
+	return $text === NULL ? '' : trim(str_replace('"', '&quot;', $text));
 }
 
 
@@ -154,17 +168,17 @@ function is_active($val, $showIcon = TRUE)
 
 function get_filter($postName, $cookieName, $defaultValue = "")
 {
-	$CI = &get_instance();
+	$ci = &get_instance();
 	$sc = '';
 
-	if ($CI->input->post($postName) !== NULL)
+	if ($ci->input->post($postName) !== NULL)
 	{
-		$sc = trim($CI->input->post($postName));
-		$CI->input->set_cookie(array('name' => $cookieName, 'value' => $sc, 'expire' => 3600, 'path' => '/'));
+		$sc = trim($ci->input->post($postName));
+		$ci->input->set_cookie(array('name' => $cookieName, 'value' => $sc, 'expire' => 3600, 'path' => '/'));
 	}
-	else if ($CI->input->cookie($cookieName) !== NULL)
+	else if ($ci->input->cookie($cookieName) !== NULL)
 	{
-		$sc = $CI->input->cookie($cookieName);
+		$sc = $ci->input->cookie($cookieName);
 	}
 	else
 	{
@@ -235,8 +249,8 @@ function ac_format($val, $digit = 0)
 
 function getConfig($code)
 {
-	$CI = &get_instance();
-	$rs = $CI->db->select('value')->where('code', $code)->get('config');
+	$ci = &get_instance();
+	$rs = $ci->db->select('value')->where('code', $code)->get('config');
 	if ($rs->num_rows() == 1)
 	{
 		return $rs->row()->value;
@@ -246,69 +260,14 @@ function getConfig($code)
 }
 
 
-function get_vat_amount($amount, $vat = NULL, $type = 'I')
-{
-	$re_vat = 0;
-
-	if ($vat === NULL)
-	{
-		$vat = getConfig('SALE_VAT_RATE');
-	}
-
-	if ($vat != 0)
-	{
-		if ($type == 'E')
-		{
-			$re_vat = $amount * ($vat * 0.01);
-		}
-		else
-		{
-			$re_vat = ($amount * $vat) / (100 + $vat);
-		}
-	}
-
-	return round($re_vat, 6);
-}
-
-
-function add_vat($amount, $vat = NULL)
-{
-	if ($vat === NULL)
-	{
-		$vat = getConfig('SALE_VAT_RATE'); //-- 7
-	}
-
-	if ($vat != 0)
-	{
-		$amount = $amount * (1 + ($vat * 0.01));
-	}
-
-	return round($amount, 6);
-}
-
-
-function remove_vat($amount, $vat = NULL)
-{
-	if ($vat === NULL)
-	{
-		$vat = getConfig('SALE_VAT_RATE'); //-- 7
-	}
-
-	if ($vat != 0)
-	{
-		$amount	= $amount / (1 + ($vat * 0.01));
-	}
-
-	return round($amount, 6);
-}
-
-
 //---- remove discount percent return price after discount
 function get_price_after_discount($price, $disc = 0)
 {
+	$price = floatval($price);
 	$find = array('%', ' ');
 	$replace = array('', '');
 	$disc = str_replace($find, $replace, $disc);
+	$disc = floatval($disc);
 
 	if ($disc > 0 && $disc <= 100)
 	{
@@ -325,6 +284,7 @@ function get_discount_amount($price, $disc = 0)
 	$find = array('%', ' ');
 	$replace = array('', '');
 	$disc = str_replace($find, $replace, $disc);
+	$disc = floatval($disc);
 
 	if ($disc > 0 && $disc <= 100)
 	{
@@ -376,10 +336,11 @@ function set_error_message($message)
 	$ci->session->set_flashdata('error', $message);
 }
 
+
 function set_message($message)
 {
-	$CI = &get_instance();
-	$CI->session->set_flashdata('success', $message);
+	$ci = &get_instance();
+	$ci->session->set_flashdata('success', $message);
 }
 
 
@@ -393,7 +354,9 @@ function get_null($value)
 //--- return TRUE if value ==  1 else return FALSE;
 function is_true($value)
 {
-	if ($value === 1 or $value === '1' or $value === 'Y' or $value === TRUE)
+	$value = is_numeric($value) ? intval($value) : (is_string($value) ? strtolower(strval($value)) : $value);
+
+	if ($value === 1 OR $value === '1' OR $value === 'y' OR $value === 'yes' OR $value === TRUE)
 	{
 		return TRUE;
 	}
@@ -404,7 +367,7 @@ function is_true($value)
 
 function get_zero($value)
 {
-	return ($value === NULL or $value === '') ? 0 : $value;
+	return ($value === NULL OR $value === '') ? 0 : $value;
 }
 
 
@@ -637,4 +600,10 @@ function select_tax_status($option = NULL)
 	$sc .= '<option value="N" ' . is_selected($option, 'N') . '>Non-VAT</option>';
 
 	echo $sc;
+}
+
+function isValidPattern(string $value, string $pattern = '/^[a-zA-Z0-9\*\-\_@]+$/'): bool
+{
+	// Accept only: a-z, A-Z, 0-9, *, -, _, @
+	return preg_match($pattern, $value) === 1;
 }

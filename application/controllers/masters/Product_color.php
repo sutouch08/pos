@@ -73,7 +73,9 @@ class Product_color extends PS_Controller
             'code' => $ds->code,
             'name' => $ds->name,
             'group_id' => $ds->group_id,
-            'active' => $ds->active
+            'active' => $ds->active,
+            'user' => $this->_user->uname,
+            'update_user' => $this->_user->uname
           );
 
           $id = $this->product_color_model->add($arr);
@@ -136,7 +138,8 @@ class Product_color extends PS_Controller
         if($sc === TRUE)
         {
           $arr = array(
-            'name' => $ds->name
+            'name' => $ds->name,
+            'user' => $this->_user->uname
           );
 
           $id = $this->product_color_model->add_group($arr);
@@ -229,7 +232,8 @@ class Product_color extends PS_Controller
             'name' => $ds->name,
             'group_id' => $ds->group_id,
             'active' => $ds->active,
-            'member' => $this->product_color_model->count_members($ds->id)
+            'member' => $this->product_color_model->count_members($ds->id),
+            'update_user' => $this->_user->uname
           );
 
           if($this->product_color_model->is_exists_code($ds->code, $ds->id))

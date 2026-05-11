@@ -219,4 +219,21 @@ class Unit_model extends CI_Model
 
     return NULL;
   }
+
+  public function get_unit_group_id($unit_id)
+  {
+    $rs = $this->db
+    ->select('id')
+    ->where('baseUnit', $unit_id)
+    ->order_by('id', 'DESC')
+    ->limit(1)
+    ->get($this->tg);
+
+    if ($rs->num_rows() === 1)
+    {
+      return $rs->row()->id;
+    }
+
+    return NULL;
+  }
 } //--- end class

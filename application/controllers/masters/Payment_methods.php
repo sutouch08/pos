@@ -25,7 +25,9 @@ class Payment_methods extends PS_Controller
       'name' => get_filter('name', 'pm_name', ''),
       'role' => get_filter('role', 'pm_role', 'all'),
       'has_term' => get_filter('has_term', 'pm_term', 'all'),
-      'active' => get_filter('active', 'pm_active', 'all')
+      'active' => get_filter('active', 'pm_active', 'all'),
+      'order_by' => get_filter('order_by', 'pm_order_by', 'code'),
+      'sort_by' => get_filter('sort_by', 'pm_sort_by', 'ASC')
     );
 
     if($this->input->post('search'))
@@ -79,9 +81,11 @@ class Payment_methods extends PS_Controller
             'name' => $ds->name,
             'has_term' => ($ds->role == 4 || $ds->role == 5) ? 1 : 0,
             'role' => $ds->role,
-            'account_id' => get_null($ds->account_id),
+            'extra_days' => $ds->role == 5 ? $ds->extra_days : 0,
+            'account_id' => $ds->role == 2 ? $ds->account_id : NULL,
             'active' => $ds->active,
-            'user' => $this->_user->uname
+            'user' => $this->_user->uname,
+            'update_user' => $this->_user->uname
           );
 
           $id = $this->payment_methods_model->add($arr);
@@ -98,12 +102,12 @@ class Payment_methods extends PS_Controller
             if( ! empty($res))
             {
               $this->load->model('masters/bank_model');
-              $account = $this->bank_model->get_account_detail($res->account_id);
+              $account = $this->bank_model->get($res->account_id);
               $res->is_active = is_active($res->active);              
-              $res->has_term = is_active($res->has_term, FALSE);
+              $res->extra_days = $res->extra_days > 0 ? $res->extra_days : '';
               $res->account = empty($res->account_id) ? '' : (empty($account) ? 'ไม่พบข้อมูลบัญชีธนาคาร' : '# '.$account->acc_no.'<br/>'.$account->acc_name);
               $res->role_name = payment_role_name($res->role);
-              $res->date_upd = thai_date($res->date_upd, TRUE, '/');
+              $res->date_upd = thai_date($res->date_upd, TRUE, '/');              
             }
           }
         }
@@ -147,7 +151,8 @@ class Payment_methods extends PS_Controller
       }
       else 
       {
-        $res->accountDisabled = ($res->role == 2 && ! empty($res->account_id)) ? '' : 'disabled';
+        $res->hide_acc = $res->role == 2 ? '' : 'hide';
+        $res->hide_extra_days = $res->role == 5 ? '' : 'hide';
       }
     }
     else
@@ -188,11 +193,12 @@ class Payment_methods extends PS_Controller
             'name' => $ds->name,
             'has_term' => ($ds->role == 4 || $ds->role == 5) ? 1 : 0,
             'role' => $ds->role,
-            'account_id' => get_null($ds->account_id),
+            'extra_days' => $ds->role == 5 ? $ds->extra_days : 0,
+            'account_id' => $ds->role == 2 ? $ds->account_id : NULL,
             'active' => $ds->active,
             'date_upd' => now(),
             'update_user' => $this->_user->uname
-          );
+          );         
 
           if( ! $this->payment_methods_model->update_by_id($ds->id, $arr))
           {
@@ -207,12 +213,12 @@ class Payment_methods extends PS_Controller
             if( ! empty($res))
             {
               $this->load->model('masters/bank_model');
-              $account = $this->bank_model->get_account_detail($res->account_id);
+              $account = $this->bank_model->get($res->account_id);
               $res->is_active = is_active($res->active);              
-              $res->has_term = is_active($res->has_term, FALSE);
+              $res->extra_days = $res->extra_days > 0 ? $res->extra_days : '';
               $res->account = empty($res->account_id) ? '' : (empty($account) ? 'ไม่พบข้อมูลบัญชีธนาคาร' : '# '.$account->acc_no.'<br/>'.$account->acc_name);
               $res->role_name = payment_role_name($res->role);
-              $res->date_upd = thai_date($res->date_upd, TRUE, '/');
+              $res->date_upd = thai_date($res->date_upd, TRUE, '/');              
             }
           }
         }
@@ -316,7 +322,7 @@ class Payment_methods extends PS_Controller
 
   public function clear_filter()
 	{
-		return clear_filter(array('pm_code', 'pm_name', 'pm_role', 'pm_term', 'pm_active'));
+		return clear_filter(array('pm_code', 'pm_name', 'pm_role', 'pm_term', 'pm_active', 'pm_sort_by', 'pm_order_by'));
 	}
 
 }//--- end class

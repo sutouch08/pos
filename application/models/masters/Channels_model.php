@@ -153,7 +153,10 @@ class Channels_model extends CI_Model
 
   
   public function get_list(array $ds = array(), $perpage = 20, $offset = 0)
-  {
+  {    
+    $order_by = empty($ds['order_by']) ? 'code' : $ds['order_by'];
+    $sort_by = empty($ds['sort_by']) ? 'ASC' : $ds['sort_by'];
+
     if( ! empty($ds['code']))
     {
       $this->db->like('code', $ds['code']);
@@ -169,7 +172,10 @@ class Channels_model extends CI_Model
       $this->db->where('active', $ds['active']);
     }
 
-    $rs = $this->db->order_by('code', 'ASC')->limit($perpage, $offset)->get($this->tb);
+    $rs = $this->db
+    ->order_by($order_by, $sort_by)
+    ->limit($perpage, $offset)
+    ->get($this->tb);
 
     if($rs->num_rows() > 0)
     {

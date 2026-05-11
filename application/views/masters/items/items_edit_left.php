@@ -3,7 +3,7 @@
     <div class="form-group">
       <label class="col-lg-3 col-md-3 col-sm-3 col-xs-12 control-label no-padding-right">รหัส</label>
       <div class="col-lg-4 col-md-9 col-sm-9 col-xs-12">
-        <input type="text" class="form-control input-sm r" maxlength="50" id="code" value="<?php echo $item->code; ?>"  autocomplete="off" disabled />
+        <input type="text" class="form-control input-sm r" maxlength="50" id="code" value="<?php echo $item->code; ?>" autocomplete="off" disabled />
         <input type="hidden" id="item-id" value="<?php echo $item->id; ?>">
       </div>
       <div class="error-block col-lg-9 col-lg-offset-3 col-md-9 col-md-offset-3 col-sm-offset-3 col-xs-12" id="code-error"></div>
@@ -12,7 +12,7 @@
     <div class="form-group">
       <label class="col-lg-3 col-md-3 col-sm-3 col-xs-12 control-label no-padding-right">ชื่อ</label>
       <div class="col-lg-8 col-md-9 col-sm-9 col-xs-12">
-        <input type="text" class="form-control input-sm r" maxlength="100" id="name" value="<?php echo $item->name; ?>" placeholder="Required" autocomplete="off" />
+        <input type="text" class="form-control input-sm r" maxlength="100" id="name" value="<?php echo escapeQuote($item->name); ?>" placeholder="Required" autocomplete="off" />
       </div>
       <div class="error-block col-lg-9 col-lg-offset-3 col-md-9 col-md-offset-3 col-sm-offset-3 col-xs-12" id="name-error"></div>
     </div>
@@ -20,7 +20,7 @@
     <div class="form-group">
       <label class="col-lg-3 col-md-3 col-sm-3 col-xs-12 control-label no-padding-right">บาร์โค้ด</label>
       <div class="col-lg-4 col-md-6 col-sm-6 col-xs-12">
-        <input type="text" class="form-control input-sm" maxlength="50" id="barcode" value="<?php echo $item->barcode; ?>" autocomplete="off" />
+        <input type="text" class="form-control input-sm" maxlength="50" id="barcode" value="<?php echo escapeQuote($item->barcode); ?>" autocomplete="off" />
       </div>
       <div class="error-block col-lg-9 col-lg-offset-3 col-md-9 col-md-offset-3 col-sm-offset-3 col-xs-12" id="barcode-error"></div>
     </div>
@@ -28,7 +28,7 @@
     <div class="form-group">
       <label class="col-lg-3 col-md-3 col-sm-3 col-xs-12 control-label no-padding-right">รุ่น</label>
       <div class="col-lg-4 col-md-9 col-sm-9 col-xs-12">
-        <input type="text" class="form-control input-sm r" maxlength="50" id="style" value="<?php echo $item->style_code; ?>" autocomplete="off" />
+        <input type="text" class="form-control input-sm r" maxlength="50" id="style" value="<?php echo escapeQuote($item->style_code); ?>" autocomplete="off" />
       </div>
       <div class="error-block col-lg-9 col-lg-offset-3 col-md-9 col-md-offset-3 col-sm-offset-3 col-xs-12" id="style-error"></div>
     </div>
@@ -94,8 +94,8 @@
     <div class="form-group">
       <label class="col-lg-3 col-md-3 col-sm-3 col-xs-12 control-label no-padding-right">&nbsp;</label>
       <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12">
-        <label for="count-stock">
-          <input type="checkbox" class="ace" id="count-stock" value="1" <?php echo $item->count_stock ? 'checked' : ''; ?> />
+        <label for="inventory-item">
+          <input type="checkbox" class="ace" id="inventory-item" value="1" <?php echo $item->inventoryItem ? 'checked' : ''; ?> />
           <span class="lbl"> สินค้านับสต็อก</span>
         </label>
       </div>
@@ -104,9 +104,19 @@
     <div class="form-group">
       <label class="col-lg-3 col-md-3 col-sm-3 col-xs-12 control-label no-padding-right">&nbsp;</label>
       <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12">
-        <label for="can-sell">
-          <input type="checkbox" class="ace" id="can-sell" value="1" <?php echo $item->can_sell ? 'checked' : ''; ?> />
+        <label for="sale-item">
+          <input type="checkbox" class="ace" id="sale-item" value="1" <?php echo $item->saleItem ? 'checked' : ''; ?> />
           <span class="lbl"> สินค้าสำหรับขาย</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="col-lg-3 col-md-3 col-sm-3 col-xs-12 control-label no-padding-right">&nbsp;</label>
+      <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12">
+        <label for="purchase-item">
+          <input type="checkbox" class="ace" id="purchase-item" value="1" <?php echo $item->purchaseItem ? 'checked' : ''; ?> />
+          <span class="lbl"> สินค้าสำหรับซื้อ</span>
         </label>
       </div>
     </div>

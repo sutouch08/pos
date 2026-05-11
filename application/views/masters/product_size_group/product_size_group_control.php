@@ -60,5 +60,7 @@
     <td class="middle">{{name}}</td>    
     <td class="middle text-center">{{{member}}}</td>
     <td></td>
+    <td>{{date_upd}}</td>
+    <td>{{update_user}}</td>
   </tr>  
 </script>

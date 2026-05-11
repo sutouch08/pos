@@ -76,7 +76,9 @@ class Product_size extends PS_Controller
             'name' => $ds->name,
             'position' => $ds->position > 0 ? $ds->position : 0,
             'active' => $ds->active,
-            'group_id' => $ds->group_id > 0 ? $ds->group_id : NULL
+            'group_id' => $ds->group_id > 0 ? $ds->group_id : NULL,
+            'user' => $this->_user->uname,
+            'update_user' => $this->_user->uname
           );
 
           if (! $this->product_size_model->add($arr))
@@ -134,7 +136,8 @@ class Product_size extends PS_Controller
         if ($sc === TRUE)
         {
           $arr = array(
-            'name' => $ds->name
+            'name' => $ds->name,
+            'user' => $this->_user->uname
           );
 
           $id = $this->product_size_model->add_group($arr);
@@ -195,16 +198,17 @@ class Product_size extends PS_Controller
 
         if ($sc === TRUE)
         {
-          $res = array(
+          $arr = array(
             'code' => $ds->code,
             'name' => $ds->name,
             'position' => $ds->position > 0 ? $ds->position : 0,
             'active' => $ds->active,
             'group_id' => $ds->group_id > 0 ? $ds->group_id : NULL,
-            'member' => $this->product_size_model->count_members($ds->id)
+            'member' => $this->product_size_model->count_members($ds->id),
+            'update_user' => $this->_user->uname
           );
 
-          if (! $this->product_size_model->update_by_id($ds->id, $res))
+          if (! $this->product_size_model->update_by_id($ds->id, $arr))
           {
             $sc = FALSE;
             set_error('update');
@@ -212,9 +216,13 @@ class Product_size extends PS_Controller
           
           if($sc === TRUE)
           {
-            $res['id'] = $ds->id;
-            $res['is_active'] = is_active($res['active']);
-            $res['group_name'] = $this->product_size_model->group_name($res['group_id']);
+            $res = $this->product_size_model->get($ds->id);
+
+            if( ! empty($res))
+            {
+              $res->is_active = is_active($res->active);
+              $res->group_name = $this->product_size_model->group_name($res->group_id);
+            }            
           }
         }
       }

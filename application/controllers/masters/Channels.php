@@ -22,7 +22,9 @@ class Channels extends PS_Controller
     $filter = array(
       'code' => get_filter('code', 'channels_code', ''),
       'name' => get_filter('name', 'channels_name', ''),
-      'active' => get_filter('active', 'channels_active', 'all')
+      'active' => get_filter('active', 'channels_active', 'all'),
+      'order_by' => get_filter('order_by', 'channels_order_by', 'code'),
+      'sort_by' => get_filter('sort_by', 'channels_sort_by', 'ASC')
     );
 
 		if($this->input->post('search'))
@@ -69,7 +71,8 @@ class Channels extends PS_Controller
             'code' => $ds->code,
             'name' => $ds->name,
             'active' => $ds->active,
-            'user' => $this->_user->uname
+            'user' => $this->_user->uname,
+            'update_user' => $this->_user->uname
           );
 
           $id = $this->channels_model->add($arr);
@@ -289,7 +292,7 @@ class Channels extends PS_Controller
 
   public function clear_filter()
 	{
-		return clear_filter(array('channels_code', 'channels_name', 'channels_active'));
+		return clear_filter(array('channels_code', 'channels_name', 'channels_active', 'channels_order_by', 'channels_sort_by'));
 	}
 
 }//--- end class

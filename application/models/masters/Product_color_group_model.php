@@ -93,13 +93,16 @@ class Product_color_group_model extends CI_Model
 
   public function get_list(array $ds = array(), $perpage = 20, $offset = 0)
   {
+    $order_by = empty($ds['order_by']) ? 'name' : $ds['order_by'];
+    $sort_by = empty($ds['sort_by']) ? 'ASC' : $ds['sort_by'];
+
     if (! empty($ds['name']))
     {
       $this->db->like('name', $ds['name']);
     }
 
     $rs = $this->db
-      ->order_by('name', 'ASC')
+      ->order_by($order_by, $sort_by)
       ->limit($perpage, $offset)
       ->get($this->tb);
 

@@ -21,7 +21,9 @@ class Product_size_group extends PS_Controller
   public function index()
   {
     $filter = [
-      'name' => get_filter('name', 'size_group_name', '')
+      'name' => get_filter('name', 'size_group_name', ''),
+      'order_by' => get_filter('order_by', 'size_group_order_by', 'name'),
+      'sort_by' => get_filter('sort_by', 'size_group_sort_by', 'ASC')
     ];
 
     if ($this->input->post('search'))
@@ -68,7 +70,9 @@ class Product_size_group extends PS_Controller
         if ($sc === TRUE)
         {
           $arr = array(            
-            'name' => $ds->name            
+            'name' => $ds->name,
+            'user' => $this->_user->uname,
+            'update_user' => $this->_user->uname
           );
 
           $id = $this->product_size_group_model->add($arr);
@@ -127,11 +131,12 @@ class Product_size_group extends PS_Controller
 
         if ($sc === TRUE)
         {
-          $res = array(            
-            'name' => $ds->name
+          $arr = array(            
+            'name' => $ds->name,
+            'update_user' => $this->_user->uname
           );
 
-          if (! $this->product_size_group_model->update($ds->id, $res))
+          if (! $this->product_size_group_model->update($ds->id, $arr))
           {
             $sc = FALSE;
             set_error('update');
@@ -139,8 +144,12 @@ class Product_size_group extends PS_Controller
           
           if($sc === TRUE)
           {
-            $res['id'] = $ds->id;
-            $res['member'] = $this->product_size_group_model->count_members($ds->id);
+            $res = $this->product_size_group_model->get($ds->id);
+
+            if( ! empty($res))
+            {
+              $res->member = $this->product_size_group_model->count_members($ds->id);
+            }            
           }
         }
       }
@@ -258,6 +267,6 @@ class Product_size_group extends PS_Controller
 
   public function clear_filter()
   {    
-    return clear_filter(['size_group_name']);
+    return clear_filter(['size_group_name', 'size_group_order_by', 'size_group_sort_by']);
   }
 } //--- end class

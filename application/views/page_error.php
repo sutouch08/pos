@@ -10,10 +10,5 @@
 				<center><button type="button" class="btn btn-lg btn-warning" onclick="goBack()"><i class="fa fa-arrow-left"></i> กลับ</button></center>
     </div>
 </div>
-<script>
-	function goBack(){
-		window.location.href = "<?php echo $this->home; ?>";
-	}
-</script>
 
 <?php $this->load->view('include/footer'); ?>

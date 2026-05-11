@@ -44,6 +44,8 @@
 <?php $sort_code = get_sort('code', $order_by, $sort_by); ?>
 <?php $sort_name = get_sort('name', $order_by, $sort_by); ?>
 <?php $sort_member = get_sort('member', $order_by, $sort_by); ?>
+<?php $sort_update = get_sort('date_upd', $order_by, $sort_by); ?>
+<?php $sort_user = get_sort('update_user', $order_by, $sort_by); ?>
 
 <div class="row">
   <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 padding-5 table-responsive">
@@ -57,6 +59,8 @@
           <th class="fix-width-200 middle sorting <?php echo $sort_name; ?>" id="sort-name" onclick="sort('name', '<?php echo $sort_name; ?>')">ชื่อ</th>
           <th class="fix-width-100 middle text-center sorting <?php echo $sort_member; ?>" id="sort-member" onclick="sort('member', '<?php echo $sort_member; ?>')">สินค้า</th>
           <th class="min-width-100"></th>
+          <th class="fix-width-150 middle text-center sorting <?php echo $sort_update; ?>" id="sort-date_upd" onclick="sort('date_upd', '<?php echo $sort_update; ?>')">แก้ไขล่าสุด</th>
+          <th class="fix-width-150 middle text-center sorting <?php echo $sort_user; ?>" id="sort-update_user" onclick="sort('update_user', '<?php echo $sort_user; ?>')">แก้ไขโดย</th>
         </tr>
       </thead>
       <tbody id="brand-table">
@@ -82,6 +86,8 @@
               <td class="middle"><?php echo $rs->name; ?></td>
               <td class="middle text-center"><?php echo number($rs->member); ?></td>
               <td></td>
+              <td class="middle text-center"><?php echo thai_date($rs->date_upd, true); ?></td>
+              <td class="middle text-center"><?php echo $rs->update_user; ?></td>
             </tr>
             <?php $no++; ?>
           <?php endforeach; ?>
@@ -113,7 +119,7 @@
 		<td class="middle">
 			<input type="text" class="form-control input-sm e" id="name-{{id}}" maxlength="100" value="{{name}}" data-id="{{id}}" data-name="{{name}}" />
 		</td>		
-		<td colspan="2" class="middle red padding-left-10" id="error-{{id}}"></td>
+		<td colspan="4" class="middle red padding-left-10" id="error-{{id}}"></td>
 	</tr>		
 </script>
 
@@ -136,6 +142,8 @@
 	<td class="middle">{{name}}</td>		
 	<td class="middle text-center">{{{member}}}</td>
 	<td></td>
+  <td class="middle text-center">{{date_upd}}</td>
+  <td class="middle text-center">{{update_user}}</td>
 </script>
 
 <script src="<?php echo base_url(); ?>scripts/masters/product_kind.js?v=<?php echo date('Ymd'); ?>"></script>

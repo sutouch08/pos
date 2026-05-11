@@ -1,6 +1,8 @@
 <?php
 class Vat_model extends CI_Model
 {
+	private $tb = "vat";
+
   public function __construct()
   {
     parent::__construct();
@@ -8,7 +10,8 @@ class Vat_model extends CI_Model
 
 	public function get_rate($code)
 	{
-		$rs = $this->db->select('rate')->where('code', $code)->get('vat');
+		$rs = $this->db->select('rate')->where('code', $code)->get($this->tb);
+
 		if($rs->num_rows() === 1)
 		{
 			return $rs->row()->rate;
@@ -17,116 +20,182 @@ class Vat_model extends CI_Model
 		return 0.00;
 	}
 
-
+	
 	public function get($code)
   {
-    $rs = $this->db->where('code', $code)->get('vat');
+    $rs = $this->db->where('code', $code)->get($this->tb);
     if($rs->num_rows() === 1)
     {
       return $rs->row();
     }
 
-    return FALSE;
+    return NULL;
   }
+
+
+	public function get_by_code($code)
+	{
+		$rs = $this->db->where('code', $code)->get($this->tb);
+		if($rs->num_rows() === 1)
+		{
+			return $rs->row();
+		}
+
+		return NULL;
+	}
+
+
+	public function get_by_id($id)
+	{
+		$rs = $this->db->where('id', $id)->get($this->tb);
+		if($rs->num_rows() === 1)
+		{
+			return $rs->row();
+		}
+
+		return NULL;
+	}
+
+
+	public function get_id($code)
+	{
+		$rs = $this->db->select('id')->where('code', $code)->get($this->tb);
+		if($rs->num_rows() === 1)
+		{
+			return $rs->row()->id;
+		}
+
+		return NULL;
+	}
 
 
 	public function add(array $ds = array())
 	{
-		return $this->db->insert('vat', $ds);
-	}
+		if(!empty($ds))
+		{
+			if($this->db->insert($this->tb, $ds))
+			{
+				return $this->db->insert_id();
+			}
+		}
 
+		return FALSE;		
+	}
 
 
 	public function update($code, $ds = array())
 	{
-		return $this->db->where('code', $code)->update('vat', $ds);
+		return $this->db->where('code', $code)->update($this->tb, $ds);
 	}
 
 
-
-	public function delete($code)
+	public function update_by_code($code, $ds = array())
 	{
-		return $this->db->where('code', $code)->delete('vat');
+		return $this->db->where('code', $code)->update($this->tb, $ds);
 	}
 
+
+	public function update_by_id($id, $ds = array())
+	{
+		return $this->db->where('id', $id)->update($this->tb, $ds);
+	}
+
+
+	public function delete($id)
+	{
+		return $this->db->where('id', $id)->delete($this->tb);
+	}
 
 
 	public function has_transection($code)
 	{
-		$pd = $this->has_product($code);
-		$st = $this->has_style($code);
-		$order = $this->has_order($code);
-		$sold = $this->has_order_sold($code);
+		$exists = FALSE;
 
-		$rs = $pd + $st + $order + $sold;
+		if( ! $exists)
+		{
+			if($this->db
+					->where('sale_vat_code', $code)
+					->or_where('purchase_vat_code', $code)
+					->count_all_results('products') > 0)
+			{
+				$exists = TRUE;
+			}			
+		}
 
-		return $rs > 0 ? TRUE : FALSE;
-	}
+		if( ! $exists && $this->db->where('vat_code', $code)->limit(1)->count_all_results('order_details') > 0)
+		{
+			$exists = TRUE;
+		}
 
+		if( ! $exists && $this->db->where('vat_code', $code)->limit(1)->count_all_results('sale_order_details') > 0)
+		{
+			$exists = TRUE;
+		}
 
+		if( ! $exists && $this->db->where('vat_code', $code)->limit(1)->count_all_results('order_pos_details') > 0)
+		{
+			$exists = TRUE;
+		}
 
-	private function has_product($code)
-	{
-		return $this->db->where('vat_code', $code)->limit(1)->count_all_results('products');
-	}
+		if( ! $exists && $this->db->where('vat_code', $code)->limit(1)->count_all_results('po_details') > 0)
+		{
+			$exists = TRUE;
+		}
 
-	private function has_style($code)
-	{
-		return $this->db->where('vat_code', $code)->limit(1)->count_all_results('product_style');
-	}
-
-	private function has_order($code)
-	{
-		return $this->db->where('vat_code', $code)->limit(1)->count_all_results('order_details');
-	}
-
-	private function has_order_sold($code)
-	{
-		return $this->db->where('vat_code', $code)->limit(1)->count_all_results('order_sold');
+		return $exists;
 	}
 
 
 	public function count_rows(array $ds = array())
 	{
-		if(!empty($ds['code']))
+		if (isset($ds['code']) && $ds['code'] != '')
 		{
-			$this->db->like('code', $ds['code']);
+			$this->db
+				->group_start()
+				->like('code', $ds['code'])
+				->or_like('name', $ds['code'])
+				->group_end();
 		}
 
-		if(!empty($ds['name']))
+		if (isset($ds['type']) && $ds['type'] != 'all')
 		{
-			$this->db->like('name', $ds['name']);
+			$this->db->where('type', $ds['type']);
 		}
 
-		if($ds['active'] !== 'all')
+		if (isset($ds['active']) && $ds['active'] != 'all')
 		{
 			$this->db->where('active', $ds['active']);
 		}
 
-		return $this->db->count_all_results('vat');
+		return $this->db->count_all_results($this->tb);
 	}
 
 
 	public function get_list(array $ds = array(), $perpage = 20, $offset = 0)
 	{
-		if(!empty($ds['code']))
+		if(isset($ds['code']) && $ds['code'] != '')
 		{
-			$this->db->like('code', $ds['code']);
+			$this->db
+			->group_start()
+			->like('code', $ds['code'])
+			->or_like('name', $ds['code'])
+			->group_end();
 		}
 
-		if(!empty($ds['name']))
+		if(isset($ds['type']) && $ds['type'] != 'all')
 		{
-			$this->db->like('name', $ds['name']);
+			$this->db->where('type', $ds['type']);
 		}
 
-		if($ds['active'] !== 'all')
+		if(isset($ds['active']) && $ds['active'] != 'all')
 		{
 			$this->db->where('active', $ds['active']);
 		}
 
-		$this->db->order_by('code', 'ASC')->limit($perpage, $offset);
-
-		$rs = $this->db->get('vat');
+		$rs = $this->db
+		->order_by('code', 'ASC')
+		->limit($perpage, $offset)
+		->get($this->tb);		
 
 		if($rs->num_rows() > 0)
 		{
@@ -137,63 +206,51 @@ class Vat_model extends CI_Model
 	}
 
 
-  public function get_active_data($type = NULL)
-  {
-    if($type != NULL)
-    {
-      $this->db->where('type', $type); //--- S or P
-    }
+	public function get_all($type = NULL, $active = TRUE)
+	{
+		if($type != NULL)
+		{
+			$this->db->where('type', $type); //--- S or P
+		}
 
-    $rs = $this->db
-		->where('active', 1)
-		->order_by('is_default', 'DESC')
+		if($active === TRUE)
+		{
+			$this->db->where('active', 1);
+		}
+
+		$rs = $this->db
 		->order_by('code', 'ASC')
-		->get('vat');
+		->get($this->tb);
 
-    if($rs->num_rows() > 0)
-    {
-      return $rs->result();
-    }
-
-    return FALSE;
-  }
-
-
-	public function is_exists_code($code, $old_code = NULL)
-	{
-		$this->db->where('code', $code);
-
-		if(!empty($old_code))
+		if($rs->num_rows() > 0)
 		{
-			$this->db->where('code !=', $old_code);
+			return $rs->result();
 		}
 
-		return $this->db->count_all_results('vat');
+		return NULL;
 	}
 
 
-	public function is_exists_name($name, $old_name = NULL)
+	public function is_exists_code($code, $id = NULL)
 	{
-		$this->db->where('name', $name);
-		if(!empty($old_name))
+		if(!empty($id))
 		{
-			$this->db->where('name !=', $old_name);
+			$this->db->where('id !=', $id);
 		}
 
-		return $this->db->count_all_results('vat');
+		return $this->db->where('code', $code)->count_all_results($this->tb) > 0;
 	}
 
 
-	public function clear_default_state()
+	public function is_exists_name($name, $id = NULL)
 	{
-		return $this->db->set('is_default', 0)->update('vat');
-	}
+		if(!empty($id))
+		{
+			$this->db->where('id !=', $id);
+		}
 
-
-	public function set_default_state($code)
-	{
-		return $this->db->set('is_default', 1)->where('code', $code)->update('vat');
+		return $this->db->where('name', $name)->count_all_results($this->tb) > 0;
 	}
 
 }
-?>
+

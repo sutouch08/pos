@@ -55,6 +55,8 @@
 <?php $sort_name = get_sort('name', $order_by, $sort_by); ?>
 <?php $sort_group = get_sort('group_name', $order_by, $sort_by); ?>
 <?php $sort_member = get_sort('member', $order_by, $sort_by); ?>
+<?php $sort_update = get_sort('date_upd', $order_by, $sort_by); ?>
+<?php $sort_user = get_sort('update_user', $order_by, $sort_by); ?>
 
 <div class="row">
 	<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 padding-5 table-responsive">
@@ -70,6 +72,8 @@
 					<th class="fix-width-80 middle text-center sorting <?php echo $sort_position; ?>" id="sort-position" onclick="sort('position')">ตำแหน่ง</th>
 					<th class="fix-width-80 middle text-center sorting <?php echo $sort_member; ?>" id="sort-member" onclick="sort('member')">สินค้า</th>
 					<th class="min-width-100"></th>
+					<th class="fix-width-150 middle text-center sorting <?php echo $sort_update; ?>" id="sort-date_upd" onclick="sort('date_upd')">แก้ไขล่าสุด</th>
+					<th class="fix-width-150 middle text-center sorting <?php echo $sort_user; ?>" id="sort-update_user" onclick="sort('update_user')">แก้ไขโดย</th>
 				</tr>
 			</thead>
 			<tbody id="size-table">
@@ -97,6 +101,8 @@
 							<td class="middle text-center"><?php echo $rs->position; ?></td>
 							<td class="middle text-center"><?php echo number($rs->member); ?></td>
 							<td></td>
+							<td class="middle text-center"><?php echo thai_date($rs->date_upd, true); ?></td>
+							<td class="middle text-center"><?php echo $rs->update_user; ?></td>
 						</tr>
 						<?php $no++; ?>
 					<?php endforeach; ?>
@@ -138,7 +144,7 @@
 		<td class="middle">
 			<input type="number" class="form-control input-sm text-center" id="position-{{id}}" value="{{position}}" data-id="{{id}}" data-position="{{position}}" />
 		</td>
-		<td colspan="2" class="middle red padding-left-10" id="error-{{id}}"></td>
+		<td colspan="4" class="middle red padding-left-10" id="error-{{id}}"></td>
 	</tr>		
 </script>
 
@@ -163,6 +169,8 @@
 	<td class="middle text-center">{{position}}</td>
 	<td class="middle text-center">{{member}}</td>
 	<td></td>
+	<td class="middle text-center">{{date_upd}}</td>
+	<td class="middle text-center">{{update_user}}</td>
 </script>
 
 <script>

@@ -1,0 +1,171 @@
+<?php $this->load->view('include/header'); ?>
+<div class="row">
+  <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 padding-5">
+    <h3 class="title"><?php echo $this->title; ?></h3>
+  </div>
+</div><!-- End Row -->
+<hr class="" />
+<form id="search-form" method="post" action="<?php echo current_url(); ?>">
+  <div class="row">
+    <div class="col-lg-2 col-md-2 col-sm-2 col-xs-6 padding-5">
+      <label>รหัส/ชื่อ</label>
+      <input type="text" class="form-control input-sm search" name="code" value="<?php echo $code; ?>" />
+    </div>
+
+    <div class="col-lg-1 col-md-1-harf col-sm-1-harf col-xs-6 padding-5">
+      <label>สถานะ</label>
+      <select class="form-control input-sm filter" name="active">
+        <option value="all" <?php echo is_selected('all', $active); ?>>ทั้งหมด</option>
+        <option value="1" <?php echo is_selected('1', $active); ?>>Active</option>
+        <option value="0" <?php echo is_selected('0', $active); ?>>Inactive</option>
+      </select>
+    </div>
+
+    <div class="col-lg-1 col-md-1-harf col-sm-1-harf col-xs-6 padding-5">
+      <label>ตัวเลือก</label>
+      <select class="form-control input-sm filter" name="show_in_list">
+        <option value="all" <?php echo is_selected('all', $show_in_list); ?>>ทั้งหมด</option>
+        <option value="1" <?php echo is_selected('1', $show_in_list); ?>>Yes</option>
+        <option value="0" <?php echo is_selected('0', $show_in_list); ?>>No</option>
+      </select>
+    </div>
+
+    <div class="col-lg-1 col-md-1-harf col-sm-1-harf col-xs-6 padding-5">
+      <label class="display-block not-show">buton</label>
+      <button type="submit" class="btn btn-xs btn-primary btn-block"><i class="fa fa-search"></i> Search</button>
+    </div>
+    <div class="col-lg-1 col-md-1-harf col-sm-1-harf col-xs-6 padding-5">
+      <label class="display-block not-show">buton</label>
+      <button type="button" class="btn btn-xs btn-warning btn-block" onclick="clearFilter()"><i class="fa fa-retweet"></i> Reset</button>
+    </div>
+  </div>
+  <input type="hidden" name="search" value="1" />
+  <input type="hidden" name="order_by" id="order_by" value="<?php echo $order_by; ?>" />
+  <input type="hidden" name="sort_by" id="sort_by" value="<?php echo $sort_by; ?>" />
+</form>
+<hr class="margin-top-15">
+<?php echo $this->pagination->create_links(); ?>
+
+<?php if ($this->pm->can_add) : ?>
+  <?php $this->load->view('masters/sender/sender_add_control'); ?>
+<?php endif; ?>
+
+<?php $sort_code = get_sort('code', $order_by, $sort_by); ?>
+<?php $sort_name = get_sort('name', $order_by, $sort_by); ?>
+<?php $sort_update = get_sort('date_upd', $order_by, $sort_by); ?>
+<?php $sort_user = get_sort('update_user', $order_by, $sort_by); ?>
+
+<div class="row">
+  <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 padding-5 table-responsive">
+    <table class="table table-striped tableFixHead dataTable border-1" style="min-width:930px;">
+      <thead>
+        <tr>
+          <th class="fix-width-80 middle"></th>
+          <th class="fix-width-40 middle text-center">#</th>
+          <th class="fix-width-80 middle text-center">สถานะ</th>
+          <th class="fix-width-80 middle text-center">ตัวเลือก</th>
+          <th class="fix-width-100 middle sorting <?php echo $sort_code; ?>" id="sort-code" onclick="sort('code', '<?php echo $sort_code; ?>')">รหัส</th>
+          <th class="fix-width-300 middle sorting <?php echo $sort_name; ?>" id="sort-name" onclick="sort('name', '<?php echo $sort_name; ?>')">ชื่อ</th>
+          <th class="fix-width-150 middle">โทรศัพท์</th>
+          <th class="min-width-100"></th>
+          <th class="fix-width-150 middle sorting <?php echo $sort_update; ?>" id="sort-date_upd" onclick="sort('date_upd', '<?php echo $sort_update; ?>')">แก้ไขล่าสุด</th>
+          <th class="fix-width-150 middle sorting <?php echo $sort_user; ?>" id="sort-update_user" onclick="sort('update_user', '<?php echo $sort_user; ?>')">แก้ไขโดย</th>
+        </tr>
+      </thead>
+      <tbody id="data-table">
+        <?php if (!empty($data)) : ?>
+          <?php $no = $this->uri->segment($this->segment) + 1; ?>
+          <?php foreach ($data as $rs) : ?>
+            <tr id="row-<?php echo $rs->id; ?>">
+              <td class="middle">
+                <?php if ($this->pm->can_edit) : ?>
+                  <button type="button" class="btn btn-minier btn-warning" onclick="edit(<?php echo $rs->id; ?>)">
+                    <i class="fa fa-pencil"></i>
+                  </button>
+                <?php endif; ?>
+                <?php if ($this->pm->can_delete) : ?>
+                  <button type="button" class="btn btn-minier btn-danger" onclick="confirmDelete(<?php echo $rs->id; ?>, '<?php echo $rs->code; ?>')">
+                    <i class="fa fa-trash"></i>
+                  </button>
+                <?php endif; ?>
+              </td>
+              <td class="middle text-center no"><?php echo $no; ?></td>
+              <td class="middle text-center"><?php echo is_active($rs->active); ?></td>
+              <td class="middle text-center"><?php echo is_active($rs->show_in_list, FALSE); ?></td>
+              <td class="middle"><?php echo $rs->code; ?></td>
+              <td class="middle"><?php echo $rs->name; ?></td>
+              <td class="middle"><?php echo $rs->phone; ?></td>
+              <td></td>
+              <td class="middle"><?php echo thai_date($rs->date_upd, TRUE, '/'); ?></td>
+              <td class="middle"><?php echo empty($rs->update_user) ? $rs->user : $rs->update_user; ?></td>
+            </tr>
+            <?php $no++; ?>
+          <?php endforeach; ?>
+        <?php endif; ?>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script id="edit-row-template" type="text/x-handlebarsTemplate">
+  <tr id="edit-row-{{id}}">
+		<td colspan="2" class="middle text-center">
+			<button type="button" class="btn btn-minier btn-success" onclick="update({{id}})">
+				<i class="fa fa-save"></i> Save
+			</button>
+      <button type="button" class="btn btn-minier btn-default" onclick="cancel({{id}})">
+        <i class="fa fa-close"></i>
+      </button>
+		</td>
+		<td class="middle text-center">
+			<label style="padding-top: 5px;">
+				<input class="ace ace-switch ace-switch-6" id="status-{{id}}" type="checkbox" value="1" {{is_active}} data-id="{{id}}" />
+				<span class="lbl"></span>
+			</label>
+		</td>
+    <td class="middle text-center">
+			<label style="padding-top: 5px;">
+				<input class="ace ace-switch ace-switch-6" id="show-in-list-{{id}}" type="checkbox" value="1" {{is_common}} data-id="{{id}}" />
+				<span class="lbl"></span>
+			</label>
+		</td>
+		<td class="middle">
+			<input type="text" class="form-control input-sm e" id="code-{{id}}" maxlength="20" value="{{code}}" disabled />
+		</td>
+		<td class="middle">
+			<input type="text" class="form-control input-sm e" id="name-{{id}}" maxlength="100" value="{{name}}" />
+		</td>	
+        <td class="middle">
+      <input type="text" class="form-control input-sm e" id="phone-{{id}}" maxlength="50" value="{{phone}}" />
+    </td>	
+		<td colspan="3" class="middle red padding-left-10" id="error-{{id}}"></td>
+	</tr>		
+</script>
+
+<script id="row-template" type="text/x-handlebarsTemplate">
+  <td class="middle">
+		<?php if ($this->pm->can_edit) : ?>
+			<button type="button" class="btn btn-minier btn-warning" onclick="edit({{id}})">
+				<i class="fa fa-pencil"></i>
+			</button>
+		<?php endif; ?>
+		<?php if ($this->pm->can_delete) : ?>
+			<button type="button" class="btn btn-minier btn-danger" onclick="confirmDelete('{{id}}', '{{name}}')">
+				<i class="fa fa-trash"></i>
+			</button>
+		<?php endif; ?>
+	</td>
+	<td class="middle text-center no"></td>
+	<td class="middle text-center">{{{is_active}}}</td>
+	<td class="middle text-center">{{{is_common}}}</td>
+	<td class="middle">{{code}}</td>
+	<td class="middle">{{name}}</td>		
+	<td class="middle">{{phone}}</td>
+  <td></td>
+	<td class="middle">{{date_upd}}</td>
+  <td class="middle">{{update_user}}</td>
+</script>
+
+<script src="<?php echo base_url(); ?>scripts/masters/sender.js?v=<?php echo date('Ymd'); ?>"></script>
+
+<?php $this->load->view('include/footer'); ?>

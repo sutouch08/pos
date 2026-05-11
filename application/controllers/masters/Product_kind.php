@@ -70,7 +70,9 @@ class Product_kind extends PS_Controller
           $arr = array(
             'code' => $ds->code,
             'name' => $ds->name,
-            'active' => $ds->active
+            'active' => $ds->active,
+            'user' => $this->_user->uname,
+            'update_user' => $this->_user->uname
           );
 
           $id = $this->product_kind_model->add($arr);
@@ -178,7 +180,8 @@ class Product_kind extends PS_Controller
             'code' => $ds->code,
             'name' => $ds->name,
             'active' => $ds->active,
-            'member' => $this->product_kind_model->count_members($ds->id)
+            'member' => $this->product_kind_model->count_members($ds->id),
+            'update_user' => $this->_user->uname
           );
 
           if (! $this->product_kind_model->update($ds->id, $arr))

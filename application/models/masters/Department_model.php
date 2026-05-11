@@ -61,6 +61,9 @@ class Department_model extends CI_Model
 
   public function get_list(array $ds = array(), $limit = 20, $offset = 0)
   {
+    $order_by = empty($ds['order_by']) ? 'name' : $ds['order_by'];
+    $sort_by = empty($ds['sort_by']) ? 'ASC' : $ds['sort_by'];
+
     if(!empty($ds['name']))
     {
       $this->db->like('name', $ds['name']);
@@ -71,7 +74,10 @@ class Department_model extends CI_Model
       $this->db->where('active', $ds['active']);
     }
 
-    $rs = $this->db->order_by('name', 'ASC')->limit($limit, $offset)->get($this->tb);
+    $rs = $this->db
+    ->order_by($order_by, $sort_by)
+    ->limit($limit, $offset)
+    ->get($this->tb);
 
     if($rs->num_rows() > 0)
     {

@@ -1,225 +1,257 @@
-var HOME = BASE_URL + 'masters/sender/';
+let click = 0;
 
-function getSearch(){
-  $('#searchForm').submit();
+const inputCode = document.getElementById("code");
+const regex = /[^a-zA-Z0-9-_.@\/]+/gi;
+
+if (inputCode) {
+	inputCode.addEventListener("input", () => validInput(inputCode, regex));
 }
 
-
-$('.search-box').keyup(function(e){
-  if(e.keyCode == 13){
-    getSearch();
-  }
-});
-
-
-function clearFilter(){
-  $.get(HOME + 'clear_filter', function(){
-    goBack();
-  });
-}
-
-function goBack(){
-  window.location.href = HOME;
-}
-
-function addNew(){
-  window.location.href = HOME + 'add_new';
-}
-
-
-function getEdit(id){
-  window.location.href = HOME + 'edit/'+id;
-}
-
-
-
-function save() {
-	var code = $('#code').val();
-	var name = $('#name').val();
-	var adr1 = $('#address1').val();
-	var adr2 = $('#address2').val();
-	var phone = $('#phone').val();
-	var open = $('#open').val();
-	var close = $('#close').val();
-	var type = $('#type').val();
-	var inlist = $('#in_list').is(':checked') ? 1 : 0;
-	var force_tracking = $('#force_tracking').is(':checked') ? 1 : 0;
-	var auto_gen = $('#auto_gen').is(':checked') ? 1 : 0;
-	var prefix = $('#tracking_prefix').val();
-
-	if(code.length === 0) {
-		swal("กรุณากำหนดรหัส");
+async function validateCode(id = null) {
+	const inputCode = id === null ? document.getElementById("code") : document.getElementById(`code-${id}`);
+	const codeError = id === null ? document.getElementById("code-error") : document.getElementById(`error-${id}`);
+	const value = inputCode.value.trim();
+	if (!value) {
+		setError(inputCode, codeError, "Code is Required");
 		return false;
 	}
 
-	if(name.length === 0) {
-		swal("กรุณากำหนดชื่อ");
+	//--- check duplicated
+	const url = `${HOME}is_exists_code`;
+	const res = await validateRemote(url, { code: value, id: id });
+
+	if (res === "exists") {
+		setError(inputCode, codeError, "Code already exists");
 		return false;
 	}
 
-	$.ajax({
-		url:HOME + 'add',
-		type:'POST',
-		cache:false,
-		data:{
-			'code' : code,
-			'name' : name,
-			'address1' : adr1,
-			'address2' : adr2,
-			'phone' : phone,
-			'open' : open,
-			'close' : close,
-			'type' : type,
-			'show_in_list' : inlist,
-			'force_tracking' : force_tracking,
-			'auto_gen' : auto_gen,
-			'prefix' : prefix
-		},
-		success:function(rs) {
-			var rs = $.trim(rs);
-			if(rs === 'success') {
-				swal({
-					title:'Success',
-					type:'success',
-					timer:1000
-				});
+	clearError(inputCode, codeError);
+	return true;
+}
 
-				setTimeout(function() {
-					addNew();
-				}, 1200);
+
+async function validateName(id = null) {
+	const inputName = id === null ? document.getElementById("name") : document.getElementById(`name-${id}`);
+	const nameError = id === null ? document.getElementById("name-error") : document.getElementById(`error-${id}`);
+	const value = inputName.value.trim();
+	if (!value) {
+		setError(inputName, nameError, "Name is Required");
+		return false;
+	}
+
+	//--- check duplicated
+	const url = `${HOME}is_exists_name`;
+	const res = await validateRemote(url, { name: value, id: id });
+
+	if (res === "exists") {
+		setError(inputName, nameError, "Name already exists");
+		return false;
+	}
+	clearError(inputName, nameError);
+	return true;
+}
+
+
+function clearFields() {
+	$('#name').val('');
+	$('#phone').val('');
+	$('#show-in-list').prop('checked', false);
+	$('#status').prop('checked', true);
+	$('#code').val('').focus();
+}
+
+
+async function add() {
+	if (click !== 0) {
+		return false;
+	}
+
+	click = 1;
+
+	const inputCode = document.getElementById("code");
+	const inputName = document.getElementById("name");
+	const inputPhone = document.getElementById("phone");
+	const inputShowInList = document.getElementById("show-in-list");
+	const status = document.getElementById("status");
+	const active = status.checked ? 1 : 0;
+	const showInList = inputShowInList.checked ? 1 : 0;
+
+	if (! await validateCode() || ! await validateName()) {
+		click = 0;
+		return false;
+	}
+
+	const url = `${HOME}add`;
+	const data = {
+		code: inputCode.value.trim(),
+		name: inputName.value.trim(),
+		phone: inputPhone.value.trim(),
+		active: active,
+		show_in_list: showInList
+	};
+
+	try {
+		const response = await postData(url, data);
+		const res = await response.text();
+
+		if (isJson(res)) {
+			const ds = JSON.parse(res);
+
+			if (ds.status === 'success') {
+				const template = $('#new-row-template').html();
+				const output = $('#data-table');
+
+				renderPrepend(template, ds.data, output);
+				reIndex();
+				clearFields();
 			}
 			else {
-				swal({
-					title:'Error!',
-					text:rs,
-					type:'error',
-					html:true
-				})
+				showError(ds.message);
 			}
-		},
-		error:function(xhr, status, error) {
-			swal({
-				title: 'Error',
-				text:xhr.responseText,
-				type:'error',
-				html:true
-			});
 		}
-	})
+		else {
+			showError(res);
+		}
+
+		click = 0;
+	}
+	catch (error) {
+		click = 0;
+		showError(error.message);
+	}
 }
 
 
+async function edit(id) {
+	const url = `${HOME}get_data`;
+	const data = { id: id };
+	try {
+		const response = await postData(url, data);
+		const res = await response.text();
 
-function update() {
-	var id = $('#id').val();
-	var code = $('#code').val();
-	var name = $('#name').val();
-	var adr1 = $('#address1').val();
-	var adr2 = $('#address2').val();
-	var phone = $('#phone').val();
-	var open = $('#open').val();
-	var close = $('#close').val();
-	var type = $('#type').val();
-	var inlist = $('#in_list').is(':checked') ? 1 : 0;
-	var force_tracking = $('#force_tracking').is(':checked') ? 1 : 0;
-	var auto_gen = $('#auto_gen').is(':checked') ? 1 : 0;
-	var prefix = $('#tracking_prefix').val();
+		if (isJson(res)) {
+			const ds = JSON.parse(res);
+			if (ds.status === 'success') {
+				const template = $('#edit-row-template').html();
+				const output = $(`#row-${id}`);
 
-	if(code.length === 0) {
-		swal("กรุณากำหนดรหัส");
-		return false;
-	}
+				renderAfter(template, ds.data, output);
 
-	if(name.length === 0) {
-		swal("กรุณากำหนดชื่อ");
-		return false;
-	}
-
-	$.ajax({
-		url:HOME + 'update/'+id,
-		type:'POST',
-		cache:false,
-		data:{
-			'code' : code,
-			'name' : name,
-			'address1' : adr1,
-			'address2' : adr2,
-			'phone' : phone,
-			'open' : open,
-			'close' : close,
-			'type' : type,
-			'show_in_list' : inlist,
-			'force_tracking' : force_tracking,
-			'auto_gen' : auto_gen,
-			'prefix' : prefix
-		},
-		success:function(rs) {
-			var rs = $.trim(rs);
-			if(rs === 'success') {
-				swal({
-					title:'Success',
-					type:'success',
-					timer:1000
-				});
-
+				$(`#row-${id}`).addClass('hide');
 			}
 			else {
-				swal({
-					title:'Error!',
-					text:rs,
-					type:'error',
-					html:true
-				})
+				showError(ds.message);
 			}
-		},
-		error:function(xhr, status, error) {
-			swal({
-				title: 'Error',
-				text:xhr.responseText,
-				type:'error',
-				html:true
-			});
 		}
-	})
-}
-
-function getDelete(id, name){
-  swal({
-    title:'Are sure ?',
-    text:'ต้องการลบ ' + name + ' หรือไม่ ?',
-    type:'warning',
-    showCancelButton: true,
-		confirmButtonColor: '#FA5858',
-		confirmButtonText: 'ใช่, ฉันต้องการลบ',
-		cancelButtonText: 'ยกเลิก',
-		closeOnConfirm: false
-  },function(){
-    window.location.href = HOME +'delete/' + id;
-  })
-}
-
-function toggleAutoGen() {
-	var el = $('#force_tracking');
-
-	if(el.is(':checked')) {
-		$('#gen_potion').removeClass('hide');
+		else {
+			showError(res);
+		}
 	}
-	else {
-		$('#gen_potion').addClass('hide');
-		$('#prefix').addClass('hide');
+	catch (error) {
+		showError(error.message);
 	}
-
-	$('#auto_gen').prop('checked', false);
 }
 
 
-function togglePrefix() {
-	var el = $('#auto_gen');
-	if(el.is(':checked')) {
-		$('#prefix').removeClass('hide');
-	}
-	else {
-		$('#prefix').addClass('hide');
+async function update(id) {
+	const inputCode = document.getElementById(`code-${id}`);
+	const inputName = document.getElementById(`name-${id}`);
+	const inputPhone = document.getElementById(`phone-${id}`);
+	const inputShowInList = document.getElementById(`show-in-list-${id}`);
+	const status = document.getElementById(`status-${id}`);
+	const active = status.checked ? 1 : 0;
+	const showInList = inputShowInList.checked ? 1 : 0;
+
+	if (! await validateCode(id) || ! await validateName(id)) {
+		return false;
 	}
 
+	const url = `${HOME}update`;
+	const data = {
+		id: id,
+		code: inputCode.value.trim(),
+		name: inputName.value.trim(),
+		phone: inputPhone.value.trim(),
+		active: active,
+		show_in_list: showInList
+	};
+
+	try {
+		const response = await postData(url, data);
+		const res = await response.text();
+
+		if (isJson(res)) {
+			const ds = JSON.parse(res);
+			if (ds.status === 'success') {
+				const template = $('#row-template').html();
+				const output = $(`#row-${id}`);
+				render(template, ds.data, output);
+				$(`#edit-row-${id}`).remove();
+				$(`#row-${id}`).removeClass('hide');
+				reIndex();
+			}
+			else {
+				showError(ds.message);
+			}
+		}
+		else {
+			showError(res);
+		}
+	}
+	catch (error) {
+		showError(error.message);
+	}
+}
+
+
+function cancel(id) {
+	$(`#edit-row-${id}`).remove();
+	$(`#row-${id}`).removeClass('hide');
+}
+
+
+function confirmDelete(id, name) {
+	swal({
+		title: `Are you sure ?`,
+		text: `Do you want to delete "${name}" ?`,
+		type: "warning",
+		showCancelButton: true,
+		confirmButtonColor: "#DD6B55",
+		confirmButtonText: "Yes, delete it!",
+		cancelButtonText: "No, cancel",
+		closeOnConfirm: true
+	},
+		function (isConfirm) {
+			if (isConfirm) {
+				setTimeout(() => {
+					deleteItem(id);
+				}, 100);
+			}
+		});
+}
+
+async function deleteItem(id) {
+	const url = `${HOME}delete`;
+	const data = { id: id };
+	try {
+		const response = await postData(url, data);
+		const res = await response.text();
+
+		if (res === 'success') {
+			swal({
+				title: 'Success',
+				type: 'success',
+				timer: 1000
+			});
+
+			$(`#row-${id}`).remove();
+			reIndex();
+		}
+		else {
+			showError(res);
+		}
+	}
+	catch (error) {
+		showError(error.message);
+	}
 }

@@ -5,7 +5,7 @@ class Department extends PS_Controller
 {
   public $menu_code = 'DBEMDP';
   public $menu_group_code = 'DB';
-  public $menu_sub_group_code = '';
+  public $menu_sub_group_code = 'EMPLOYEE';
   public $title = 'เพิ่ม/แก้ไข แผนก';
   public $segment = 4;
 
@@ -21,7 +21,9 @@ class Department extends PS_Controller
   {
     $filter = array(
       'name' => get_filter('name', 'department_name', ''),      
-      'active' => get_filter('active', 'department_active', 'all')
+      'active' => get_filter('active', 'department_active', 'all'),
+      'order_by' => get_filter('order_by', 'department_order_by', 'name'),
+      'sort_by' => get_filter('sort_by', 'department_sort_by', 'ASC')
     );
 
     if ($this->input->post('search'))
@@ -61,7 +63,8 @@ class Department extends PS_Controller
           $arr = array(            
             'name' => $ds->name,
             'active' => $ds->active,
-            'user' => $this->_user->uname
+            'user' => $this->_user->uname,
+            'update_user' => $this->_user->uname
           );
 
           $id = $this->department_model->add($arr);
@@ -79,6 +82,8 @@ class Department extends PS_Controller
             if (! empty($res))
             {
               $res->is_active = is_active($res->active);
+              $res->date_add = thai_date($res->date_add, TRUE, '/');
+              $res->date_upd = thai_date($res->date_upd, TRUE, '/');
             }
           }
         }
@@ -178,6 +183,8 @@ class Department extends PS_Controller
             if (! empty($res))
             {
               $res->is_active = is_active($res->active);
+              $res->date_add = thai_date($res->date_add, TRUE, '/');
+              $res->date_upd = thai_date($res->date_upd, TRUE, '/');
             }
           }
         }
@@ -266,7 +273,9 @@ class Department extends PS_Controller
   {
     $filter = array(      
       'department_name',
-      'department_active'
+      'department_active',
+      'department_order_by',
+      'department_sort_by'
     );
 
     return clear_filter($filter);

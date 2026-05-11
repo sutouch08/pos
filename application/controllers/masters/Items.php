@@ -44,6 +44,7 @@ class Items extends PS_Controller
       'main_group' => get_filter('main_group', 'item_main_group', 'all'),
       'kind' => get_filter('kind', 'item_kind', 'all'),
       'type' => get_filter('type', 'item_type', 'all'),
+      'gender' => get_filter('gender', 'item_gender', 'all'),
       'category' => get_filter('category', 'item_category', 'all'),
       'brand' => get_filter('brand', 'item_brand', 'all'),
       'year' => get_filter('year', 'item_year', 'all'),
@@ -95,7 +96,8 @@ class Items extends PS_Controller
       'can_add_category' => $this->perm->can_add('DBPDCR', $this->_user->id_profile),
       'can_add_brand' => $this->perm->can_add('DBPDBR', $this->_user->id_profile),
       'can_add_unit' => $this->perm->can_add('DBPUOM', $this->_user->id_profile),
-      'default_unit_group' => getConfig('DEFAULT_UNIT_GROUP')
+      'default_unit_group_id' => getConfig('DEFAULT_UNIT_GROUP_ID'),
+      'default_unit_id' => getConfig('DEFAULT_UNIT_ID')
     );
 
     $this->load->view('masters/items/items_add', $ds);
@@ -129,7 +131,7 @@ class Items extends PS_Controller
           $sc = FALSE;
           set_error('exists', $ds->barcode);
         }
-      
+
         if ($sc === TRUE)
         {
           $this->load->model('masters/product_style_model');
@@ -151,8 +153,9 @@ class Items extends PS_Controller
             'purchase_vat_rate' => $ds->purchase_vat_rate,
             'sale_vat_code' => $ds->sale_vat_code,
             'sale_vat_rate' => $ds->sale_vat_rate,
-            'count_stock' => $ds->count_stock,
-            'can_sell' => $ds->can_sell,
+            'inventoryItem' => $ds->inventoryItem,
+            'saleItem' => $ds->saleItem,
+            'purchaseItem' => $ds->purchaseItem,
             'active' => $ds->active,
             'color_id' => get_null($ds->color),
             'size_id' => get_null($ds->size),
@@ -164,7 +167,8 @@ class Items extends PS_Controller
             'category_id' => get_null($ds->category),
             'brand_id' => get_null($ds->brand),
             'year' => get_null($ds->year),
-            'user' => $this->_user->uname
+            'user' => $this->_user->uname,
+            'update_user' => $this->_user->uname
           );
 
           if (! $this->items_model->add($arr))
@@ -185,18 +189,18 @@ class Items extends PS_Controller
       $sc = FALSE;
       set_error('permission');
     }
-    
+
     $this->_response($sc);
   }
 
 
   public function edit($id)
   {
-    if($this->pm->can_edit)
+    if ($this->pm->can_edit)
     {
       $item = $this->items_model->get($id);
 
-      if( ! empty($item))
+      if (! empty($item))
       {
         $this->load->model('users/permission_model', 'perm');
 
@@ -211,16 +215,17 @@ class Items extends PS_Controller
           'can_add_category' => $this->perm->can_add('DBPDCR', $this->_user->id_profile),
           'can_add_brand' => $this->perm->can_add('DBPDBR', $this->_user->id_profile),
           'can_add_unit' => $this->perm->can_add('DBPUOM', $this->_user->id_profile),
-          'default_unit_group' => getConfig('DEFAULT_UNIT_GROUP'),
+          'default_unit_group_id' => getConfig('DEFAULT_UNIT_GROUP_ID'),
+          'default_unit_id' => getConfig('DEFAULT_UNIT_ID'),
           'item' => $item
         );
 
         $this->load->view('masters/items/items_edit', $ds);
       }
-      else 
+      else
       {
         $this->page_error();
-      }            
+      }
     }
     else
     {
@@ -235,7 +240,7 @@ class Items extends PS_Controller
 
     $item = $this->items_model->get($id);
 
-    if( ! empty($item))
+    if (! empty($item))
     {
       $item->price = number($item->price, 2);
       $item->cost = number($item->cost, 2);
@@ -261,9 +266,9 @@ class Items extends PS_Controller
     $sc = TRUE;
     $ds = json_decode(file_get_contents('php://input'));
 
-    if($this->pm->can_edit)
+    if ($this->pm->can_edit)
     {
-      if(!empty($ds) && ! empty($ds->id) && ! empty($ds->name) && ! empty($ds->unit))
+      if (!empty($ds) && ! empty($ds->id) && ! empty($ds->name) && ! empty($ds->unit))
       {
         $id = $ds->id;
 
@@ -286,7 +291,7 @@ class Items extends PS_Controller
           $style = ! empty($ds->style) ? $ds->style : NULL;
           $style_id = empty($style) ? NULL : $this->product_style_model->get_id($style);
 
-          $arr = array(            
+          $arr = array(
             'name' => $ds->name,
             'style_id' => get_null($style_id),
             'style_code' => empty($style_id) ? NULL : $style,
@@ -299,8 +304,9 @@ class Items extends PS_Controller
             'purchase_vat_rate' => $ds->purchase_vat_rate,
             'sale_vat_code' => $ds->sale_vat_code,
             'sale_vat_rate' => $ds->sale_vat_rate,
-            'count_stock' => $ds->count_stock,
-            'can_sell' => $ds->can_sell,
+            'inventoryItem' => $ds->inventoryItem,
+            'saleItem' => $ds->saleItem,
+            'purchaseItem' => $ds->purchaseItem,
             'active' => $ds->active,
             'color_id' => get_null($ds->color),
             'size_id' => get_null($ds->size),
@@ -343,8 +349,8 @@ class Items extends PS_Controller
   {
     $item = $this->items_model->get($id);
 
-    if ( ! empty($item))
-    {      
+    if (! empty($item))
+    {
       $this->load->view('masters/items/items_view_detail', array('item' => $item));
     }
     else
@@ -359,13 +365,13 @@ class Items extends PS_Controller
     $sc = TRUE;
     $ds = json_decode(file_get_contents('php://input'));
 
-    if($this->pm->can_delete)
+    if ($this->pm->can_delete)
     {
-      if(!empty($ds) && ! empty($ds->id))
+      if (!empty($ds) && ! empty($ds->id))
       {
         $item = $this->items_model->get($ds->id);
 
-        if( ! empty($item))
+        if (! empty($item))
         {
           //--- check transaction exists ?
           if ($this->items_model->is_exists_transaction($item->code))
@@ -387,7 +393,7 @@ class Items extends PS_Controller
         {
           $sc = FALSE;
           set_error('not_found');
-        }               
+        }
       }
       else
       {
@@ -426,7 +432,7 @@ class Items extends PS_Controller
     $ds = json_decode(file_get_contents('php://input'));
 
     if (!empty($ds) && !empty($ds->name))
-    {     
+    {
       $exists = $this->items_model->is_exists_name($ds->name, $ds->id);
     }
 
@@ -440,7 +446,7 @@ class Items extends PS_Controller
     $ds = json_decode(file_get_contents('php://input'));
 
     if (!empty($ds) && isset($ds->barcode) && $ds->barcode != '')
-    {      
+    {
       $exists = $this->items_model->is_exists_barcode($ds->barcode, $ds->id);
     }
 
@@ -735,8 +741,11 @@ class Items extends PS_Controller
         'code' => $ds->code,
         'name' => $ds->name,
         'group_id' => get_null($ds->group_id),
-        'active' => 1
+        'active' => 1,
+        'user' => $this->_user->uname,
+        'update_user' => $this->_user->uname
       );
+
       $id = $this->product_color_model->add($arr);
 
       if ($id)
@@ -768,7 +777,9 @@ class Items extends PS_Controller
       $arr = array(
         'code' => $ds->code,
         'name' => $ds->name,
-        'group_id' => get_null($ds->group_id)
+        'group_id' => get_null($ds->group_id),
+        'user' => $this->_user->uname,
+        'update_user' => $this->_user->uname
       );
 
       $id = $this->product_size_model->add($arr);
@@ -801,7 +812,9 @@ class Items extends PS_Controller
     {
       $arr = array(
         'code' => $ds->code,
-        'name' => $ds->name
+        'name' => $ds->name,
+        'user' => $this->_user->uname,
+        'update_user' => $this->_user->uname
       );
 
       $id = $this->product_main_group_model->add($arr);
@@ -834,7 +847,9 @@ class Items extends PS_Controller
     {
       $arr = array(
         'code' => $ds->code,
-        'name' => $ds->name
+        'name' => $ds->name,
+        'user' => $this->_user->uname,
+        'update_user' => $this->_user->uname
       );
 
       $id = $this->product_group_model->add($arr);
@@ -866,7 +881,9 @@ class Items extends PS_Controller
     {
       $arr = array(
         'code' => $ds->code,
-        'name' => $ds->name
+        'name' => $ds->name,
+        'user' => $this->_user->uname,
+        'update_user' => $this->_user->uname
       );
 
       $id = $this->product_gender_model->add($arr);
@@ -898,7 +915,9 @@ class Items extends PS_Controller
     {
       $arr = array(
         'code' => $ds->code,
-        'name' => $ds->name
+        'name' => $ds->name,
+        'user' => $this->_user->uname,
+        'update_user' => $this->_user->uname
       );
 
       $id = $this->product_category_model->add($arr);
@@ -930,7 +949,9 @@ class Items extends PS_Controller
     {
       $arr = array(
         'code' => $ds->code,
-        'name' => $ds->name
+        'name' => $ds->name,
+        'user' => $this->_user->uname,
+        'update_user' => $this->_user->uname
       );
 
       $id = $this->product_kind_model->add($arr);
@@ -962,7 +983,9 @@ class Items extends PS_Controller
     {
       $arr = array(
         'code' => $ds->code,
-        'name' => $ds->name
+        'name' => $ds->name,
+        'user' => $this->_user->uname,
+        'update_user' => $this->_user->uname
       );
 
       $id = $this->product_type_model->add($arr);
@@ -994,7 +1017,9 @@ class Items extends PS_Controller
     {
       $arr = array(
         'code' => $ds->code,
-        'name' => $ds->name
+        'name' => $ds->name,
+        'user' => $this->_user->uname,
+        'update_user' => $this->_user->uname
       );
 
       $id = $this->product_brand_model->add($arr);
@@ -1045,6 +1070,21 @@ class Items extends PS_Controller
   }
 
 
+  public function get_import_template()
+  {
+    $this->load->helper('download');
+    $file = 'assets/templates/items_import_template.xlsx';
+
+    if (file_exists($file))
+    {
+      force_download($file, NULL);
+    }
+    else
+    {
+      $this->page_error();
+    }
+  }
+  
   public function clear_filter()
   {
     $filter = array(
@@ -1056,6 +1096,7 @@ class Items extends PS_Controller
       'item_size',
       'item_group',
       'item_main_group',
+      'item_gender',
       'item_kind',
       'item_type',
       'item_category',

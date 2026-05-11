@@ -52,5 +52,6 @@
     <td class="middle">{{name}}</td>    
     <td class=""></td>
     <td class="middle">{{date_upd}}</td>
+    <td class="middle">{{user}}</td>
   </tr>  
 </script>

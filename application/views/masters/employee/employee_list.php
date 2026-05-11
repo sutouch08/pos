@@ -71,12 +71,14 @@
 <?php echo $this->pagination->create_links(); ?>
 <?php $sort_code = get_sort('code', $order_by, $sort_by); ?>
 <?php $sort_name = get_sort('name', $order_by, $sort_by); ?>
-<?php $sort_position = get_sort('position', $order_by, $sort_by); ?>
-<?php $sort_department = get_sort('department', $order_by, $sort_by); ?>
+<?php $sort_position = get_sort('position_id', $order_by, $sort_by); ?>
+<?php $sort_department = get_sort('department_id', $order_by, $sort_by); ?>
+<?php $sort_update = get_sort('date_upd', $order_by, $sort_by); ?>
+<?php $sort_user = get_sort('update_user', $order_by, $sort_by); ?>
 
 <div class="row">
   <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 padding-5 table-responsive">
-    <table class="table table-striped tableFixHead dataTable border-1" style="min-width:1060px;">
+    <table class="table table-striped tableFixHead dataTable border-1" style="min-width:1180px;">
       <thead>
         <tr>
           <th class="fix-width-80 middle"></th>
@@ -84,10 +86,11 @@
           <th class="fix-width-80 middle text-center">สถานะ</th>
           <th class="fix-width-100 middle sorting <?php echo $sort_code; ?>" id="sort-code" onclick="sort('code', '<?php echo $sort_code; ?>')">รหัส</th>
           <th class="min-width-200 middle sorting <?php echo $sort_name; ?>" id="sort-name" onclick="sort('name', '<?php echo $sort_name; ?>')">ชื่อ</th>
-          <th class="fix-width-150 middle sorting <?php echo $sort_position; ?>" id="sort-position" onclick="sort('position', '<?php echo $sort_position; ?>')">ตำแหน่ง</th>
-          <th class="fix-width-150 middle sorting <?php echo $sort_department; ?>" id="sort-department" onclick="sort('department', '<?php echo $sort_department; ?>')">แผนก</th>
+          <th class="fix-width-150 middle sorting <?php echo $sort_position; ?>" id="sort-position_id" onclick="sort('position_id', '<?php echo $sort_position; ?>')">ตำแหน่ง</th>
+          <th class="fix-width-150 middle sorting <?php echo $sort_department; ?>" id="sort-department_id" onclick="sort('department_id', '<?php echo $sort_department; ?>')">แผนก</th>
           <th class="fix-width-100 middle">การจ้าง</th>          
-          <th class="fix-width-150">แก้ไขล่าสุด</th>
+          <th class="fix-width-150 sorting <?php echo $sort_update; ?>" id="sort-date_upd" onclick="sort('date_upd', '<?php echo $sort_update; ?>')">แก้ไขล่าสุด</th>
+          <th class="fix-width-120 sorting <?php echo $sort_user; ?>" id="sort-update_user" onclick="sort('update_user', '<?php echo $sort_user; ?>')">แก้ไขโดย</th>
         </tr>
       </thead>
       <tbody id="data-table">
@@ -115,6 +118,7 @@
               <td class="middle"><?php echo $rs->department_name; ?></td>
               <td class="middle"><?php echo employee_status_text($rs->status); ?></td>
               <td class="middle"><?php echo thai_date($rs->date_upd, TRUE, '/'); ?></td>
+              <td class="middle"><?php echo empty($rs->update_user) ? $rs->user : $rs->update_user; ?></td>
             </tr>
             <?php $no++; ?>
           <?php endforeach; ?>

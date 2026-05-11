@@ -1,256 +1,295 @@
-var HOME = BASE_URL + 'masters/vat/';
+let click = 0;
 
-function addNew(){
-  window.location.href = HOME + 'add_new';
+const inputCode = document.getElementById("code");
+const regex = /[^a-zA-Z0-9-_.@\/]+/gi;
+
+if (inputCode) {
+	inputCode.addEventListener("input", () => validInput(inputCode, regex));
+}
+
+async function validateCode(id = null) {
+	const inputCode = id === null ? document.getElementById("code") : document.getElementById(`code-${id}`);
+	const codeError = id === null ? document.getElementById("code-error") : document.getElementById(`error-${id}`);
+	const value = inputCode.value.trim();
+	if (!value) {
+		setError(inputCode, codeError, "Code is Required");
+		return false;
+	}
+
+	//--- check duplicated
+	const url = `${HOME}is_exists_code`;
+	const res = await validateRemote(url, { code: value, id: id });
+
+	if (res === "exists") {
+		setError(inputCode, codeError, "Code already exists");
+		return false;
+	}
+
+	clearError(inputCode, codeError);
+	return true;
 }
 
 
+async function validateName(id = null) {
+	const inputName = id === null ? document.getElementById("name") : document.getElementById(`name-${id}`);
+	const nameError = id === null ? document.getElementById("name-error") : document.getElementById(`error-${id}`);
+	const value = inputName.value.trim();
+	if (!value) {
+		setError(inputName, nameError, "Name is Required");
+		return false;
+	}
 
-function goBack(){
-  window.location.href = HOME;
+	//--- check duplicated
+	const url = `${HOME}is_exists_name`;
+	const res = await validateRemote(url, { name: value, id: id });
+
+	if (res === "exists") {
+		setError(inputName, nameError, "Name already exists");
+		return false;
+	}
+	clearError(inputName, nameError);
+	return true;
 }
 
 
-function getEdit(code){
-  window.location.href = HOME + 'edit/'+code;
+function clearFields() {
+	$('#name').val('');
+	$('#type').val('');
+	$('#rate').val('');
+	$('#status').prop('checked', true);
+	$('#code').val('').focus();
 }
 
 
-function clearFilter(){
-	$.get(HOME + 'clear_filter', function(){
-		goBack();
-	});
-}
+async function add() {
+	if (click !== 0) {
+		return false;
+	}
 
-function setAsDefault(code) {
-	$.ajax({
-		url:HOME + 'set_default',
-		type:'POST',
-		cache:false,
-		data:{
-			'code' : code
-		},
-		success:function(rs) {
-			var rs = $.trim(rs);
-			if(rs === 'success') {
-				window.location.reload();
+	click = 1;
+
+	clearErrorByClass('e');
+
+	const inputCode = document.getElementById("code");
+	const inputName = document.getElementById("name");
+	const inputType = document.getElementById("type");
+	const typeError = document.getElementById("type-error");
+	const inputRate = document.getElementById("rate");
+	const rateError = document.getElementById("rate-error");
+	const status = document.getElementById("status");
+	const active = status.checked ? 1 : 0;
+
+	if (! await validateCode() || ! await validateName()) {
+		click = 0;
+		return false;
+	}	
+
+	if(inputRate.value === '') {
+		setError(inputRate, rateError, "Please enter rate");
+		click = 0;
+		return false;
+	}
+
+	if(inputRate.value < 0 || inputRate.value > 100) {
+		setError(inputRate, rateError, "Invalid rate");
+		click = 0;
+		return false;
+	}
+
+	if (inputType.value === '') {
+		setError(inputType, typeError, "Please select type");
+		click = 0;
+		return false;
+	}
+
+	const url = `${HOME}add`;
+	const data = {
+		code: inputCode.value.trim(),
+		name: inputName.value.trim(),
+		type: inputType.value,
+		rate: parseFloat(inputRate.value),
+		active: active
+	};
+
+	try {
+		const response = await postData(url, data);
+		const res = await response.text();
+
+		if (isJson(res)) {
+			const ds = JSON.parse(res);
+
+			if (ds.status === 'success') {
+				const template = $('#new-row-template').html();
+				const output = $('#data-table');
+
+				renderPrepend(template, ds.data, output);
+				reIndex();
+				clearFields();
 			}
 			else {
-				swal({
-					title:'Error!',
-					text:rs,
-					type:'error'
-				})
+				showError(ds.message);
 			}
-
 		}
-	})
-}
+		else {
+			showError(res);
+		}
 
-
-function toggleActive(option) {
-	$('#active').val(option);
-
-	if(option == 1) {
-		$('#btn-on').addClass('btn-primary');
-		$('#btn-off').removeClass('btn-danger');
-		return;
+		click = 0;
 	}
-
-	if(option == 0) {
-		$('#btn-on').removeClass('btn-primary');
-		$('#btn-off').addClass('btn-danger');
-		return;
+	catch (error) {
+		click = 0;
+		showError(error.message);
 	}
 }
 
 
-function getDelete(code, name){
-  swal({
-    title:'Are sure ?',
-    text:'ต้องการลบ ' + name + ' หรือไม่ ?',
-    type:'warning',
-    showCancelButton: true,
-		confirmButtonColor: '#FA5858',
-		confirmButtonText: 'ใช่, ฉันต้องการลบ',
-		cancelButtonText: 'ยกเลิก',
-		closeOnConfirm: false
-  },function(){
-		load_in();
-		$.ajax({
-			url:HOME + 'delete',
-			type:'POST',
-			cache:false,
-			data:{
-				'code' : code
-			},
-			success:function(rs) {
-				load_out();
-				var rs = $.trim(rs);
-				if(rs === 'success') {
-					swal({
-						title:'Success',
-						type:'success',
-						timer:'1000'
-					});
+async function edit(id) {
+	const url = `${HOME}get_data`;
+	const data = { id: id };
+	try {
+		const response = await postData(url, data);
+		const res = await response.text();
 
-					setTimeout(function() {
-						window.location.reload();
-					}, 1200);
-				}
-				else {
-					swal({
-						title:'Error!',
-						text:rs,
-						type:'error'
-					})
-				}
-			}
-		})
-  });
-}
+		if (isJson(res)) {
+			const ds = JSON.parse(res);
+			if (ds.status === 'success') {
+				const template = $('#edit-row-template').html();
+				const output = $(`#row-${id}`);
 
+				renderAfter(template, ds.data, output);
 
-
-function save() {
-	var code = $('#code').val();
-	var name = $('#name').val();
-	var rate = parseDefault(parseFloat($('#rate').val()),0);
-	var active = $('#active').val();
-
-	if(code.length == 0) {
-		$('#code').addClass('has-error');
-		return false;
-	}
-	else {
-		$('#code').removeClass('has-error');
-	}
-
-	if(name.length == 0) {
-		$('#name').addClass('has-error');
-		return false;
-	}
-	else {
-		$('#name').removeClass('has-error');
-	}
-
-	if(rate < 0 || rate > 100) {
-		$('#rate').addClass('has-error');
-		set_error($('#rate'), $('#rate-error'), "อัตราภาษีต้องอยู่ในช่วง 0 - 100");
-		return false;
-	}
-	else {
-		clear_error($('#rate'), $('#rate-error'));
-	}
-
-	$.ajax({
-		url:HOME + 'add',
-		type:'POST',
-		cache:false,
-		data:{
-			'code' : code,
-			'name' : name,
-			'rate' : rate,
-			'active' : active
-		},
-		success:function(rs) {
-			var rs = $.trim(rs);
-			if(rs === 'success') {
-				swal({
-					title:'Success',
-					type:'success',
-					timer:1000
-				});
-
-				setTimeout(function() {
-					addNew();
-				}, 1200);
+				$(`#row-${id}`).addClass('hide');
 			}
 			else {
-				swal({
-					title: "Error!",
-					text:rs,
-					type:'error'
-				});
+				showError(ds.message);
 			}
 		}
-	})
+		else {
+			showError(res);
+		}
+	}
+	catch (error) {
+		showError(error.message);
+	}
 }
 
 
+async function update(id) {		
+	const inputCode = document.getElementById(`code-${id}`);
+	const inputName = document.getElementById(`name-${id}`);
+	const inputType = document.getElementById(`type-${id}`);	
+	const inputRate = document.getElementById(`rate-${id}`);
+	const inputError = document.getElementById(`error-${id}`);
+	const status = document.getElementById(`status-${id}`);
+	const active = status.checked ? 1 : 0;
 
-function update() {
-	var code = $('#code').val();
-	var name = $('#name').val();
-	var rate = parseDefault(parseFloat($('#rate').val()),0);
-	var active = $('#active').val();
-	var old_name = $('#old_name').val();
-
-	if(code.length == 0) {
-		$('#code').addClass('has-error');
+	if (! await validateCode(id) || ! await validateName(id)) {
 		return false;
 	}
-	else {
-		$('#code').removeClass('has-error');
-	}
 
-	if(name.length == 0) {
-		$('#name').addClass('has-error');
+	clearError(inputType, inputError);
+	clearError(inputRate, inputError);	
+
+	if(inputRate.value === '') {
+		setError(inputRate, inputError, "Please enter rate");
 		return false;
 	}
-	else {
-		$('#name').removeClass('has-error');
-	}
 
-	if(rate < 0 || rate > 100) {
-		$('#rate').addClass('has-error');
-		set_error($('#rate'), $('#rate-error'), "อัตราภาษีต้องอยู่ในช่วง 0 - 100");
+	if(inputRate.value < 0 || inputRate.value > 100) {
+		setError(inputRate, inputError, "Invalid rate");
 		return false;
 	}
-	else {
-		clear_error($('#rate'), $('#rate-error'));
+
+	if (inputType.value === '') {
+		setError(inputType, inputError, "Please select type");
+		return false;
 	}
 
-	$.ajax({
-		url:HOME + 'update',
-		type:'POST',
-		cache:false,
-		data:{
-			'code' : code,
-			'name' : name,
-			'rate' : rate,
-			'active' : active,
-			'old_name' : old_name
-		},
-		success:function(rs) {
-			var rs = $.trim(rs);
-			if(rs === 'success') {
-				swal({
-					title:'Success',
-					type:'success',
-					timer:1000
-				});
+	const url = `${HOME}update`;
+	const data = {
+		id: id,
+		code: inputCode.value.trim(),
+		name: inputName.value.trim(),
+		type: inputType.value,
+		rate: parseFloat(inputRate.value),
+		active: active
+	};
 
-				setTimeout(function() {
-					addNew();
-				}, 1200);
+	try {
+		const response = await postData(url, data);
+		const res = await response.text();
+
+		if (isJson(res)) {
+			const ds = JSON.parse(res);
+			if (ds.status === 'success') {
+				const template = $('#row-template').html();
+				const output = $(`#row-${id}`);
+				render(template, ds.data, output);
+				$(`#edit-row-${id}`).remove();
+				$(`#row-${id}`).removeClass('hide');
+				reIndex();
 			}
 			else {
-				swal({
-					title: "Error!",
-					text:rs,
-					type:'error'
-				});
+				showError(ds.message);
 			}
 		}
-	})
+		else {
+			showError(res);
+		}
+	}
+	catch (error) {
+		showError(error.message);
+	}
 }
 
-$('.search-box').keyup(function(e){
-	if(e.keyCode === 13){
-		getSearch();
+
+function cancel(id) {
+	$(`#edit-row-${id}`).remove();
+	$(`#row-${id}`).removeClass('hide');
+}
+
+
+function confirmDelete(id, name) {
+	swal({
+		title: `Are you sure ?`,
+		text: `Do you want to delete "${name}" ?`,
+		type: "warning",
+		showCancelButton: true,
+		confirmButtonColor: "#DD6B55",
+		confirmButtonText: "Yes, delete it!",
+		cancelButtonText: "No, cancel",
+		closeOnConfirm: true
+	},
+		function (isConfirm) {
+			if (isConfirm) {
+				deleteItem(id);
+			}
+		});
+}
+
+
+async function deleteItem(id) {
+	const url = `${HOME}delete`;
+	const data = { id: id };
+	try {
+		const response = await postData(url, data);
+		const res = await response.text();
+
+		if (res === 'success') {
+			swal({
+				title: 'Success',
+				type: 'success',
+				timer: 1000
+			});
+
+			$(`#row-${id}`).remove();
+			reIndex();
+		}
+		else {
+			showError(res);
+		}
 	}
-})
-function getSearch() {
-	$('#searchForm').submit();
+	catch (error) {
+		showError(error.message);
+	}
 }

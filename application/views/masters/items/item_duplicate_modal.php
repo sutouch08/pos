@@ -102,8 +102,8 @@
               <div class="form-group">
                 <label class="col-lg-3 col-md-3 col-sm-3 col-xs-12 control-label no-padding-right">&nbsp;</label>
                 <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12">
-                  <label for="count-stock">
-                    <input type="checkbox" class="ace" id="count-stock" value="1" checked />
+                  <label for="inventory-item">
+                    <input type="checkbox" class="ace" id="inventory-item" value="1" checked />
                     <span class="lbl"> สินค้านับสต็อก</span>
                   </label>
                 </div>
@@ -112,9 +112,19 @@
               <div class="form-group">
                 <label class="col-lg-3 col-md-3 col-sm-3 col-xs-12 control-label no-padding-right">&nbsp;</label>
                 <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12">
-                  <label for="can-sell">
-                    <input type="checkbox" class="ace" id="can-sell" value="1" checked />
+                  <label for="sale-item">
+                    <input type="checkbox" class="ace" id="sale-item" value="1" checked />
                     <span class="lbl"> สินค้าสำหรับขาย</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="col-lg-3 col-md-3 col-sm-3 col-xs-12 control-label no-padding-right">&nbsp;</label>
+                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12">
+                  <label for="purchase-item">
+                    <input type="checkbox" class="ace" id="purchase-item" value="1" checked />
+                    <span class="lbl"> สินค้าสำหรับซื้อ</span>
                   </label>
                 </div>
               </div>

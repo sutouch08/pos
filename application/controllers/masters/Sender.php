@@ -1,234 +1,305 @@
 <?php
-defined('BASEPATH') OR exit('No direct script access allowed');
+defined('BASEPATH') or exit('No direct script access allowed');
 
-class Sender extends PS_Controller{
-	public $menu_code = 'DBSEND'; //--- Add/Edit Users
+class Sender extends PS_Controller
+{
+	public $menu_code = 'DBSEND';
 	public $menu_group_code = 'DB';
-	public $menu_sub_group_code = 'TRANSPORT'; //--- System security
-	public $title = 'เพิ่ม/แก้ไข ขนส่ง';
+	public $menu_sub_group_code = ''; 
+	public $title = 'เพิ่ม/แก้ไข ผู้จัดส่ง';
+	public $segment = 4;
 
-  public function __construct()
-  {
-    parent::__construct();
-    $this->home = base_url().'masters/sender';
-		$this->load->model('masters/sender_model');
-  }
-
-
-
-  public function index()
-  {
-		$filter = array(
-			'code' => get_filter('code', 'sender_code', ''),
-			'name' => get_filter('name', 'sender_name', ''),
-			'addr' => get_filter('addr', 'sender_addr', ''),
-			'phone' => get_filter('phone', 'sender_phone', ''),
-			'type' => get_filter('type', 'sender_type', 'all')
-		);
-
-		//--- แสดงผลกี่รายการต่อหน้า
-		$perpage = get_filter('set_rows', 'rows', 20);
-		//--- หาก user กำหนดการแสดงผลมามากเกินไป จำกัดไว้แค่ 300
-		if($perpage > 300)
-		{
-			$perpage = get_filter('rows', 'rows', 300);
-		}
-
-		$segment = 4; //-- url segment
-		$rows = $this->sender_model->count_rows($filter);
-
-		//--- ส่งตัวแปรเข้าไป 4 ตัว base_url ,  total_row , perpage = 20, segment = 3
-		$init	= pagination_config($this->home.'/index/', $rows, $perpage, $segment);
-
-		$rs = $this->sender_model->get_list($filter, $perpage, $this->uri->segment($segment));
-		$filter['data'] = $rs;
-
-		$this->pagination->initialize($init);
-    $this->load->view('masters/sender/sender_view', $filter);
-  }
-
-
-
-
-
-	public function add_new()
+	public function __construct()
 	{
-		$this->load->view('masters/sender/sender_add');
+		parent::__construct();
+		$this->home = base_url() . 'masters/sender';
+		$this->load->model('masters/sender_model');
 	}
 
+
+	public function index()
+	{
+		$filter = array(
+			'code' => get_filter('code', 'sender_code', ''),
+			'active' => get_filter('active', 'sender_active', 'all'),
+			'show_in_list' => get_filter('show_in_list', 'sender_show_in_list', 'all'),
+			'order_by' => get_filter('order_by', 'sender_order_by', 'code'),
+			'sort_by' => get_filter('sort_by', 'sender_sort_by', 'ASC')
+		);
+
+		if ($this->input->post('search'))
+		{
+			redirect($this->home);
+		}
+		else
+		{
+			$perpage = get_rows();
+			$rows = $this->sender_model->count_rows($filter);
+			$filter['data'] = $this->sender_model->get_list($filter, $perpage, $this->uri->segment($this->segment));
+			$init = pagination_config($this->home . '/index/', $rows, $perpage, $this->segment);
+			$this->pagination->initialize($init);
+			$this->load->view('masters/sender/sender_list', $filter);
+		}
+	}
 
 
 	public function add()
 	{
 		$sc = TRUE;
+		$res = NULL;
+		$ds = json_decode(file_get_contents('php://input'));
 
-		$code = trim($this->input->post('code'));
-		$name = trim($this->input->post('name'));
-
-		if($code !== NULL && $code !== "")
+		if ($this->pm->can_add)
 		{
-			if($name !== NULL && $name !== "")
+			if (! empty($ds) && ! empty($ds->code) && ! empty($ds->name))
 			{
-				//--- check duplicate code
-				if(! $this->sender_model->is_exists_code($code))
-				{
-					if(! $this->sender_model->is_exists_name($name))
-					{
-						$arr = array(
-							'code' => $code,
-							'name' => $name,
-							'address1' => get_null(trim($this->input->post('address1'))),
-							'address2' => get_null(trim($this->input->post('address2'))),
-							'phone' => get_null(trim($this->input->post('phone'))),
-							'open' => trim($this->input->post('open')),
-							'close' => trim($this->input->post('close')),
-							'type' => trim($this->input->post('type')),
-							'show_in_list' => empty($this->input->post('show_in_list')) ? 0 : 1,
-							'force_tracking' => empty($this->input->post('force_tracking')) ? 0 : 1,
-							'auto_gen' => empty($this->input->post('auto_gen')) ? 0 :1,
-							'prefix' => get_null(trim($this->input->post('prefix')))
-						);
-
-						if(! $this->sender_model->add($arr))
-						{
-							$sc = FALSE;
-							$this->error = "เพิ่มรายการไม่สำเร็จ";
-						}
-					}
-					else
-					{
-						$sc = FALSE;
-						$this->error = "ชื่อซ้ำ กรุณากำหนดชื่อใหม่";
-					}
-				}
-				else
+				if ($this->sender_model->is_exists_code($ds->code))
 				{
 					$sc = FALSE;
-					$this->error = "รหัสซ้ำ กรุณากำหนดรหัสใหม่";
+					set_error('exists', $ds->code);
+				}
+
+				if ($sc === TRUE && $this->sender_model->is_exists_name($ds->name))
+				{
+					$sc = FALSE;
+					set_error('exists', $ds->name);
+				}
+
+				if ($sc === TRUE)
+				{
+					$arr = array(
+						'code' => $ds->code,
+						'name' => $ds->name,
+						'phone' => get_null($ds->phone),
+						'show_in_list' => $ds->show_in_list,
+						'active' => $ds->active,
+						'user' => $this->_user->uname,
+						'update_user' => $this->_user->uname
+					);
+
+					$id = $this->sender_model->add($arr);
+
+					if (! $id)
+					{
+						$sc = FALSE;
+						set_error('insert');
+					}
+
+					if ($sc === TRUE)
+					{
+						$res = $this->sender_model->get($id);
+
+						if (! empty($res))
+						{
+							$res->is_active = is_active($res->active);
+							$res->is_common = is_active($res->show_in_list);
+							$res->date_upd = thai_date($res->date_upd, TRUE, '/');
+						}
+					}
 				}
 			}
 			else
 			{
 				$sc = FALSE;
-				$this->error = "Missing required parameter : name";
+				set_error('required');
 			}
 		}
 		else
 		{
 			$sc = FALSE;
-			$this->error = "Missing required parameter : code";
+			set_error('permission');
 		}
 
-		echo $sc === TRUE ? 'success' : $this->error;
+		$arr = array(
+			'status' => $sc === TRUE ? 'success' : 'error',
+			'message' => $sc === TRUE ? 'success' : $this->error,
+			'data' => $res
+		);
 
+		echo json_encode($arr);
 	}
 
 
-	public function edit($id)
-	{
-		$rs = $this->sender_model->get($id);
-		$this->load->view('masters/sender/sender_edit', $rs);
-	}
-
-	public function update($id)
+	public function get_data()
 	{
 		$sc = TRUE;
+		$res = NULL;
+		$ds = json_decode(file_get_contents('php://input'));
 
-		$code = trim($this->input->post('code'));
-		$name = trim($this->input->post('name'));
-
-		if($code !== NULL && $code !== "")
+		if (! empty($ds) && ! empty($ds->id))
 		{
-			if($name !== NULL && $name !== "")
-			{
-				//--- check duplicate code
-				if(! $this->sender_model->is_exists_code($code, $id))
-				{
-					if(! $this->sender_model->is_exists_name($name, $id))
-					{
-						$arr = array(
-							'code' => $code,
-							'name' => $name,
-							'address1' => get_null(trim($this->input->post('address1'))),
-							'address2' => get_null(trim($this->input->post('address2'))),
-							'phone' => get_null(trim($this->input->post('phone'))),
-							'open' => trim($this->input->post('open')),
-							'close' => trim($this->input->post('close')),
-							'type' => trim($this->input->post('type')),
-							'show_in_list' => empty($this->input->post('show_in_list')) ? 0 : 1,
-							'force_tracking' => empty($this->input->post('force_tracking')) ? 0 : 1,
-							'auto_gen' => empty($this->input->post('auto_gen')) ? 0 :1,
-							'prefix' => get_null(trim($this->input->post('prefix')))
-						);
+			$res = $this->sender_model->get_by_id($ds->id);
 
-						if(! $this->sender_model->update($id, $arr))
-						{
-							$sc = FALSE;
-							$this->error = "แก้ไขรายการไม่สำเร็จ";
-						}
-					}
-					else
-					{
-						$sc = FALSE;
-						$this->error = "ชื่อซ้ำ กรุณากำหนดชื่อใหม่";
-					}
-				}
-				else
-				{
-					$sc = FALSE;
-					$this->error = "รหัสซ้ำ กรุณากำหนดรหัสใหม่";
-				}
+			if (! empty($res))
+			{
+				$res->is_active = $res->active == 1 ? 'checked' : '';
+				$res->is_common = $res->show_in_list == 1 ? 'checked' : '';
+				$res->date_upd = thai_date($res->date_upd, TRUE, '/');
 			}
 			else
 			{
 				$sc = FALSE;
-				$this->error = "Missing required parameter : name";
+				set_error('not_found');
 			}
 		}
 		else
 		{
 			$sc = FALSE;
-			$this->error = "Missing required parameter : code";
+			set_error('required');
 		}
 
-		echo $sc === TRUE ? 'success' : $this->error;
+		$arr = array(
+			'status' => $sc === TRUE ? 'success' : 'error',
+			'message' => $sc === TRUE ? 'success' : $this->error,
+			'data' => $res
+		);
 
+		echo json_encode($arr);
 	}
 
 
-
-
-	public function delete($id)
+	public function update()
 	{
-		if($this->pm->can_delete)
+		$sc = TRUE;
+		$res = NULL;
+		$ds = json_decode(file_get_contents('php://input'));
+
+		if (! empty($ds) && ! empty($ds->id) && ! empty($ds->name))
 		{
-			if($this->sender_model->delete($id))
+			if ($this->pm->can_edit)
 			{
-				set_message('ลบรายการเรียบร้อยแล้ว');
+				if ($this->sender_model->is_exists_name($ds->name, $ds->id))
+				{
+					$sc = FALSE;
+					set_error('exists', $ds->name);
+				}
+
+				if ($sc === TRUE)
+				{
+					$arr = array(
+						'name' => $ds->name,
+						'phone' => get_null($ds->phone),
+						'show_in_list' => $ds->show_in_list,
+						'active' => $ds->active,
+						'update_user' => $this->_user->uname
+					);
+
+					if ($this->sender_model->update($ds->id, $arr))
+					{
+						$res = $this->sender_model->get($ds->id);
+
+						if (! empty($res))
+						{
+							$res->is_active = is_active($res->active);
+							$res->is_common = is_active($res->show_in_list, FALSE);
+							$res->date_upd = thai_date($res->date_upd, TRUE, '/');
+						}
+					}
+					else
+					{
+						$sc = FALSE;
+						set_error('update');
+					}
+				}
 			}
 			else
 			{
-				set_error('ลบรายการไม่สำเร็จ');
+				$sc = FALSE;
+				set_error('permission');
 			}
 		}
 		else
 		{
-			set_error('คุณไม่มีอำนาจในการลบ');
+			$sc = FALSE;
+			set_error('required');
 		}
 
-		redirect($this->home);
+		$arr = array(
+			'status' => $sc === TRUE ? 'success' : 'error',
+			'message' => $sc === TRUE ? 'success' : $this->error,
+			'data' => $res
+		);
+
+		echo json_encode($arr);
 	}
 
 
+	public function delete()
+	{
+		$sc = TRUE;
+		$ds = json_decode(file_get_contents('php://input'));
+
+		if (! empty($ds) && ! empty($ds->id))
+		{
+			if ($this->pm->can_delete)
+			{
+				if($this->sender_model->has_transection($ds->id))
+				{
+					$sc = FALSE;
+					set_error('transection');
+				}
+
+				if($sc === TRUE)
+				{
+					if (! $this->sender_model->delete($ds->id))
+					{
+						$sc = FALSE;
+						set_error('delete');
+					}
+				}
+			}
+			else
+			{
+				$sc = FALSE;
+				set_error('permission');
+			}
+		}
+		else
+		{
+			$sc = FALSE;
+			set_error('required');
+		}
+
+		$this->_response($sc);
+	}
+
+
+	public function is_exists_code()
+	{
+		$exists = FALSE;
+		$ds = json_decode(file_get_contents('php://input'));
+
+		if(! empty($ds) && ! empty($ds->code))
+		{
+			$exists = $this->sender_model->is_exists_code($ds->code, empty($ds->id) ? NULL : $ds->id);			
+		}
+
+		echo $exists ? 'exists' : 'not_exists';
+	}
+
+
+	public function is_exists_name()
+	{
+		$exists = FALSE;
+		$ds = json_decode(file_get_contents('php://input'));
+
+		if(! empty($ds) && ! empty($ds->name))
+		{
+			$exists = $this->sender_model->is_exists_name($ds->name, empty($ds->id) ? NULL : $ds->id);
+		}
+
+		echo $exists ? 'exists' : 'not_exists';
+	}
 
 
 	public function clear_filter()
 	{
-		$filter = array('sender_code', 'sender_name', 'sender_addr', 'sender_phone', 'sender_type');
-		clear_filter($filter);
+		return clear_filter(array(
+			'sender_code',
+			'sender_active',
+			'sender_show_in_list',
+			'sender_order_by',
+			'sender_sort_by'
+		));
 	}
-
-}//--- end class
-
-
- ?>
+} //--- end class

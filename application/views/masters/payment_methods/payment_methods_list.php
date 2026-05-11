@@ -2,7 +2,7 @@
 <div class="row">
 	<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 padding-5">
 		<h3 class="title"><?php echo $this->title; ?></h3>
-	</div>	
+	</div>
 </div><!-- End Row -->
 <hr class="" />
 <form id="search-form" method="post" action="<?php echo current_url(); ?>">
@@ -52,33 +52,44 @@
 			<button type="button" class="btn btn-xs btn-warning btn-block" onclick="clearFilter()"><i class="fa fa-retweet"></i> Reset</button>
 		</div>
 	</div>
+	<input type="hidden" name="search" value="1" />
+	<input type="hidden" name="order_by" id="order_by" value="<?php echo $order_by; ?>" />
+	<input type="hidden" name="sort_by" id="sort_by" value="<?php echo $sort_by; ?>" />
 </form>
-<hr class="margin-top-15">
+<hr class=" margin-top-15">
 <?php echo $this->pagination->create_links(); ?>
 
 <?php if ($this->pm->can_add) : ?>
 	<?php $this->load->view('masters/payment_methods/payment_methods_add_control'); ?>
 <?php endif; ?>
+
+<?php $sort_code = get_sort('code', $order_by, $sort_by); ?>
+<?php $sort_name = get_sort('name', $order_by, $sort_by); ?>
+<?php $sort_role = get_sort('role', $order_by, $sort_by); ?>
+<?php $sort_days = get_sort('extra_days', $order_by, $sort_by); ?>
+<?php $sort_update = get_sort('date_upd', $order_by, $sort_by); ?>
+<?php $sort_user = get_sort('update_user', $order_by, $sort_by); ?>
 <div class="row">
 	<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 padding-5 table-responsive">
-		<table class="table table-striped tableFixHead border-1" style="min-width:810px;">
+		<table class="table table-striped tableFixHead dataTable border-1" style="min-width:930px;">
 			<thead>
 				<tr>
 					<th class="fix-width-80 middle"></th>
 					<th class="fix-width-40 middle text-center">#</th>
 					<th class="fix-width-80 middle text-center">สถานะ</th>
-					<th class="fix-width-120 middle">รหัส</th>
-					<th class="fix-width-200 middle">ชื่อ</th>
-					<th class="fix-width-100 middle">ประเภท</th>
-					<th class="fix-width-60 middle text-center">เครดิต</th>
-					<th class="fix-width-200 middle">บัญชีธนาคาร</th>
+					<th class="fix-width-120 middle sorting <?php echo $sort_code; ?>" id="sort-code" onclick="sort('code', '<?php echo $sort_code; ?>')">รหัส</th>
+					<th class="fix-width-200 middle sorting <?php echo $sort_name; ?>" id="sort-name" onclick="sort('name', '<?php echo $sort_name; ?>')">ชื่อ</th>
+					<th class="fix-width-100 middle sorting <?php echo $sort_role; ?>" id="sort-role" onclick="sort('role', '<?php echo $sort_role; ?>')">ประเภท</th>
+					<th class="fix-width-80 middle text-center sorting <?php echo $sort_days; ?>" id="sort-extra_days" onclick="sort('extra_days', '<?php echo $sort_days; ?>')">เครดิต (วัน)</th>
+					<th class="fix-width-300 middle">บัญชีธนาคาร</th>
 					<th class="min-width-100"></th>
-					<th class="fix-width-150 middle">ปรับปรุงล่าสุด</th>
+					<th class="fix-width-150 middle sorting <?php echo $sort_update; ?>" id="sort-date_upd" onclick="sort('date_upd', '<?php echo $sort_update; ?>')">แก้ไขล่าสุด</th>
+					<th class="fix-width-150 middle sorting <?php echo $sort_user; ?>" id="sort-update_user" onclick="sort('update_user', '<?php echo $sort_user; ?>')">แก้ไขโดย</th>
 				</tr>
 			</thead>
 			<tbody id="data-table">
 				<?php if (!empty($data)) : ?>
-					<?php $no = $this->uri->segment(4) + 1; ?>
+					<?php $no = $this->uri->segment($this->segment) + 1; ?>
 					<?php foreach ($data as $rs) : ?>
 						<tr id="row-<?php echo $rs->id; ?>">
 							<td class="middle">
@@ -98,10 +109,11 @@
 							<td class="middle"><?php echo $rs->code; ?></td>
 							<td class="middle"><?php echo $rs->name; ?></td>
 							<td class="middle"><?php echo $rs->role_name; ?></td>
-							<td class="middle text-center"><?php echo is_active($rs->has_term, FALSE); ?></td>
+							<td class="middle text-center"><?php echo $rs->extra_days > 0 ? $rs->extra_days : ''; ?></td>
 							<td class="middle"><?php echo empty($rs->account_id) ? '' : '# ' . $rs->account_no . '<br/>' . $rs->account_name; ?></td>
 							<td class=""></td>
 							<td class="middle"><?php echo thai_date($rs->date_upd, TRUE, '/'); ?></td>
+							<td class="middle"><?php echo empty($rs->update_user) ? $rs->user : $rs->update_user; ?></td>
 						</tr>
 						<?php $no++; ?>
 					<?php endforeach; ?>
@@ -134,18 +146,26 @@
 			<input type="text" class="form-control input-sm e" id="name-{{id}}" maxlength="100" value="{{name}}" data-id="{{id}}" data-name="{{name}}" />
 		</td>
 		<td colspan="2" class="middle">
-			<select class="form-control input-sm e" id="role-{{id}}" onchange="toggleAccountSelect({{id}})">
+			<select class="form-control input-sm e" id="role-{{id}}" onchange="toggleRoleOption({{id}})">
 				<option value="">Please select</option>
 				<?php echo select_payment_role(); ?>
 			</select>
 		</td>
 		<td>
-			<select class="form-control input-sm" id="account-{{id}}" {{accountDisabled}}>
-				<option value="">เลือกบัญชีธนาคาร</option>
-				<?php echo select_bank_account(); ?>
-			</select>
+			<div class="input-group {{hide_acc}}" id="account-group-{{id}}">
+				<span class="input-group-addon">บัญชี</span>
+				<select class="form-control input-sm" id="account-{{id}}">
+					<option value="">เลือกบัญชีธนาคาร</option>
+					<?php echo select_bank_account(); ?>
+				</select>
+			</div>
+			
+			<div class="input-group {{hide_extra_days}}" id="term-group-{{id}}">
+				<span class="input-group-addon">เครดิต (วัน)</span>
+				<input type="number" class="form-control input-sm text-center fix-width-100" id="extra-days-{{id}}" value="{{extra_days}}" min="0" />
+			</div>
 		</td>
-		<td colspan="2" class="middle red padding-left-10" id="error-{{id}}"></td>
+		<td colspan="3" class="middle red padding-left-10" id="error-{{id}}"></td>
 	</tr>		
 </script>
 
@@ -167,10 +187,11 @@
 	<td class="middle">{{code}}</td>
 	<td class="middle">{{name}}</td>		
 	<td class="middle">{{{role_name}}}</td>
-	<td class="middle text-center">{{{has_term}}}</td>
+	<td class="middle text-center">{{extra_days}}</td>
 	<td class="middle">{{{account}}}</td>
 	<td class=""></td>
 	<td class="middle">{{date_upd}}</td>
+	<td class="middle">{{update_user}}</td>
 </script>
 
 <script src="<?php echo base_url(); ?>scripts/masters/payment_methods.js?v=<?php echo date('Ymd'); ?>"></script>

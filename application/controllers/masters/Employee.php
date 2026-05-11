@@ -4,7 +4,7 @@ class Employee extends PS_Controller
 {
   public $menu_code = 'DBEMPL';
 	public $menu_group_code = 'DB';
-  public $menu_sub_group_code = '';
+  public $menu_sub_group_code = 'EMPLOYEE';
 	public $title = 'เพิ่ม/แก้ไข รายชื่อพนักงาน';
   public $segment = 4;
 
@@ -104,7 +104,8 @@ class Employee extends PS_Controller
             'active' => $ds->active,
             'position_id' => get_null($ds->position),
             'department_id' => get_null($ds->department),
-            'user' => $this->_user->uname
+            'user' => $this->_user->uname,
+            'update_user' => $this->_user->uname
           );
 
           if(! $this->employee_model->add($arr))                      

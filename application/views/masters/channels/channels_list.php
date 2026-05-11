@@ -37,6 +37,8 @@
 	</div>
 
 	<input type="hidden" name="search" value="1" />
+	<input type="hidden" name="order_by" id="order_by" value="<?php echo $order_by; ?>" />
+	<input type="hidden" name="sort_by" id="sort_by" value="<?php echo $sort_by; ?>" />
 </form>
 <hr class="margin-top-15">
 <?php echo $this->pagination->create_links(); ?>
@@ -45,18 +47,24 @@
 	<?php $this->load->view('masters/channels/channels_add_control'); ?>
 <?php endif; ?>
 
+<?php $sort_code = get_sort('code', $order_by, $sort_by); ?>
+<?php $sort_name = get_sort('name', $order_by, $sort_by); ?>
+<?php $sort_update = get_sort('date_upd', $order_by, $sort_by); ?>
+<?php $sort_user = get_sort('update_user', $order_by, $sort_by); ?>
+
 <div class="row">
 	<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 padding-5 table-responsive">
-		<table class="table table-striped tableFixHead border-1" style="min-width:830px;">
+		<table class="table table-striped tableFixHead dataTable border-1" style="min-width:830px;">
 			<thead>
 				<tr>
 					<th class="fix-width-80"></th>
 					<th class="fix-width-40 middle text-center">#</th>
 					<th class="fix-width-80 middle text-center">สถานะ</th>
-					<th class="fix-width-150 middle">รหัส</th>
-					<th class="fix-width-250 middle">ชื่อ</th>
+					<th class="fix-width-150 middle sorting <?php echo $sort_code; ?>" id="sort-code" onclick="sort('code', '<?php echo $sort_code; ?>')">รหัส</th>
+					<th class="fix-width-250 middle sorting <?php echo $sort_name; ?>" id="sort-name" onclick="sort('name', '<?php echo $sort_name; ?>')">ชื่อ</th>
 					<th class="min-width-100"></th>
-					<th class="fix-width-150">แก้ไขล่าสุด</th>
+					<th class="fix-width-150 middle sorting <?php echo $sort_update; ?>" id="sort-date_upd" onclick="sort('date_upd', '<?php echo $sort_update; ?>')">แก้ไขล่าสุด</th>
+					<th class="fix-width-150 middle sorting <?php echo $sort_user; ?>" id="sort-update_user" onclick="sort('update_user', '<?php echo $sort_user; ?>')">แก้ไขโดย</th>
 				</tr>
 			</thead>
 			<tbody id="data-table">
@@ -82,6 +90,7 @@
 							<td class="middle"><?php echo $rs->name; ?></td>
 							<td class="middle"></td>
 							<td class="middle"><?php echo thai_date($rs->date_upd, TRUE, '/'); ?></td>
+							<td class="middle"><?php echo empty($rs->update_user) ? $rs->user : $rs->update_user; ?></td>
 						</tr>
 						<?php $no++; ?>
 					<?php endforeach; ?>

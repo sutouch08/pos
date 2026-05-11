@@ -5,6 +5,8 @@
   </div>
   <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 text-right">
     <?php if ($this->pm->can_add) : ?>
+      <button type="button" class="btn btn-white btn-info top-btn" onclick="getImportTemplate()"><i class="fa fa-download"></i> ดาวน์โหลดเทมเพลต</button>
+      <button type="button" class="btn btn-white btn-primary top-btn" onclick="showImportModal()"><i class="fa fa-upload"></i> นำเข้า</button>
       <button type="button" class="btn btn-white btn-success top-btn" onclick="addNew()"><i class="fa fa-plus"></i> เพิ่มใหม่</button>
     <?php endif; ?>
   </div>
@@ -117,13 +119,15 @@
 <?php echo $this->pagination->create_links(); ?>
 <div class="row">
   <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 table-responsive padding-5">
-    <table class="table dataTable tableFixHead table-bordered" style="min-width:1530px;">
+    <table class="table dataTable table-narrow table-bordered" style="min-width:1650px;">
       <thead>
         <tr>
           <th class="fix-width-120"></th>
-          <th class="fix-width-40 middle text-center fix-header">#</th>
-          <th class="fix-width-40 middle text-center">Sell</th>
-          <th class="fix-width-40 middle text-center" style="padding:3px;">Active</th>
+          <th class="fix-width-50 middle text-center fix-header">#</th>
+          <th class="fix-width-50 middle text-center">Active</th>
+          <th class="fix-width-50 middle text-center">Inventory</th>
+          <th class="fix-width-50 middle text-center">Sale</th>
+          <th class="fix-width-50 middle text-center">Purchase</th>
           <th class="fix-width-200 middle text-center">รหัส</th>
           <th class="min-width-200 middle text-center">สินค้า</th>
           <th class="fix-width-150 middle text-center">รุ่น</th>
@@ -160,8 +164,10 @@
                 <?php endif; ?>
               </td>
               <td class="middle text-center no"><?php echo $no; ?></td>
-              <td class="middle text-center"><?php echo is_active($rs->can_sell); ?></td>
               <td class="middle text-center"><?php echo is_active($rs->active); ?></td>
+              <td class="middle text-center"><?php echo is_active($rs->inventoryItem); ?></td>
+              <td class="middle text-center"><?php echo is_active($rs->saleItem); ?></td>
+              <td class="middle text-center"><?php echo is_active($rs->purchaseItem); ?></td>
               <td class="middle"><?php echo $rs->code; ?></td>
               <td class="middle"><?php echo $rs->name; ?></td>
               <td class="middle"><?php echo $rs->style_code; ?></td>
@@ -195,6 +201,10 @@
   $('#f-brand').select2();
   $('#f-year').select2();
   $('#f-active').select2();
+
+  $('.filter').change(function() {
+    getSearch();
+  });
 </script>
 <script src="<?php echo base_url(); ?>scripts/masters/items.js?v=<?php echo date('Ymd'); ?>"></script>
 <script src="<?php echo base_url(); ?>scripts/masters/items_attributes.js?v=<?php echo date('Ymd'); ?>"></script>

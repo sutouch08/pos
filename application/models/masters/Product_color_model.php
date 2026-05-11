@@ -146,6 +146,31 @@ class Product_color_model extends CI_Model
     return NULL;
   }
 
+  public function get_code($id)
+  {
+    $rs = $this->db->select('code')->where('id', $id)->get($this->tb);
+
+    if($rs->num_rows() === 1)
+    {
+      return $rs->row()->code;
+    }
+
+    return NULL;
+  }
+
+
+  public function get_id($code)
+  {
+    $rs = $this->db->select('id')->where('code', $code)->get($this->tb);
+
+    if($rs->num_rows() === 1)
+    {
+      return $rs->row()->id;
+    }
+
+    return NULL;
+  }
+
 
   public function get_name_by_code($code)
   {
@@ -159,6 +184,7 @@ class Product_color_model extends CI_Model
     return NULL;
   }
 
+  
   public function get_name_by_id($id)
   {
     $rs = $this->db->select('name')->where('id', $id)->get($this->tb);

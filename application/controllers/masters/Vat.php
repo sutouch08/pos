@@ -1,298 +1,311 @@
 <?php
-defined('BASEPATH') OR exit('No direct script access allowed');
+defined('BASEPATH') or exit('No direct script access allowed');
 class Vat extends PS_Controller
 {
-  public $menu_code = 'DBVATG';
+	public $menu_code = 'DBVATG';
 	public $menu_group_code = 'DB';
-  public $menu_sub_group_code = '';
+	public $menu_sub_group_code = '';
 	public $title = 'เพิ่ม/แก้ไข กลุ่มภาษี';
+	public $segment = 4;
 
-  public function __construct()
-  {
-    parent::__construct();
-    $this->home = base_url().'masters/vat';
-    $this->load->model('masters/vat_model');
-  }
+	public function __construct()
+	{
+		parent::__construct();
+		$this->home = base_url() . 'masters/vat';
+		$this->load->model('masters/vat_model');
+		$this->load->helper('vat');
+	}
 
 
-  public function index()
-  {
-    $filter = array(
-      'code' => get_filter('code', 'vat_code', ''),
-      'name' => get_filter('name', 'vat_name', ''),
-      'active' => get_filter('active', 'vat_active', 'all')
-    );
+	public function index()
+	{
+		$filter = array(
+			'code' => get_filter('code', 'vat_code', ''),
+			'type' => get_filter('type', 'vat_type', 'all'),
+			'active' => get_filter('active', 'vat_active', 'all')
+		);
 
-		//--- แสดงผลกี่รายการต่อหน้า
-		$perpage = get_rows();
-		//--- หาก user กำหนดการแสดงผลมามากเกินไป จำกัดไว้แค่ 300
-		if($perpage > 300)
+		if ($this->input->post('search'))
 		{
-			$perpage = 20;
+			redirect($this->home);
 		}
-
-		$segment = 4; //-- url segment
-		$rows = $this->vat_model->count_rows($filter);
-		//--- ส่งตัวแปรเข้าไป 4 ตัว base_url ,  total_row , perpage = 20, segment = 3
-		$init	= pagination_config($this->home.'/index/', $rows, $perpage, $segment);
-		$list = $this->vat_model->get_list($filter, $perpage, $this->uri->segment($segment));
-
-    $filter['data'] = $list;
-
-		$this->pagination->initialize($init);
-    $this->load->view('masters/vat/vat_list', $filter);
-  }
-
-
-  public function add_new()
-  {
-    $this->load->view('masters/vat/vat_add');
-  }
+		else
+		{
+			$perpage = get_rows();
+			$rows = $this->vat_model->count_rows($filter);
+			$filter['data'] = $this->vat_model->get_list($filter, $perpage, $this->uri->segment($this->segment));
+			$init = pagination_config($this->home . '/index/', $rows, $perpage, $this->segment);
+			$this->pagination->initialize($init);
+			$this->load->view('masters/vat/vat_list', $filter);
+		}
+	}
 
 
 	public function add()
-  {
-		$sc = TRUE;
-
-		$code = trim($this->input->post('code'));
-		$name = trim($this->input->post('name'));
-		$rate = floatval($this->input->post('rate'));
-		$active = $this->input->post('active');
-
-		if(!empty($code))
-		{
-			if($this->pm->can_add)
-			{
-				//--- check duplicate code;
-
-				$is_exists = $this->vat_model->is_exists_code($code);
-				if(! $is_exists)
-				{
-					$is_exists = $this->vat_model->is_exists_name($name);
-
-					if(! $is_exists)
-					{
-						if($rate < 0 OR $rate > 100)
-						{
-							$sc = FALSE;
-							$this->error = "อัตราภาษีต้องอยู่ในช่วง 0 - 100";
-						}
-						else
-						{
-							$arr = array(
-								'code' => $code,
-								'name' => $name,
-								'rate' => $rate,
-								'active' => $active
-							);
-
-							if(! $this->vat_model->add($arr))
-							{
-								$sc = FALSE;
-								$this->error = "เพิ่มรายการไม่สำเร็จ";
-							}
-						}
-
-					}
-					else
-					{
-						$sc = FALSE;
-						$this->error = "ชื่อซ้ำ กรุณากำหนดชื่อใหม่";
-					}
-				}
-				else
-				{
-					$sc = FALSE;
-					$this->error = "รหัสซ้ำ กรุณากำหนดรหัสใหม่";
-				}
-
-			}
-			else
-			{
-				$sc = FALSE;
-				$this->error = "Missing permission";
-			}
-		}
-		else
-		{
-			$sc = FALSE;
-			$this->error = "Missing required parameter : code";
-		}
-
-		echo $sc === TRUE ? 'success' : $this->error;
-  }
-
-
-
-  public function edit($code)
-  {
-    $data['data'] = $this->vat_model->get($code);
-    $this->load->view('masters/vat/vat_edit', $data);
-  }
-
-
-
-  public function update()
-  {
-    $sc = TRUE;
-		$code = trim($this->input->post('code'));
-		$name = trim($this->input->post('name'));
-		$active = $this->input->post('active');
-		$rate = floatval($this->input->post('rate'));
-		$old_name = trim($this->input->post('old_name'));
-
-		if(!empty($code))
-		{
-			if($this->pm->can_edit)
-			{
-				if(!empty($name))
-				{
-					$is_exists = $this->vat_model->is_exists_name($name, $old_name);
-
-					if(! $is_exists)
-					{
-						if($rate < 0 OR $rate > 100)
-						{
-							$sc = FALSE;
-							$this->error = "อัตราภาษีต้องอยู่ในช่วง 0 - 100";
-						}
-						else
-						{
-							$arr = array(
-								'name' => $name,
-								'rate' => $rate,
-								'active' => $active
-							);
-
-							if(! $this->vat_model->update($code, $arr))
-							{
-								$sc = FALSE;
-								$this->error = "Update failed";
-							}
-						}
-
-					}
-					else
-					{
-						$sc = FALSE;
-						$this->error = "ชื่อซ้ำ กรุณากำหนดชื่อใหม่";
-					}
-				}
-				else
-				{
-					$sc = FALSE;
-					$this->error = "Missing required parameter : name";
-				}
-			}
-			else
-			{
-				$sc = FALSE;
-				$this->error = "Missing Permission";
-			}
-		}
-		else
-		{
-			$sc = FALSE;
-			$this->error = "Missing required parameter : code";
-		}
-
-		echo $sc === TRUE ? 'success' : $this->error;
-  }
-
-
-
-  public function delete()
-  {
-		$sc = TRUE;
-    $code = $this->input->post('code');
-
-		if(!empty($code))
-		{
-			if($this->pm->can_delete)
-			{
-				//--- check transection used
-				$has_trans = $this->vat_model->has_transection($code);
-
-				if(! $has_trans)
-				{
-					if(!$this->vat_model->delete($code))
-					{
-						$sc = FALSE;
-						$this->error = "Delete failed";
-					}
-				}
-				else
-				{
-					$sc = FALSE;
-					$this->error = "{$code} มีการใช้งานแล้ว ไม่อนุญาติให้ลบ";
-				}
-			}
-			else
-			{
-				$sc = FALSE;
-				$this->error = "Missing permission";
-			}
-		}
-		else
-		{
-			$sc = FALSE;
-			$this->error = "Missing required parameter : code";
-		}
-
-		echo $sc === TRUE ? 'success' : $this->error;
-  }
-
-
-
-	function set_default()
 	{
 		$sc = TRUE;
-		$code = $this->input->post('code');
-		if($code !== NULL)
-		{
-			//----
-			$this->db->trans_begin();
+		$res = NULL;
+		$ds = json_decode(file_get_contents('php://input'));
 
-			//--- remove current default
-			if(!$this->vat_model->clear_default_state())
+		if ($this->pm->can_add)
+		{
+			if (! empty($ds) && ! empty($ds->code) && ! empty($ds->name))
 			{
-				$sc = FALSE;
-				$this->error = "Clear current default state failed";
-			}
-			else
-			{
-				if(! $this->vat_model->set_default_state($code))
+				if ($sc === TRUE && $this->vat_model->is_exists_code($ds->code))
 				{
 					$sc = FALSE;
-					$this->error = "Set default state failed : {$code}";
+					set_error('exists', $ds->code);
 				}
-			}
 
-			if($sc === TRUE)
-			{
-				$this->db->trans_commit();
+				if ($sc === TRUE && $this->vat_model->is_exists_name($ds->name))
+				{
+					$sc = FALSE;
+					set_error('exists', $ds->name);
+				}
+
+				if ($sc === TRUE)
+				{
+					$rate = floatval($ds->rate);
+					$rate = $rate < 0 ? 0 : ($rate > 100 ? 100 : $rate);
+
+					$arr = array(
+						'code' => $ds->code,
+						'name' => $ds->name,
+						'type' => $ds->type === 'S' ? 'S' : 'P',
+						'rate' => $rate,
+						'active' => $ds->active ? 1 : 0,
+						'user' => $this->_user->uname,
+						'update_user' => $this->_user->uname
+					);
+
+					$id = $this->vat_model->add($arr);
+
+					if( ! $id)
+					{
+						$sc = FALSE;
+						set_error('insert');
+					}
+					
+					if($sc === TRUE)
+					{
+						$res = $this->vat_model->get_by_id($id);
+
+						if( ! empty($res))
+						{
+							$res->is_active = is_active($res->active);
+							$res->vatType = $ds->type === 'S' ? 'Sales' : 'Purchase';
+						}
+					}
+				}				
 			}
 			else
 			{
-				$this->db->trans_rollback();
+				$sc = FALSE;
+				set_error('required');
 			}
-
 		}
 		else
 		{
 			$sc = FALSE;
-			$this->error = "Missing required parameter : Code";
+			set_error('permission');
 		}
 
-		echo $sc === TRUE ? 'success' : $this->error;
+		$arr = array(
+			'status' => $sc === TRUE ? 'success' : 'error',
+			'message' => get_error(),
+			'data' => $res
+		);
+
+		echo json_encode($arr);
 	}
 
 
-  public function clear_filter()
+	public function get_data()
 	{
-		clear_filter(array('vat_code', 'vat_name', 'vat_active'));
-		echo 'done';
+		$sc = TRUE;
+		$res = NULL;
+		$ds = json_decode(file_get_contents('php://input'));
+
+		if(! empty($ds) && ! empty($ds->id))
+		{
+			$res = $this->vat_model->get_by_id($ds->id);
+
+			if( ! empty($res))
+			{
+				$res->isChecked = $res->active == 1 ? 'checked' : '';
+				$res->typeOptions = select_vat_type($res->type);
+			}
+			else
+			{
+				$sc = FALSE;
+				set_error('not_found');
+			}
+		}
+		else
+		{
+			$sc = FALSE;
+			set_error('required');
+		}
+
+		$arr = array(
+			'status' => $sc === TRUE ? 'success' : 'error',
+			'message' => get_error(),
+			'data' => $res
+		);
+
+		echo json_encode($arr);
+	}
+
+
+	public function update()
+	{
+		$sc = TRUE;
+		$res = NULL;
+		$ds = json_decode(file_get_contents('php://input'));
+
+		if ($this->pm->can_edit)
+		{
+			if (! empty($ds) && ! empty($ds->id) && ! empty($ds->code) && ! empty($ds->name))
+			{				
+				if ($sc === TRUE && $this->vat_model->is_exists_name($ds->name, $ds->id))
+				{
+					$sc = FALSE;
+					set_error('exists', $ds->name);
+				}
+
+				if ($sc === TRUE)
+				{
+					$rate = floatval($ds->rate);
+					$rate = $rate < 0 ? 0 : ($rate > 100 ? 100 : $rate);
+
+					$arr = array(
+						'code' => $ds->code,
+						'name' => $ds->name,
+						'type' => $ds->type === 'S' ? 'S' : 'P',
+						'rate' => $rate,
+						'active' => $ds->active ? 1 : 0,
+						'update_user' => $this->_user->uname
+					);
+
+					if ($this->vat_model->update_by_id($ds->id, $arr))
+					{
+						$res = $this->vat_model->get_by_id($ds->id);
+
+						if( ! empty($res))
+						{
+							$res->is_active = is_active($res->active);
+							$res->vatType = $res->type === 'S' ? 'Sales' : 'Purchase';
+						}
+					}
+					else
+					{
+						$sc = FALSE;
+						set_error('update');
+					}
+				}
+			}
+			else
+			{
+				$sc = FALSE;
+				set_error('required');
+			}
+		}
+		else
+		{
+			$sc = FALSE;
+			set_error('permission');
+		}
+
+		$arr = array(
+			'status' => $sc === TRUE ? 'success' : 'error',
+			'message' => get_error(),
+			'data' => $res
+		);
+
+		echo json_encode($arr);
+	}
+
+
+	public function delete()
+	{
+		$sc = TRUE;
+		$ds = json_decode(file_get_contents('php://input'));
+
+		if($this->pm->can_delete)
+		{
+			if (! empty($ds) && ! empty($ds->id))
+			{
+				$res = $this->vat_model->get_by_id($ds->id);
+
+				if( ! empty($res))
+				{
+					if ($this->vat_model->has_transection($res->code))
+					{
+						$sc = FALSE;
+						set_error('transection');
+					}
+					
+					if($sc === TRUE)
+					{
+						if ( ! $this->vat_model->delete($ds->id))
+						{
+							$sc = FALSE;
+							set_error('delete');
+						}						
+					}
+				}
+				else
+				{
+					$sc = FALSE;
+					set_error('not_found');
+				}
+			}
+			else
+			{
+				$sc = FALSE;
+				set_error('required');
+			}
+		}
+		else
+		{
+			$sc = FALSE;
+			set_error('permission');
+		}
+
+		$this->_response($sc);
+	}
+
+
+	public function is_exists_code()
+	{
+		$exists = FALSE;
+		$ds = json_decode(file_get_contents('php://input'));
+
+		if (! empty($ds) && ! empty($ds->code))
+		{
+			$exists = $this->vat_model->is_exists_code($ds->code, isset($ds->id) ? $ds->id : NULL);
+		}
+
+		echo $exists ? 'exists' : 'not_exists';
+	}
+
+
+	public function is_exists_name()
+	{
+		$exists = FALSE;
+		$ds = json_decode(file_get_contents('php://input'));
+
+		if (! empty($ds) && ! empty($ds->name))
+		{
+			$exists = $this->vat_model->is_exists_name($ds->name, isset($ds->id) ? $ds->id : NULL);
+		}
+
+		echo $exists ? 'exists' : 'not_exists';
+	}
+
+
+	public function clear_filter()
+	{
+		return clear_filter(array('vat_code', 'vat_type', 'vat_active'));
 	}
 }
-
-?>

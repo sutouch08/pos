@@ -5,7 +5,7 @@ class Saleman extends PS_Controller
 {
 	public $menu_code = 'DBSALE';
 	public $menu_group_code = 'DB';
-	public $menu_sub_group_code = '';
+	public $menu_sub_group_code = 'EMPLOYEE';
 	public $title = 'พนักงานขาย';
 	public $segment = 4;
 
@@ -24,7 +24,9 @@ class Saleman extends PS_Controller
 		$filter = array(
 			'name' => get_filter('name', 'saleman_name', ''),
 			'emp_id' => get_filter('emp_id', 'saleman_emp_id', 'all'),
-			'active' => get_filter('active', 'saleman_active', 'all')
+			'active' => get_filter('active', 'saleman_active', 'all'),
+			'order_by' => get_filter('order_by', 'saleman_order_by', 'name'),
+			'sort_by' => get_filter('sort_by', 'saleman_sort_by', 'ASC')
 		);
 
 		if ($this->input->post('search'))
@@ -73,7 +75,8 @@ class Saleman extends PS_Controller
 						'emp_id' => $ds->emp_id,
 						'name' => employee_name($ds->emp_id),
 						'active' => $ds->active,
-						'user' => $this->_user->uname
+						'user' => $this->_user->uname,
+						'update_user' => $this->_user->uname
 					);					
 
 					$id = $this->slp_model->add($arr);

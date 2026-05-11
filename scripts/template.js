@@ -6,30 +6,27 @@ window.addEventListener('load', () => {
 
     localStorage.setItem('webPosUid', uuid);
   }
+
+  document.querySelectorAll('input[type="number"]').forEach(input => {
+    // ปิด wheel
+    input.addEventListener('wheel', e => e.preventDefault(), { passive: false });
+  });
+
+  document.querySelectorAll('.search')
+    .forEach(el => el.addEventListener('keyup', e => e.key === 'Enter' && getSearch()));  
 });
 
-
-$('.search').keyup(function (e) {
-  if (e.key === 'Enter') {
-    getSearch();
-  }
-});
-
-
-$('.filter').change(function () {
+$('.filter').change(function() {
   getSearch();
 });
 
+const getSearch = () => {
+  document.querySelector('#search-form').submit();
+};
 
-const inputRows = document.getElementById('set-rows');
+document.querySelector('#set-rows')
+  ?.addEventListener('keyup', e => e.key === 'Enter' && setRows());
 
-if (inputRows) {
-  inputRows.addEventListener('keyup', (e) => {
-    if (e.key === 'Enter') {
-      setRows();
-    }
-  });
-}
 
 const generateUID = (length = 15) => {
   const array = new Uint8Array(length);
@@ -46,12 +43,6 @@ const getUid = () => {
 const goBack = () => {
   window.location.href = HOME;
 }
-
-
-const getSearch = () => {
-  $('#search-form').submit();
-}
-
 
 const clearFilter = () => {
   fetch(`${HOME}clear_filter`)

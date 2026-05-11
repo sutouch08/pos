@@ -53,7 +53,7 @@
       <div class="col-lg-4 col-md-6 col-sm-6 col-xs-12">
         <select class="form-control input-sm r" id="unit-group" onchange="genUnitSelection()">
           <option value="">เลือก</option>
-          <?php echo select_unit_group($default_unit_group); ?>
+          <?php echo select_unit_group($default_unit_group_id); ?>
         </select>
       </div>
       <div class="error-block col-lg-9 col-lg-offset-3 col-md-9 col-md-offset-3 col-sm-offset-3 col-xs-12" id="unit-group-error"></div>
@@ -64,7 +64,7 @@
       <div class="col-lg-4 col-md-6 col-sm-6 col-xs-12">
         <select class="form-control input-sm r" id="unit">
           <option value="">เลือก</option>
-          <?php echo select_unit_by_group($default_unit_group, NULL); ?>
+          <?php echo select_unit_by_group($default_unit_group_id, $default_unit_id); ?>
         </select>
       </div>
       <div class="error-block col-lg-9 col-lg-offset-3 col-md-9 col-md-offset-3 col-sm-offset-3 col-xs-12" id="unit-error"></div>
@@ -74,7 +74,7 @@
       <label class="col-lg-3 col-md-3 col-sm-3 col-xs-12 control-label no-padding-right">ภาษีซื้อ</label>
       <div class="col-lg-4 col-md-6 col-sm-6 col-xs-12">
         <select class="form-control input-sm r" id="purchase-vat-group">
-          <?php echo select_purchase_vat_group(getConfig('DEFAULT_PURCHASE_VAT_GROUP')); ?>
+          <?php echo select_purchase_vat_group(getConfig('DEFAULT_PURCHASE_VAT_CODE')); ?>
         </select>
       </div>
       <div class="error-block col-lg-9 col-lg-offset-3 col-md-9 col-md-offset-3 col-sm-offset-3 col-xs-12" id="purchase-vat-group-error"></div>
@@ -84,7 +84,7 @@
       <label class="col-lg-3 col-md-3 col-sm-3 col-xs-12 control-label no-padding-right">ภาษีขาย</label>
       <div class="col-lg-4 col-md-6 col-sm-6 col-xs-12">
         <select class="form-control input-sm r" id="sale-vat-group">
-          <?php echo select_sale_vat_group(getConfig('DEFAULT_SALE_VAT_GROUP')); ?>
+          <?php echo select_sale_vat_group(getConfig('DEFAULT_SALE_VAT_CODE')); ?>
         </select>
       </div>
       <div class="error-block col-lg-9 col-lg-offset-3 col-md-9 col-md-offset-3 col-sm-offset-3 col-xs-12" id="sale-vat-group-error"></div>
@@ -93,8 +93,8 @@
     <div class="form-group">
       <label class="col-lg-3 col-md-3 col-sm-3 col-xs-12 control-label no-padding-right">&nbsp;</label>
       <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12">
-        <label for="count-stock">
-          <input type="checkbox" class="ace" id="count-stock" value="1" checked />
+        <label for="inventory-item">
+          <input type="checkbox" class="ace" id="inventory-item" value="1" checked />
           <span class="lbl"> สินค้านับสต็อก</span>
         </label>
       </div>
@@ -103,9 +103,19 @@
     <div class="form-group">
       <label class="col-lg-3 col-md-3 col-sm-3 col-xs-12 control-label no-padding-right">&nbsp;</label>
       <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12">
-        <label for="can-sell">
-          <input type="checkbox" class="ace" id="can-sell" value="1" checked />
+        <label for="sale-item">
+          <input type="checkbox" class="ace" id="sale-item" value="1" checked />
           <span class="lbl"> สินค้าสำหรับขาย</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="col-lg-3 col-md-3 col-sm-3 col-xs-12 control-label no-padding-right">&nbsp;</label>
+      <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12">
+        <label for="purchase-item">
+          <input type="checkbox" class="ace" id="purchase-item" value="1" checked />
+          <span class="lbl"> สินค้าสำหรับซื้อ</span>
         </label>
       </div>
     </div>

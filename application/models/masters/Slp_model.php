@@ -112,7 +112,10 @@ class Slp_model extends CI_Model
 
 
   public function get_list(array $ds = array(), $perpage = 20, $offset = 0)
-  {    
+  {
+    $order_by = empty($ds['order_by']) ? 'name' : $ds['order_by'];
+    $sort_by = empty($ds['sort_by']) ? 'ASC' : $ds['sort_by'];
+
     if(isset($ds['emp_id']) && $ds['emp_id'] != 'all')
     {
       $this->db->where('emp_id', $ds['emp_id']);
@@ -128,7 +131,10 @@ class Slp_model extends CI_Model
       $this->db->where('active', $ds['active']);
     }
 
-    $rs = $this->db->order_by('name', 'ASC')->limit($perpage, $offset)->get($this->tb);
+    $rs = $this->db
+    ->order_by($order_by, $sort_by)
+    ->limit($perpage, $offset)
+    ->get($this->tb);
 
     if ($rs->num_rows() > 0)
     {

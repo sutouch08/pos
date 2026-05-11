@@ -46,16 +46,13 @@ if (inputPrice) {
   });
 }
 
-
 const addNew = () => {
   window.location.href = `${HOME}add_new`;
 }
 
-
 const edit = (id) => {
   window.location.href = `${HOME}edit/${id}`;
 }
-
 
 async function duplicate(id) {
   const url = `${HOME}get_item_data/${id}`;
@@ -80,8 +77,9 @@ async function duplicate(id) {
       }, 500);
       $('#purchase-vat-group').val(item.purchase_vat_code).trigger('change');
       $('#sale-vat-group').val(item.sale_vat_code).trigger('change');
-      $('#count-stock').prop('checked', item.count_stock);
-      $('#can-sell').prop('checked', item.can_sell);
+      $('#inventory-item').prop('checked', item.inventoryItem);
+      $('#sale-item').prop('checked', item.saleItem);
+      $('#purchase-item').prop('checked', item.purchaseItem);
       $(`input[name="active"][value="${item.active}"]`).prop('checked', true);
       $('#color').val(item.color_id ? item.color_id : '').trigger('change');
       $('#size').val(item.size_id ? item.size_id : '').trigger('change');
@@ -94,7 +92,10 @@ async function duplicate(id) {
       $('#brand').val(item.brand_id ? item.brand_id : '').trigger('change');
       $('#year').val(item.year ? item.year : '').trigger('change');
 
-      $('#duplicate-modal').modal('show');
+      setTimeout(() => {
+        loadOut();
+        $('#duplicate-modal').modal('show');
+      }, 700);
     }
     else {
       showError(res.message);
@@ -102,12 +103,8 @@ async function duplicate(id) {
   } 
   catch (error) {
     showError('An error occurred while fetching item data');
-  } 
-  finally {
-    loadOut();
   }
 }
-
 
 const viewDetail = (id) => {
   const url = `${HOME}view_detail/${id}?nomenu`;
@@ -117,7 +114,6 @@ const viewDetail = (id) => {
   const top = 30;
   window.open(url, '_blank', `width=${width},height=${height},left=${left},top=${top}`);
 }
-
 
 async function validateCode() {
   const inputCode = document.getElementById('code');
@@ -141,7 +137,6 @@ async function validateCode() {
   clearError(inputCode, codeError);
   return true;
 }
-
 
 async function validateName(id = null) {
   if(id === null) {
@@ -170,7 +165,6 @@ async function validateName(id = null) {
   return true;
 }
 
-
 async function validateBarcode(id = null) {
     if(id === null) {
     id = document.getElementById('item-id') ? document.getElementById('item-id').value : null;
@@ -197,7 +191,6 @@ async function validateBarcode(id = null) {
   clearError(inputBarcode, barcodeError);
   return true;
 }
-
 
 async function add() {
   if (click !== 0) {
@@ -242,8 +235,9 @@ async function add() {
     purchase_vat_rate: parseDefaultFloat(puVat.options[puVat.selectedIndex].getAttribute('data-rate'), 0),
     sale_vat_code: saVat.value.trim(),
     sale_vat_rate: parseDefaultFloat(saVat.options[saVat.selectedIndex].getAttribute('data-rate'), 0),
-    count_stock: document.getElementById('count-stock').checked ? 1 : 0,
-    can_sell: document.getElementById('can-sell').checked ? 1 : 0,
+    inventoryItem: document.getElementById('inventory-item').checked ? 1 : 0,
+    saleItem: document.getElementById('sale-item').checked ? 1 : 0,
+    purchaseItem: document.getElementById('purchase-item').checked ? 1 : 0,
     active: document.querySelector('input[name="active"]:checked').value,
     color: document.getElementById('color').value.trim(),
     size: document.getElementById('size').value.trim(),
@@ -296,8 +290,6 @@ async function add() {
   }
 }
 
-
-
 async function update() {
   if (click !== 0) {
     return false;
@@ -339,8 +331,9 @@ async function update() {
     purchase_vat_rate: parseDefaultFloat(puVat.options[puVat.selectedIndex].getAttribute('data-rate'), 0),
     sale_vat_code: saVat.value.trim(),
     sale_vat_rate: parseDefaultFloat(saVat.options[saVat.selectedIndex].getAttribute('data-rate'), 0),
-    count_stock: document.getElementById('count-stock').checked ? 1 : 0,
-    can_sell: document.getElementById('can-sell').checked ? 1 : 0,
+    inventoryItem: document.getElementById('inventory-item').checked ? 1 : 0,
+    saleItem: document.getElementById('sale-item').checked ? 1 : 0,
+    purchaseItem: document.getElementById('purchase-item').checked ? 1 : 0,
     active: document.querySelector('input[name="active"]:checked').value,
     color: document.getElementById('color').value.trim(),
     size: document.getElementById('size').value.trim(),
@@ -385,7 +378,6 @@ async function update() {
   }
 }
 
-
 async function addDuplicate() {
   if (click !== 0) {
     return false;
@@ -429,8 +421,9 @@ async function addDuplicate() {
     purchase_vat_rate: parseDefaultFloat(puVat.options[puVat.selectedIndex].getAttribute('data-rate'), 0),
     sale_vat_code: saVat.value.trim(),
     sale_vat_rate: parseDefaultFloat(saVat.options[saVat.selectedIndex].getAttribute('data-rate'), 0),
-    count_stock: document.getElementById('count-stock').checked ? 1 : 0,
-    can_sell: document.getElementById('can-sell').checked ? 1 : 0,
+    inventoryItem: document.getElementById('inventory-item').checked ? 1 : 0,
+    saleItem: document.getElementById('sale-item').checked ? 1 : 0,
+    purchaseItem: document.getElementById('purchase-item').checked ? 1 : 0,
     active: document.querySelector('input[name="active"]:checked').value,
     color: document.getElementById('color').value.trim(),
     size: document.getElementById('size').value.trim(),
@@ -481,7 +474,6 @@ async function addDuplicate() {
   }
 }
 
-
 function confirmDelete(id, name) {
   swal({
     title: 'Are you sure ?',
@@ -498,7 +490,6 @@ function confirmDelete(id, name) {
     }
   });
 }
-
 
 async function deleteItem(id) {
   loadIn();
@@ -532,7 +523,6 @@ async function deleteItem(id) {
   }
 }
 
-
 $('#style').autocomplete({
   source: `${BASE_URL}auto_complete/get_style_code_and_name`,
   autoFocus: true,
@@ -548,7 +538,6 @@ $('#style').autocomplete({
     }
   }
 });
-
 
 async function genUnitSelection() {
   const groupId = $('#unit-group').val();
@@ -576,4 +565,9 @@ async function genUnitSelection() {
     $('#unit').html('<option value="">เลือก</option>');
     $('#unit').select2();
   }
+}
+
+function getImportTemplate() {
+  const url = `${HOME}get_import_template`;
+  window.location.href = url;
 }

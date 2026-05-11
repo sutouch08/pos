@@ -76,16 +76,38 @@ async function add() {
   const inputName = document.getElementById('name');
   const inputRole = document.getElementById('role');
   const inputAccount = document.getElementById('account');
+  const inputExtraDays = document.getElementById('extra-days');
   const inputStatus = document.getElementById('status');
   const active = inputStatus.checked ? 1 : 0;
+  const extraDays = parseDefaultInt(inputExtraDays.value, 0);
+  const optionError = document.getElementById('option-error');
+  const roleError = document.getElementById('role-error');
 
   if (inputRole.value === '') {
-    setError(inputRole, document.getElementById('role-error'), "Please select a role");
+    setError(inputRole, roleError, "Please select a role");
     click = 0;
     return false;
   }
   else {
-    clearError(inputRole, document.getElementById('role-error'));
+    clearError(inputRole, roleError);
+  }
+
+  if(inputRole.value == '2' && inputAccount.value == '') {
+    setError(inputAccount, optionError, "Please select a bank account");
+    click = 0;
+    return false;
+  }
+  else {
+    clearError(inputAccount, optionError);
+  }
+
+  if(inputRole.value == '5' && extraDays <= 0) {
+    setError(inputExtraDays, optionError, "Please enter extra days");
+    click = 0;
+    return false;
+  }
+  else {
+    clearError(inputExtraDays, optionError);
   }
 
   const url = `${HOME}add`;
@@ -94,6 +116,7 @@ async function add() {
     name: inputName.value.trim(),
     role: inputRole.value,
     account_id: inputAccount.value,
+    extra_days: inputExtraDays.value,
     active: active
   };
 
@@ -151,7 +174,7 @@ async function edit(id) {
         $(`#role-${id}`).val(ds.data.role);
         $(`#account-${id}`).val(ds.data.account_id);
         setTimeout(() => {
-          
+          toggleRoleOption(id);
         }, 100);
       }
       else {
@@ -175,21 +198,41 @@ function cancel(id) {
 
 
 async function update(id) {
-  if( ! await validateName(id)) {
+  if (! await validateName(id)) {
     return false;
   }
 
   const inputName = document.getElementById(`name-${id}`);
   const inputRole = document.getElementById(`role-${id}`);
   const inputAccount = document.getElementById(`account-${id}`);
+  const inputExtraDays = document.getElementById(`extra-days-${id}`);
   const inputStatus = document.getElementById(`status-${id}`);
   const active = inputStatus.checked ? 1 : 0;
+  const extraDays = parseDefaultInt(inputExtraDays.value, 0);
+  const errorLabel = document.getElementById(`error-${id}`);
+
   if (inputRole.value === '') {
-    setError(inputRole, document.getElementById(`error-${id}`), "Please select a role");
+    setError(inputRole, errorLabel, "Please select a role");
     return false;
   }
   else {
-    clearError(inputRole, document.getElementById(`error-${id}`));
+    clearError(inputRole, errorLabel);
+  }
+
+  if(inputRole.value == '2' && inputAccount.value == '') {
+    setError(inputAccount, errorLabel, "Please select a bank account");
+    return false;
+  }
+  else {
+    clearError(inputAccount, errorLabel);
+  }
+
+  if(inputRole.value == '5' && extraDays <= 0) {
+    setError(inputExtraDays, errorLabel, "Please enter extra days");
+    return false;
+  }
+  else {
+    clearError(inputExtraDays, errorLabel);
   }
 
   const url = `${HOME}update`;
@@ -198,6 +241,7 @@ async function update(id) {
     name: inputName.value.trim(),
     role: inputRole.value,
     account_id: inputAccount.value,
+    extra_days: inputExtraDays.value,
     active: active
   };
 
@@ -234,16 +278,29 @@ async function update(id) {
 }
 
 
-function toggleAccountSelect(id = null) {
+function toggleRoleOption(id = null) {
   const roleSelect = id === null ? document.getElementById('role') : document.getElementById(`role-${id}`);
-  const accountSelect = id === null ? document.getElementById('account') : document.getElementById(`account-${id}`);
+  const termGroup = id === null ? document.getElementById('term-group') : document.getElementById(`term-group-${id}`);
+  const accountGroup = id === null ? document.getElementById('account-group') : document.getElementById(`account-group-${id}`);
+  const extraDaysInput = id === null ? document.getElementById('extra-days') : document.getElementById(`extra-days-${id}`);
 
-  if(roleSelect.value == '2') {
-    accountSelect.disabled = false;
+  termGroup.classList.add('hide');
+  accountGroup.classList.add('hide');
+
+  if (roleSelect.value == '2') {    
+    termGroup.classList.add('hide');
+    accountGroup.classList.remove('hide');
   }
-  else {
-    accountSelect.value = '';
-    accountSelect.disabled = true;
+
+  if (roleSelect.value == '5') {
+    termGroup.classList.remove('hide');
+
+    setTimeout(() => {
+      let val = extraDaysInput.value;
+      extraDaysInput.focus();
+      extraDaysInput.value = '';
+      extraDaysInput.value = val;      
+    }, 100);
   }
 }
 
@@ -258,9 +315,9 @@ function confirmDelete(id, name) {
     confirmButtonColor: "#DD6B55",
     confirmButtonText: "Yes, delete it!",
     cancelButtonText: "No, cancel!",
-    closeOnConfirm:true
-  }, function(isConfirm){
-    if(isConfirm) {
+    closeOnConfirm: true
+  }, function (isConfirm) {
+    if (isConfirm) {
       deleteItem(id);
     }
   });
@@ -269,7 +326,7 @@ function confirmDelete(id, name) {
 
 async function deleteItem(id) {
   const url = `${HOME}delete`;
-  const data = { id: id }; 
+  const data = { id: id };
 
   loadIn();
 
@@ -295,8 +352,7 @@ async function deleteItem(id) {
       }
     }, 500);
   }
-  catch (err) {    
+  catch (err) {
     showError(err.message);
   }
 }
-    

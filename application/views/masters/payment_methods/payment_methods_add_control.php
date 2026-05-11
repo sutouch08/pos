@@ -14,30 +14,34 @@
     </div>
     <div class="error-block" id="name-error"></div>
   </div>
-  <div class="col-lg-2 col-md-4 col-sm-4 col-xs-12 padding-5">
+  <div class="col-lg-2-harf col-md-4 col-sm-4 col-xs-12 padding-5">
     <div class="input-group">
       <span class="input-group-addon">ประเภท</span>
-      <select class="form-control input-sm" id="role" onchange="toggleAccountSelect()">
+      <select class="form-control input-sm" id="role" onchange="toggleRoleOption()">
         <option value="">Please select</option>
         <?php echo select_payment_role(); ?>
       </select>
     </div>
     <div class="error-block" id="role-error"></div>
   </div>
-
-  <div class="col-lg-3 col-md-4 col-sm-4 col-xs-12 padding-5">
-    <div class="input-group">
+  <div class="col-lg-2-harf col-md-4 col-sm-4-harf col-xs-12 padding-5">
+    <div class="input-group hide" id="term-group">
+      <span class="input-group-addon">เครดิต (วัน)</span>
+      <input type="number" class="form-control input-sm fix-width-100 text-center" id="extra-days" value="0" min="0" />
+    </div>
+    <div class="input-group hide" id="account-group">
       <span class="input-group-addon">บัญชี</span>
-      <select class="form-control input-sm" id="account" disabled>
+      <select class="form-control input-sm" id="account">
         <option value="">เลือกบัญชีธนาคาร</option>
         <?php echo select_bank_account(); ?>
       </select>
-    </div>
+    </div>    
+    <div class="error-block" id="option-error"></div>
   </div>
 
   <div class="divider-hidden visible-xs"></div>
-  <div class="col-lg-1 col-md-1-harf col-sm-1-harf col-xs-12 padding-5" style="display: inline-flex; align-items: center;">
-    <span class="visible-xs margin-right-15"> Active</span>
+  <div class="col-lg-1-harf col-md-2 col-sm-2 col-xs-12 padding-5" style="display: inline-flex; align-items: center;">
+    <span class="margin-right-5"> Active</span>
     <label style="padding-top: 5px; margin-bottom: 0px; height: 30px;">
       <input class="ace ace-switch ace-switch-6" id="status" type="checkbox" value="1" checked />
       <span class="lbl"></span>
@@ -71,9 +75,10 @@
     <td class="middle">{{code}}</td>
     <td class="middle">{{name}}</td>		
     <td class="middle">{{{role_name}}}</td>
-    <td class="middle text-center">{{{has_term}}}</td>
+    <td class="middle text-center">{{extra_days}}</td>
     <td class="middle">{{{account}}}</td>
     <td class=""></td>
     <td class="middle">{{date_upd}}</td>
+    <td class="middle">{{user}}</td>
   </tr>  
 </script>

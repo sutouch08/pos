@@ -58,6 +58,8 @@
 <?php $sort_name = get_sort('name', $order_by, $sort_by); ?>
 <?php $sort_group = get_sort('group_name', $order_by, $sort_by); ?>
 <?php $sort_member = get_sort('member', $order_by, $sort_by); ?>
+<?php $sort_update = get_sort('date_upd', $order_by, $sort_by); ?>
+<?php $sort_user = get_sort('update_user', $order_by, $sort_by); ?>
 
 <div class="row">
 	<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 table-responsive">
@@ -71,7 +73,9 @@
 					<th class="fix-width-250 middle sorting <?php echo $sort_name; ?>" id="sort-name" onclick="sort('name')">ชื่อ</th>
 					<th class="fix-width-150 middle sorting <?php echo $sort_group; ?>" id="sort-group_name" onclick="sort('group_name')">กลุ่ม</th>
 					<th class="fix-width-100 middle text-center sorting <?php echo $sort_member; ?>" id="sort-member" onclick="sort('member')">สินค้า</th>
-					<th class="min-width-100 middle text-right"></th>
+					<th class="min-width-100 middle"></th>
+					<th class="fix-width-150 middle sorting <?php echo $sort_update; ?>" id="sort-date_upd" onclick="sort('date_upd')">แก้ไขล่าสุด</th>
+					<th class="fix-width-150 middle sorting <?php echo $sort_user; ?>" id="sort-update_user" onclick="sort('update_user')">แก้ไขโดย</th>
 				</tr>
 			</thead>
 			<tbody id="color-table">
@@ -98,6 +102,8 @@
 							<td class="middle"><?php echo $rs->group_name; ?></td>
 							<td class="middle text-center"><?php echo number($rs->member); ?></td>
 							<td></td>
+							<td class="middle"><?php echo $rs->date_upd; ?></td>
+							<td class="middle"><?php echo $rs->update_user; ?></td>
 						</tr>
 						<?php $no++; ?>
 					<?php endforeach; ?>
@@ -135,7 +141,7 @@
 				<?php echo select_color_group(); ?>
 			</select>
 		</td>		
-		<td colspan="2" class="middle red padding-left-10" id="error-{{id}}"></td>
+		<td colspan="4" class="middle red padding-left-10" id="error-{{id}}"></td>
 	</tr>		
 </script>
 
@@ -159,6 +165,8 @@
 	<td class="middle">{{group_name}}</td>	
 	<td class="middle text-center">{{{member}}}</td>
 	<td></td>
+	<td class="middle">{{date_upd}}</td>
+	<td class="middle">{{update_user}}</td>
 </script>
 
 <script>

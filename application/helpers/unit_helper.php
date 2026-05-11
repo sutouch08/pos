@@ -92,4 +92,93 @@ function unit_code($id)
 }
 
 
+function unit_code_array()
+{
+  $ci =& get_instance();
+  $ci->load->model('masters/unit_model');
+  $units = $ci->unit_model->get_all();
+
+  $arr = array();
+
+  if(!empty($units))
+  {
+    foreach($units as $unit)
+    {
+      $arr[$unit->code] = $unit;
+    }
+  }
+
+  return $arr;
+}
+
+
+function unit_array()
+{
+  $ci =& get_instance();
+  $ci->load->model('masters/unit_model');
+  $units = $ci->unit_model->get_all();
+
+  $arr = array();
+
+  if(!empty($units))
+  {
+    foreach($units as $unit)
+    {
+      $arr[$unit->id] = $unit;
+    }
+  }
+
+  return $arr;
+}
+
+
+function unit_group_array()
+{
+  $ci =& get_instance();
+  $ci->load->model('masters/unit_group_model');
+  $groups = $ci->unit_group_model->get_all();
+
+  $arr = array();
+
+  if(!empty($groups))
+  {
+    foreach($groups as $group)
+    {
+      $arr[$group->id] = $group;
+    }
+  }
+
+  return $arr;
+}
+
+
+function unit_group_code_array()
+{
+  $ci =& get_instance();
+  $ci->load->model('masters/unit_group_model');
+  $groups = $ci->unit_group_model->get_all();
+
+  $arr = array();
+
+  if(!empty($groups))
+  {
+    foreach($groups as $group)
+    {
+      $arr[$group->code] = $group;
+    }
+  }
+
+  return $arr;
+}
+
+
+function unit_group_name($id)
+{
+  $ci =& get_instance();
+  $ci->load->model('masters/unit_group_model');
+  $group = $ci->unit_group_model->get_by_id($id);
+
+  return $group ? $group->name : '';
+}
+
  ?>

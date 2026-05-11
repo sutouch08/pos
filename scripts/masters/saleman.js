@@ -132,6 +132,7 @@ async function update(id) {
         render(template, ds.data, output);
         $('#edit-row-' + id).remove();
         $(`#row-${id}`).removeClass('hide');
+        reIndex();
       }
       else {
         showError(ds.message);

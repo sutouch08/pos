@@ -76,6 +76,19 @@ class Items_model extends CI_Model
   }
 
 
+  public function get_id($code)
+  {
+    $rs = $this->db->select('id')->where('code', $code)->get($this->tb);
+
+    if($rs->num_rows() === 1)
+    {
+      return $rs->row()->id;
+    }
+
+    return NULL;
+  }
+
+
   public function count_rows(array $ds = array())
   {
     $this->db    
@@ -112,6 +125,11 @@ class Items_model extends CI_Model
     if(!empty($ds['main_group']) && $ds['main_group'] !== 'all')
     {
       $this->db->where('i.main_group_id', $ds['main_group']);
+    }
+
+    if(!empty($ds['gender']) && $ds['gender'] !== 'all')
+    {
+      $this->db->where('i.gender_id', $ds['gender']);
     }
 
     if(!empty($ds['kind']) && $ds['kind'] !== 'all')
@@ -163,6 +181,7 @@ class Items_model extends CI_Model
     ->select('si.code AS size_code, si.name AS size_name')
     ->select('g.name AS group_name')
     ->select('mg.name AS main_group_name')
+    ->select('gd.name AS gender_name')
     ->select('k.name AS kind_name')
     ->select('t.name AS type_name')
     ->select('c.name AS category_name')
@@ -173,6 +192,7 @@ class Items_model extends CI_Model
     ->join('product_size AS si', 'i.size_id = si.id', 'left')
     ->join('product_group AS g', 'i.group_id = g.id', 'left')
     ->join('product_main_group AS mg', 'i.main_group_id = mg.id', 'left')
+    ->join('product_gender AS gd', 'i.gender_id = gd.id', 'left')
     ->join('product_kind AS k', 'i.kind_id = k.id', 'left')
     ->join('product_type AS t', 'i.type_id = t.id', 'left')
     ->join('product_category AS c', 'i.category_id = c.id', 'left')
@@ -216,6 +236,11 @@ class Items_model extends CI_Model
     if(!empty($ds['main_group']) && $ds['main_group'] !== 'all')
     {
       $this->db->where('i.main_group_id', $ds['main_group']);
+    }
+
+    if(!empty($ds['gender']) && $ds['gender'] !== 'all')
+    {
+      $this->db->where('i.gender_id', $ds['gender']);
     }
 
     if(!empty($ds['kind']) && $ds['kind'] !== 'all')

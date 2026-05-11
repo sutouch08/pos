@@ -5,7 +5,7 @@ class Position extends PS_Controller
 {
   public $menu_code = 'DBEMPT';
   public $menu_group_code = 'DB';
-  public $menu_sub_group_code = '';
+  public $menu_sub_group_code = 'EMPLOYEE';
   public $title = 'เพิ่ม/แก้ไข ตำแหน่งงาน';
   public $segment = 4;
 
@@ -21,7 +21,9 @@ class Position extends PS_Controller
   {
     $filter = array(
       'name' => get_filter('name', 'position_name', ''),
-      'active' => get_filter('active', 'position_active', 'all')
+      'active' => get_filter('active', 'position_active', 'all'),
+      'order_by' => get_filter('order_by', 'position_order_by', 'name'),
+      'sort_by' => get_filter('sort_by', 'position_sort_by', 'ASC')
     );
 
     if ($this->input->post('search'))
@@ -61,7 +63,8 @@ class Position extends PS_Controller
           $arr = array(
             'name' => $ds->name,
             'active' => $ds->active,
-            'user' => $this->_user->uname
+            'user' => $this->_user->uname,
+            'update_user' => $this->_user->uname
           );
 
           $id = $this->position_model->add($arr);
@@ -266,7 +269,9 @@ class Position extends PS_Controller
   {
     $filter = array(
       'position_name',
-      'position_active'
+      'position_active',
+      'position_order_by',
+      'position_sort_by'
     );
 
     return clear_filter($filter);
