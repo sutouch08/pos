@@ -4,8 +4,8 @@
 		<h3 class="title"><?php echo $this->title; ?></h3>
 	</div>
 	<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 padding-5 text-right">
-		<button type="button" class="btn btn-white btn-info top-btn" onclick="syncData()"><i class="fa fa-refresh"></i> Sync</button>
-		<button type="button" class="btn btn-white btn-primary top-btn" onclick="syncAllData()"><i class="fa fa-refresh"></i> Sync All</button>
+		<!-- <button type="button" class="btn btn-white btn-info top-btn" onclick="syncData()"><i class="fa fa-refresh"></i> Sync</button>
+		<button type="button" class="btn btn-white btn-primary top-btn" onclick="syncAllData()"><i class="fa fa-refresh"></i> Sync All</button> -->
 		<?php if ($this->pm->can_add) : ?>
 			<button type="button" class="btn btn-white btn-success top-btn" onclick="addNew()"><i class="fa fa-plus"></i> เพิมใหม่</button>
 		<?php endif; ?>

@@ -71,11 +71,11 @@ class Product_size_group extends PS_Controller
         {
           $arr = array(            
             'name' => $ds->name,
-            'user' => $this->_user->uname,
-            'update_user' => $this->_user->uname
+            'create_by' => $this->_user->id
           );
 
           $id = $this->product_size_group_model->add($arr);
+
           if (! $id)
           {
             $sc = FALSE;
@@ -84,11 +84,14 @@ class Product_size_group extends PS_Controller
 
           if ($sc === TRUE)
           {
-            $res = array(
-              'id' => $id,
-              'name' => $ds->name,
-              'member' => 0
-            );
+            $res = $this->product_size_group_model->get($id);
+
+            if (! empty($res))
+            {
+              $res->member = $this->product_size_group_model->count_members($id);
+              $res->last_modified = thai_date($res->create_at, TRUE, '/');
+              $res->modified_by = display_name($res->create_by);
+            }            
           }
         }
       }
@@ -133,7 +136,7 @@ class Product_size_group extends PS_Controller
         {
           $arr = array(            
             'name' => $ds->name,
-            'update_user' => $this->_user->uname
+            'update_by' => $this->_user->id
           );
 
           if (! $this->product_size_group_model->update($ds->id, $arr))
@@ -149,6 +152,8 @@ class Product_size_group extends PS_Controller
             if( ! empty($res))
             {
               $res->member = $this->product_size_group_model->count_members($ds->id);
+              $res->last_modified = thai_date($res->update_at, TRUE, '/');
+              $res->modified_by = display_name($res->update_by);
             }            
           }
         }

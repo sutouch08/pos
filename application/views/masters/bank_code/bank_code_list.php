@@ -63,6 +63,7 @@
 				<?php if (!empty($data)) : ?>
 					<?php $no = $this->uri->segment($this->segment) + 1; ?>
 					<?php foreach ($data as $rs) : ?>
+					<?php $last_modified = empty($rs->update_at) ? thai_date($rs->create_at, TRUE, '/') : thai_date($rs->update_at, TRUE, '/'); ?>
 						<tr id="row-<?php echo $rs->id; ?>">
 							<td class="">
 								<?php if ($this->pm->can_edit) : ?>
@@ -81,7 +82,7 @@
 							<td class="middle"><?php echo $rs->code; ?></td>
 							<td class="middle"><?php echo $rs->name; ?></td>
 							<td class="middle"></td>
-							<td class="middle"><?php echo thai_date($rs->date_upd, TRUE, '/'); ?></td>
+							<td class="middle"><?php echo $last_modified; ?></td>
 						</tr>
 						<?php $no++; ?>
 					<?php endforeach; ?>
@@ -135,7 +136,7 @@
 	<td class="middle">{{code}}</td>
 	<td class="middle">{{name}}</td>			
 	<td class=""></td>
-	<td class="middle">{{date_upd}}</td>
+	<td class="middle">{{last_modified}}</td>
 </script>
 
 <script src="<?php echo base_url(); ?>scripts/masters/bank_code.js?v=<?php echo date('Ymd'); ?>"></script>

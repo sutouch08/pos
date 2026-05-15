@@ -84,8 +84,7 @@ class Payment_methods extends PS_Controller
             'extra_days' => $ds->role == 5 ? $ds->extra_days : 0,
             'account_id' => $ds->role == 2 ? $ds->account_id : NULL,
             'active' => $ds->active,
-            'user' => $this->_user->uname,
-            'update_user' => $this->_user->uname
+            'create_by' => $this->_user->id
           );
 
           $id = $this->payment_methods_model->add($arr);
@@ -107,7 +106,8 @@ class Payment_methods extends PS_Controller
               $res->extra_days = $res->extra_days > 0 ? $res->extra_days : '';
               $res->account = empty($res->account_id) ? '' : (empty($account) ? 'ไม่พบข้อมูลบัญชีธนาคาร' : '# '.$account->acc_no.'<br/>'.$account->acc_name);
               $res->role_name = payment_role_name($res->role);
-              $res->date_upd = thai_date($res->date_upd, TRUE, '/');              
+              $res->last_modified = thai_date($res->create_at, TRUE, '/');
+              $res->modified_by = display_name($res->create_by);
             }
           }
         }
@@ -195,9 +195,8 @@ class Payment_methods extends PS_Controller
             'role' => $ds->role,
             'extra_days' => $ds->role == 5 ? $ds->extra_days : 0,
             'account_id' => $ds->role == 2 ? $ds->account_id : NULL,
-            'active' => $ds->active,
-            'date_upd' => now(),
-            'update_user' => $this->_user->uname
+            'active' => $ds->active,            
+            'update_by' => $this->_user->id
           );         
 
           if( ! $this->payment_methods_model->update_by_id($ds->id, $arr))
@@ -218,7 +217,8 @@ class Payment_methods extends PS_Controller
               $res->extra_days = $res->extra_days > 0 ? $res->extra_days : '';
               $res->account = empty($res->account_id) ? '' : (empty($account) ? 'ไม่พบข้อมูลบัญชีธนาคาร' : '# '.$account->acc_no.'<br/>'.$account->acc_name);
               $res->role_name = payment_role_name($res->role);
-              $res->date_upd = thai_date($res->date_upd, TRUE, '/');              
+              $res->last_modified = thai_date($res->update_at, TRUE, '/');
+              $res->modified_by = display_name($res->update_by);
             }
           }
         }

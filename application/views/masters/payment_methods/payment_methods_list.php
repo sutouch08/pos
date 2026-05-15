@@ -67,8 +67,7 @@
 <?php $sort_name = get_sort('name', $order_by, $sort_by); ?>
 <?php $sort_role = get_sort('role', $order_by, $sort_by); ?>
 <?php $sort_days = get_sort('extra_days', $order_by, $sort_by); ?>
-<?php $sort_update = get_sort('date_upd', $order_by, $sort_by); ?>
-<?php $sort_user = get_sort('update_user', $order_by, $sort_by); ?>
+<?php $sort_update = get_sort('update_at', $order_by, $sort_by); ?>
 <div class="row">
 	<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 padding-5 table-responsive">
 		<table class="table table-striped tableFixHead dataTable border-1" style="min-width:930px;">
@@ -83,14 +82,16 @@
 					<th class="fix-width-80 middle text-center sorting <?php echo $sort_days; ?>" id="sort-extra_days" onclick="sort('extra_days', '<?php echo $sort_days; ?>')">เครดิต (วัน)</th>
 					<th class="fix-width-300 middle">บัญชีธนาคาร</th>
 					<th class="min-width-100"></th>
-					<th class="fix-width-150 middle sorting <?php echo $sort_update; ?>" id="sort-date_upd" onclick="sort('date_upd', '<?php echo $sort_update; ?>')">แก้ไขล่าสุด</th>
-					<th class="fix-width-150 middle sorting <?php echo $sort_user; ?>" id="sort-update_user" onclick="sort('update_user', '<?php echo $sort_user; ?>')">แก้ไขโดย</th>
+					<th class="fix-width-150 middle sorting <?php echo $sort_update; ?>" id="sort-update_at" onclick="sort('update_at', '<?php echo $sort_update; ?>')">แก้ไขล่าสุด</th>
+					<th class="fix-width-150 middle">แก้ไขโดย</th>
 				</tr>
 			</thead>
 			<tbody id="data-table">
 				<?php if (!empty($data)) : ?>
 					<?php $no = $this->uri->segment($this->segment) + 1; ?>
 					<?php foreach ($data as $rs) : ?>
+					<?php $last_modified = empty($rs->update_at) ? thai_date($rs->create_at, TRUE, '/') : thai_date($rs->update_at, TRUE, '/'); ?>
+					<?php $modified_by = empty($rs->update_by) ? display_name($rs->create_by) : display_name($rs->update_by); ?>
 						<tr id="row-<?php echo $rs->id; ?>">
 							<td class="middle">
 								<?php if ($this->pm->can_edit) : ?>
@@ -112,8 +113,8 @@
 							<td class="middle text-center"><?php echo $rs->extra_days > 0 ? $rs->extra_days : ''; ?></td>
 							<td class="middle"><?php echo empty($rs->account_id) ? '' : '# ' . $rs->account_no . '<br/>' . $rs->account_name; ?></td>
 							<td class=""></td>
-							<td class="middle"><?php echo thai_date($rs->date_upd, TRUE, '/'); ?></td>
-							<td class="middle"><?php echo empty($rs->update_user) ? $rs->user : $rs->update_user; ?></td>
+							<td class="middle"><?php echo $last_modified; ?></td>
+							<td class="middle"><?php echo $modified_by; ?></td>
 						</tr>
 						<?php $no++; ?>
 					<?php endforeach; ?>
@@ -190,8 +191,8 @@
 	<td class="middle text-center">{{extra_days}}</td>
 	<td class="middle">{{{account}}}</td>
 	<td class=""></td>
-	<td class="middle">{{date_upd}}</td>
-	<td class="middle">{{update_user}}</td>
+	<td class="middle">{{last_modified}}</td>
+	<td class="middle">{{modified_by}}</td>
 </script>
 
 <script src="<?php echo base_url(); ?>scripts/masters/payment_methods.js?v=<?php echo date('Ymd'); ?>"></script>

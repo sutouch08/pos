@@ -77,8 +77,7 @@ class Product_size extends PS_Controller
             'position' => $ds->position > 0 ? $ds->position : 0,
             'active' => $ds->active,
             'group_id' => $ds->group_id > 0 ? $ds->group_id : NULL,
-            'user' => $this->_user->uname,
-            'update_user' => $this->_user->uname
+            'create_by' => $this->_user->id
           );
 
           if (! $this->product_size_model->add($arr))
@@ -92,6 +91,8 @@ class Product_size extends PS_Controller
             $res = $this->product_size_model->get($this->db->insert_id());
             $res->is_active = is_active($res->active);
             $res->group_name = $this->product_size_model->group_name($res->group_id);
+            $res->last_modified = thai_date($res->create_at, TRUE);
+            $res->modified_by = display_name($res->create_by);
           }
         }
       }
@@ -137,7 +138,7 @@ class Product_size extends PS_Controller
         {
           $arr = array(
             'name' => $ds->name,
-            'user' => $this->_user->uname
+            'create_by' => $this->_user->id
           );
 
           $id = $this->product_size_model->add_group($arr);
@@ -205,7 +206,7 @@ class Product_size extends PS_Controller
             'active' => $ds->active,
             'group_id' => $ds->group_id > 0 ? $ds->group_id : NULL,
             'member' => $this->product_size_model->count_members($ds->id),
-            'update_user' => $this->_user->uname
+            'update_by' => $this->_user->id
           );
 
           if (! $this->product_size_model->update_by_id($ds->id, $arr))
@@ -222,6 +223,8 @@ class Product_size extends PS_Controller
             {
               $res->is_active = is_active($res->active);
               $res->group_name = $this->product_size_model->group_name($res->group_id);
+              $res->last_modified = empty($res->update_at) ? thai_date($res->create_at, TRUE) : thai_date($res->update_at, TRUE);
+              $res->modified_by = empty($res->update_by) ? display_name($res->create_by) : display_name($res->update_by);
             }            
           }
         }

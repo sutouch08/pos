@@ -80,6 +80,7 @@
 				<?php if (!empty($data)) : ?>
 					<?php $no = $this->uri->segment(4) + 1; ?>
 					<?php foreach ($data as $rs) : ?>
+					<?php $last_modified = empty($rs->update_at) ? thai_date($rs->create_at, TRUE, '/') : thai_date($rs->update_at, TRUE, '/'); ?>
 						<tr id="row-<?php echo $rs->id; ?>">
 							<td class="middle">
 								<button type="button" class="btn btn-minier btn-info" onclick="viewDetail(<?php echo $rs->id; ?>)">
@@ -103,7 +104,7 @@
 							<td class="middle"><?php echo $rs->acc_name; ?></td>
 							<td class="middle"><?php echo $rs->branch; ?></td>
 							<td class="middle"></td>
-							<td class="middle"><?php echo thai_date($rs->date_upd, TRUE, '/'); ?></td>
+							<td class="middle"><?php echo $last_modified; ?></td>
 						</tr>
 						<?php $no++; ?>
 					<?php endforeach; ?>

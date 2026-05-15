@@ -100,7 +100,7 @@ class Customers extends PS_Controller
           'area_code' => get_null($ds->area),
           'sale_id' => get_null($ds->saleId),
           'active' => $ds->active == 1 ? 1 : 0,
-          'user' => $this->_user->uname
+          'create_by' => $this->_user->id
         );
 
         if (! $this->customers_model->add($arr))
@@ -167,8 +167,7 @@ class Customers extends PS_Controller
         'area_code' => get_null($ds->area),
         'sale_id' => get_null($ds->saleId),
         'active' => $ds->active == 1 ? 1 : 0,
-        'update_user' => $this->_user->uname,
-        'date_upd' => now()
+        'update_by' => $this->_user->id
       );
 
       if (! $this->customers_model->update($ds->id, $arr))
@@ -300,7 +299,8 @@ class Customers extends PS_Controller
         'district' => get_null($ds->district),
         'province' => get_null($ds->province),
         'postcode' => get_null($ds->postcode),
-        'phone' => get_null($ds->phone)
+        'phone' => get_null($ds->phone),
+        'create_by' => $this->_user->id
       );
 
       $id = $this->customer_address_model->add($arr);
@@ -352,7 +352,8 @@ class Customers extends PS_Controller
         'district' => get_null($ds->district),
         'province' => get_null($ds->province),
         'postcode' => get_null($ds->postcode),
-        'phone' => get_null($ds->phone)
+        'phone' => get_null($ds->phone),
+        'update_by' => $this->_user->id
       );
 
       if (! $this->customer_address_model->update($ds->id, $arr))

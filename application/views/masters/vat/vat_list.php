@@ -69,6 +69,8 @@
 				<?php if (!empty($data)) : ?>
 					<?php $no = $this->uri->segment(4) + 1; ?>
 					<?php foreach ($data as $rs) : ?>
+					<?php $last_modified = empty($rs->update_at) ? thai_date($rs->create_at, TRUE, '/') : thai_date($rs->update_at, TRUE, '/'); ?>
+					<?php $modified_by = empty($rs->update_by) ? display_name($rs->create_by) : display_name($rs->update_by); ?>
 						<tr id="row-<?php echo $rs->id; ?>">
 							<td class="middle">
 								<?php if ($this->pm->can_edit) : ?>
@@ -89,8 +91,8 @@
 							<td class="middle"><?php echo $rs->type === 'S' ? 'Sales' : 'Purchase'; ?></td>
 							<td class="middle text-right"><?php echo number($rs->rate, 2); ?></td>
 							<td></td>
-							<td class="middle"><?php echo thai_date($rs->date_upd, TRUE, '/'); ?></td>
-							<td class="middle"><?php echo empty($rs->update_user) ? $rs->user : $rs->update_user; ?></td>
+							<td class="middle"><?php echo $last_modified; ?></td>
+							<td class="middle"><?php echo $modified_by; ?></td>
 						</tr>
 						<?php $no++; ?>
 					<?php endforeach; ?>
@@ -154,8 +156,8 @@
 	<td class="middle">{{vatType}}</td>
 	<td class="middle text-right">{{{rate}}}</td>
 	<td></td>
-	<td class="middle">{{date_upd}}</td>
-	<td class="middle">{{update_user}}</td>
+	<td class="middle">{{last_modified}}</td>
+	<td class="middle">{{modified_by}}</td>
 </script>
 
 <script src="<?php echo base_url(); ?>scripts/masters/vat.js?v=<?php echo date('Ymd'); ?>"></script>

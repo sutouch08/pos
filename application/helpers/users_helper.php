@@ -186,12 +186,11 @@ function select_user_code_and_name($uname)
 }
 
 
-function display_name($uname)
+function display_name($id)
 {
   $ci =& get_instance();
   $ci->load->model('users/user_model');
-  $name = $ci->user_model->get_name($uname);
-
+  $name = $ci->user_model->get_name($id);
   return $name;
 }
 

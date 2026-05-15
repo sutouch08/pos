@@ -78,7 +78,7 @@
     <td class="middle text-center">{{extra_days}}</td>
     <td class="middle">{{{account}}}</td>
     <td class=""></td>
-    <td class="middle">{{date_upd}}</td>
-    <td class="middle">{{user}}</td>
+    <td class="middle">{{last_modified}}</td>
+    <td class="middle">{{modified_by}}</td>
   </tr>  
 </script>

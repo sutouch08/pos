@@ -40,7 +40,7 @@
     <td class="middle text-center">{{{is_active}}}</td>    
     <td class="middle">{{name}}</td>       
     <td></td>
-    <td class="middle">{{date_add}}</td> 
-    <td class="middle">{{user}}</td>
+    <td class="middle">{{last_modified}}</td> 
+    <td class="middle">{{modified_by}}</td>
   </tr>  
 </script>

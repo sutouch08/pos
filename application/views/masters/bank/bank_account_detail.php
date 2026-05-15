@@ -55,14 +55,14 @@
       <div class="form-group">
         <label class="col-lg-4-harf col-md-4-harf col-sm-4 col-xs-2 control-label no-padding-right">สร้างโดย</label>
         <div class="col-lg-6 col-md-6 col-sm-6 col-xs-10" style="padding-top:7px;">
-          <p><?php echo $data->user; ?> วันที่ <?php echo thai_date($data->date_add, TRUE, '/'); ?></p>
+          <p><?php echo display_name($data->create_by); ?> วันที่ <?php echo thai_date($data->create_at, TRUE, '/'); ?></p>
         </div>
       </div>
 
       <div class="form-group">
         <label class="col-lg-4-harf col-md-4-harf col-sm-4 col-xs-2 control-label no-padding-right">แก้ไขล่าสุด</label>
         <div class="col-lg-6 col-md-6 col-sm-6 col-xs-10" style="padding-top:7px;">
-          <p><?php echo $data->update_user; ?> วันที่ <?php echo thai_date($data->date_upd, TRUE, '/'); ?></p>
+          <p><?php echo display_name($data->update_by); ?> วันที่ <?php echo thai_date($data->update_at, TRUE, '/'); ?></p>
         </div>
       </div>
 

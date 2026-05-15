@@ -173,3 +173,39 @@ function select_customer_code_prefix($code = NULL)
 
   return $ds;
 }
+
+function customer_group_name($id)
+{  
+  $ci = &get_instance();
+  $ci->load->model('masters/customer_group_model');
+  return $ci->customer_group_model->get_name($id);
+}
+
+
+function customer_kind_name($id)
+{  
+  $ci = &get_instance();
+  $ci->load->model('masters/customer_kind_model');
+  return $ci->customer_kind_model->get_name($id);
+} 
+
+function customer_type_name($id)
+{  
+  $ci = &get_instance();
+  $ci->load->model('masters/customer_type_model');
+  return $ci->customer_type_model->get_name($id);
+}
+
+function customer_class_name($id)
+{  
+  $ci = &get_instance();
+  $ci->load->model('masters/customer_class_model');
+  return $ci->customer_class_model->get_name($id);
+}
+
+function customer_area_name($id)
+{  
+  $ci = &get_instance();
+  $ci->load->model('masters/customer_area_model');
+  return $ci->customer_area_model->get_name($id);
+}

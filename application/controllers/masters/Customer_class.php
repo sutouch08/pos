@@ -20,7 +20,9 @@ class Customer_class extends PS_Controller
   public function index()
   {
     $filter = array(
-      'code' => get_filter('code', 'customer_class_code', '')
+      'code' => get_filter('code', 'customer_class_code', ''),
+      'order_by' => get_filter('order_by', 'customer_class_order_by', 'code'),
+      'sort_by' => get_filter('sort_by', 'customer_class_sort_by', 'ASC')
     );
 
     if ($this->input->post('search'))
@@ -104,7 +106,8 @@ class Customer_class extends PS_Controller
         {
           $arr = array(
             'code' => $ds->code,
-            'name' => $ds->name
+            'name' => $ds->name,
+            'create_by' => $this->_user->id
           );
 
           if (! $this->customer_class_model->add($arr))
@@ -120,7 +123,8 @@ class Customer_class extends PS_Controller
 
           if (! empty($res))
           {
-            $res->date_update = thai_date($res->date_upd, TRUE, '/');
+            $res->last_modified = thai_date($res->create_at, TRUE, '/');
+            $res->modified_by = display_name($res->create_by);
           }
         }
       }
@@ -197,7 +201,8 @@ class Customer_class extends PS_Controller
         if ($sc === TRUE)
         {
           $arr = array(
-            'name' => $ds->name
+            'name' => $ds->name,
+            'update_by' => $this->_user->id
           );
 
           if (! $this->customer_class_model->update($ds->id, $arr))
@@ -213,7 +218,8 @@ class Customer_class extends PS_Controller
 
           if (! empty($res))
           {
-            $res->date_update = thai_date($res->date_upd, TRUE, '/');
+            $res->last_modified = thai_date($res->update_at, TRUE, '/');
+            $res->modified_by = display_name($res->update_by);
           }
         }
       }
@@ -291,7 +297,7 @@ class Customer_class extends PS_Controller
 
   public function clear_filter()
   {
-    $filter = ['customer_class_code', 'customer_class_name'];
+    $filter = ['customer_class_code', ' customer_class_order_by', 'customer_class_sort_by'];
     return clear_filter($filter);
   }
 

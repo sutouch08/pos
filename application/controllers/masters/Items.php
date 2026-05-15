@@ -167,8 +167,7 @@ class Items extends PS_Controller
             'category_id' => get_null($ds->category),
             'brand_id' => get_null($ds->brand),
             'year' => get_null($ds->year),
-            'user' => $this->_user->uname,
-            'update_user' => $this->_user->uname
+            'create_by' => $this->_user->id
           );
 
           if (! $this->items_model->add($arr))
@@ -318,8 +317,7 @@ class Items extends PS_Controller
             'category_id' => get_null($ds->category),
             'brand_id' => get_null($ds->brand),
             'year' => get_null($ds->year),
-            'date_upd' => now(),
-            'update_user' => $this->_user->uname
+            'update_by' => $this->_user->id
           );
 
           if (! $this->items_model->update($id, $arr))
@@ -742,8 +740,7 @@ class Items extends PS_Controller
         'name' => $ds->name,
         'group_id' => get_null($ds->group_id),
         'active' => 1,
-        'user' => $this->_user->uname,
-        'update_user' => $this->_user->uname
+        'create_by' => $this->_user->id
       );
 
       $id = $this->product_color_model->add($arr);
@@ -778,8 +775,7 @@ class Items extends PS_Controller
         'code' => $ds->code,
         'name' => $ds->name,
         'group_id' => get_null($ds->group_id),
-        'user' => $this->_user->uname,
-        'update_user' => $this->_user->uname
+        'create_by' => $this->_user->id
       );
 
       $id = $this->product_size_model->add($arr);
@@ -813,8 +809,7 @@ class Items extends PS_Controller
       $arr = array(
         'code' => $ds->code,
         'name' => $ds->name,
-        'user' => $this->_user->uname,
-        'update_user' => $this->_user->uname
+        'create_by' => $this->_user->id
       );
 
       $id = $this->product_main_group_model->add($arr);
@@ -848,8 +843,7 @@ class Items extends PS_Controller
       $arr = array(
         'code' => $ds->code,
         'name' => $ds->name,
-        'user' => $this->_user->uname,
-        'update_user' => $this->_user->uname
+        'create_by' => $this->_user->id
       );
 
       $id = $this->product_group_model->add($arr);
@@ -882,8 +876,7 @@ class Items extends PS_Controller
       $arr = array(
         'code' => $ds->code,
         'name' => $ds->name,
-        'user' => $this->_user->uname,
-        'update_user' => $this->_user->uname
+        'create_by' => $this->_user->id
       );
 
       $id = $this->product_gender_model->add($arr);
@@ -916,8 +909,7 @@ class Items extends PS_Controller
       $arr = array(
         'code' => $ds->code,
         'name' => $ds->name,
-        'user' => $this->_user->uname,
-        'update_user' => $this->_user->uname
+        'create_by' => $this->_user->id
       );
 
       $id = $this->product_category_model->add($arr);
@@ -950,8 +942,7 @@ class Items extends PS_Controller
       $arr = array(
         'code' => $ds->code,
         'name' => $ds->name,
-        'user' => $this->_user->uname,
-        'update_user' => $this->_user->uname
+        'create_by' => $this->_user->id
       );
 
       $id = $this->product_kind_model->add($arr);
@@ -984,8 +975,7 @@ class Items extends PS_Controller
       $arr = array(
         'code' => $ds->code,
         'name' => $ds->name,
-        'user' => $this->_user->uname,
-        'update_user' => $this->_user->uname
+        'create_by' => $this->_user->id
       );
 
       $id = $this->product_type_model->add($arr);
@@ -1018,8 +1008,7 @@ class Items extends PS_Controller
       $arr = array(
         'code' => $ds->code,
         'name' => $ds->name,
-        'user' => $this->_user->uname,
-        'update_user' => $this->_user->uname
+        'create_by' => $this->_user->id
       );
 
       $id = $this->product_brand_model->add($arr);

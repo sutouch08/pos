@@ -70,7 +70,7 @@ class Bank_code extends PS_Controller
             'code' => $ds->code,
             'name' => $ds->name,
             'active' => $ds->active,
-            'user' => $this->_user->uname
+            'create_by' => $this->_user->id
           );
 
           $id = $this->bank_code_model->add($arr);
@@ -88,7 +88,7 @@ class Bank_code extends PS_Controller
             if (! empty($res))
             {
               $res->is_active = is_active($res->active);
-              $res->date_upd = thai_date($res->date_upd, TRUE, '/');
+              $res->last_modified = thai_date($res->create_at, TRUE, '/');
             }
           }
         }
@@ -136,7 +136,7 @@ class Bank_code extends PS_Controller
           $arr = array(
             'name' => $ds->name,
             'active' => $ds->active,
-            'update_user' => $this->_user->uname
+            'update_by' => $this->_user->id
           );
 
           if (! $this->bank_code_model->update($ds->id, $arr))
@@ -152,7 +152,7 @@ class Bank_code extends PS_Controller
             if (! empty($res))
             {
               $res->is_active = is_active($res->active);
-              $res->date_upd = thai_date($res->date_upd, TRUE, '/');
+              $res->last_modified = thai_date($res->update_at, TRUE, '/');
             }
           }
         }

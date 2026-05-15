@@ -20,7 +20,9 @@ class Customer_kind extends PS_Controller
   public function index()
   {
     $filter = array(
-      'code' => get_filter('code', 'customer_kind_code', '')
+      'code' => get_filter('code', 'customer_kind_code', ''),
+      'order_by' => get_filter('order_by', 'customer_kind_order_by', 'code'),
+      'sort_by' => get_filter('sort_by', 'customer_kind_sort_by', 'ASC')
     );
 
     if ($this->input->post('search'))
@@ -104,7 +106,8 @@ class Customer_kind extends PS_Controller
         {
           $arr = array(
             'code' => $ds->code,
-            'name' => $ds->name
+            'name' => $ds->name,
+            'create_by' => $this->_user->id
           );
 
           if (! $this->customer_kind_model->add($arr))
@@ -120,7 +123,8 @@ class Customer_kind extends PS_Controller
 
           if (! empty($res))
           {
-            $res->date_update = thai_date($res->date_upd, TRUE, '/');
+            $res->last_modified = thai_date($res->create_at, TRUE, '/');
+            $res->modified_by = display_name($res->create_by);
           }
         }
       }
@@ -196,7 +200,8 @@ class Customer_kind extends PS_Controller
         if ($sc === TRUE)
         {
           $arr = array(
-            'name' => $ds->name
+            'name' => $ds->name,
+            'update_by' => $this->_user->id
           );
 
           if (! $this->customer_kind_model->update($ds->id, $arr))
@@ -212,7 +217,8 @@ class Customer_kind extends PS_Controller
 
           if (! empty($res))
           {
-            $res->date_update = thai_date($res->date_upd, TRUE, '/');
+            $res->last_modified = thai_date($res->update_at, TRUE, '/');
+            $res->modified_by = display_name($res->update_by);
           }
         }
       }
@@ -290,7 +296,7 @@ class Customer_kind extends PS_Controller
 
   public function clear_filter()
   {
-    $filter = ['customer_kind_code', 'customer_kind_name'];
+    $filter = ['customer_kind_code', 'customer_kind_order_by', 'customer_kind_sort_by'];
     return clear_filter($filter);
   }
 

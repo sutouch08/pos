@@ -216,6 +216,24 @@
         </div>
         <div class="error-block col-lg-9 col-lg-offset-3 col-md-9 col-md-offset-3 col-sm-offset-3 col-xs-12" id="year-error"></div>
       </div>
+      <div class="form-group">
+        <label class="col-lg-3 col-md-3 col-sm-3 col-xs-12 control-label no-padding-right">สร้างโดย</label>
+        <div class="col-lg-9 col-md-9 col-sm-9 col-xs-12" style="padding-top: 7px;">
+          <?php echo display_name($item->create_by); ?>  At <?php echo thai_date($item->create_at, TRUE); ?>                       
+        </div>
+        <div class="error-block col-lg-9 col-lg-offset-3 col-md-9 col-md-offset-3 col-sm-offset-3 col-xs-12" id="created-error"></div>
+      </div>
+      <div class="form-group">
+        <label class="col-lg-3 col-md-3 col-sm-3 col-xs-12 control-label no-padding-right">แก้ไขโดย</label>
+        <div class="col-lg-9 col-md-9 col-sm-9 col-xs-12" style="padding-top: 7px;">
+          <?php if( ! empty($item->update_by)) : ?>            
+            <?php echo display_name($item->update_by); ?>  At <?php echo thai_date($item->update_at, TRUE); ?>
+          <?php else : ?>
+              -
+          <?php endif; ?>
+        </div>                          
+        <div class="error-block col-lg-9 col-lg-offset-3 col-md-9 col-md-offset-3 col-sm-offset-3 col-xs-12" id="updated-error"></div>
+      </div>
     </div><!--/form-horizontal-->
   </div><!--/col right-->
 </div><!--/row-->

@@ -67,7 +67,7 @@
     <td class="middle">{{name}}</td>
     <td class="middle">{{phone}}</td>    
     <td></td>
-    <td class="middle">{{date_upd}}</td>
-    <td class="middle">{{user}}</td>
+    <td class="middle">{{last_modified}}</td>
+    <td class="middle">{{modified_by}}</td>
   </tr>  
 </script>

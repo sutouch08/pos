@@ -49,7 +49,7 @@
     <td class="middle">{{name}}</td>       
     <td class="middle text-center">{{member}}</td>
     <td></td>
-    <td class="middle">{{date_upd}}</td>
-    <td class="middle">{{update_user}}</td>
+    <td class="middle text-center">{{last_modified}}</td>
+    <td class="middle text-center">{{modified_by}}</td>
   </tr>  
 </script>

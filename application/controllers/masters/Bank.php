@@ -80,7 +80,7 @@ class Bank extends PS_Controller
               'acc_name' => $ds->account_name,
               'acc_no' => $ds->account_no,            
               'active' => $ds->active,
-              'user' => $this->_user->uname
+              'create_by' => $this->_user->id
             );
 
             if( ! $this->bank_model->add($arr))
@@ -141,7 +141,7 @@ class Bank extends PS_Controller
               'acc_name' => $ds->account_name,
               'acc_no' => $ds->account_no,            
               'active' => $ds->active,
-              'update_user' => $this->_user->uname
+              'update_by' => $this->_user->id
             );
 
             if( ! $this->bank_model->update($ds->id, $arr))

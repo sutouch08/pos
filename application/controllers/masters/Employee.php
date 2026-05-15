@@ -104,8 +104,7 @@ class Employee extends PS_Controller
             'active' => $ds->active,
             'position_id' => get_null($ds->position),
             'department_id' => get_null($ds->department),
-            'user' => $this->_user->uname,
-            'update_user' => $this->_user->uname
+            'create_by' => $this->_user->id
           );
 
           if(! $this->employee_model->add($arr))                      
@@ -187,7 +186,7 @@ class Employee extends PS_Controller
             'active' => $ds->active,
             'position_id' => get_null($ds->position),
             'department_id' => get_null($ds->department),
-            'update_user' => $this->_user->uname
+            'update_by' => $this->_user->id
           );
 
           if (! $this->employee_model->update($ds->id, $arr))
@@ -204,7 +203,7 @@ class Employee extends PS_Controller
             {
               $arr = array(
                 'name' => $ds->fname . ' ' . $ds->lname,
-                'update_user' => $this->_user->uname
+                'update_by' => $this->_user->id
               );
 
               $this->slp_model->update($slp->id, $arr);

@@ -96,7 +96,7 @@ class Customers_model extends CI_Model
         ->group_start()
         ->like('code', $ds['code'])
         ->or_like('name', $ds['code'])
-        ->grup_end();
+        ->group_end();
     }
 
     if ($ds['group'] != 'all')
@@ -173,7 +173,7 @@ class Customers_model extends CI_Model
     $this->db
     ->select('id, code, name, tax_id, group_code AS group, class_code AS grade')
     ->select('kind_code AS kind, type_code AS type, area_code AS area, sale_id')
-    ->select('active, user, date_add, update_user, date_upd');    
+    ->select('active, create_by, create_at, update_by, update_at');    
 
     if (! empty($ds['code']))
     {
@@ -181,7 +181,7 @@ class Customers_model extends CI_Model
         ->group_start()
         ->like('code', $ds['code'])
         ->or_like('name', $ds['code'])
-        ->grup_end();
+        ->group_end();
     }
 
     if ($ds['group'] != 'all')

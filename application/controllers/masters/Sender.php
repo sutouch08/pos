@@ -73,8 +73,7 @@ class Sender extends PS_Controller
 						'phone' => get_null($ds->phone),
 						'show_in_list' => $ds->show_in_list,
 						'active' => $ds->active,
-						'user' => $this->_user->uname,
-						'update_user' => $this->_user->uname
+						'create_by' => $this->_user->id
 					);
 
 					$id = $this->sender_model->add($arr);
@@ -93,7 +92,8 @@ class Sender extends PS_Controller
 						{
 							$res->is_active = is_active($res->active);
 							$res->is_common = is_active($res->show_in_list);
-							$res->date_upd = thai_date($res->date_upd, TRUE, '/');
+							$res->last_modified = thai_date($res->create_at, TRUE, '/');
+							$res->modified_by = display_name($res->create_by);
 						}
 					}
 				}
@@ -133,8 +133,7 @@ class Sender extends PS_Controller
 			if (! empty($res))
 			{
 				$res->is_active = $res->active == 1 ? 'checked' : '';
-				$res->is_common = $res->show_in_list == 1 ? 'checked' : '';
-				$res->date_upd = thai_date($res->date_upd, TRUE, '/');
+				$res->is_common = $res->show_in_list == 1 ? 'checked' : '';				
 			}
 			else
 			{
@@ -181,7 +180,7 @@ class Sender extends PS_Controller
 						'phone' => get_null($ds->phone),
 						'show_in_list' => $ds->show_in_list,
 						'active' => $ds->active,
-						'update_user' => $this->_user->uname
+						'update_by' => $this->_user->id
 					);
 
 					if ($this->sender_model->update($ds->id, $arr))
@@ -192,7 +191,8 @@ class Sender extends PS_Controller
 						{
 							$res->is_active = is_active($res->active);
 							$res->is_common = is_active($res->show_in_list, FALSE);
-							$res->date_upd = thai_date($res->date_upd, TRUE, '/');
+							$res->last_modified = thai_date($res->update_at, TRUE, '/');
+							$res->modified_by = display_name($res->update_by);
 						}
 					}
 					else

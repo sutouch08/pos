@@ -1,7 +1,7 @@
 <?php
-require_once FCPATH . 'vendor/autoload.php';
+// require_once FCPATH . 'vendor/autoload.php';
 
-use PhpOffice\PhpSpreadsheet\IOFactory;
+// use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class Import_items extends CI_Controller
 {
@@ -60,8 +60,12 @@ class Import_items extends CI_Controller
     else
     {
       $info = $this->upload->data();
-      $spreadsheet = IOFactory::load($info['full_path']);
-      $collection  = $spreadsheet->getActiveSheet()->toArray(NULL, TRUE, TRUE, TRUE);
+      $this->load->library('excel');
+      $excel = PHPExcel_IOFactory::load($info['full_path']);
+      $excel->setActiveSheetIndex(0);
+      $sheet = $excel->getSheet(0);
+      //$spreadsheet = IOFactory::load($info['full_path']);
+      $collection  = $sheet->toArray(NULL, TRUE, TRUE, TRUE);
       $i = 1;
       $count = count($collection);
       $limit = intval(getConfig('IMPORT_ROWS_LIMIT')) + 1;
@@ -134,7 +138,7 @@ class Import_items extends CI_Controller
 
               if (! $id)
               {
-                $arr['user'] = $this->_user->uname;
+                $arr['create_by'] = $this->_user->id;
                 if (! $this->items_model->add($arr))
                 {
                   $error++;
@@ -147,8 +151,8 @@ class Import_items extends CI_Controller
               }
               else
               {
-                $arr['update_user'] = $this->_user->uname;
-                $arr['date_upd'] = now();
+                $arr['update_by'] = $this->_user->id;
+                
                 if (! $this->items_model->update($id, $arr))
                 {
                   $error++;

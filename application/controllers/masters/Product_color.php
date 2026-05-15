@@ -74,8 +74,7 @@ class Product_color extends PS_Controller
             'name' => $ds->name,
             'group_id' => $ds->group_id,
             'active' => $ds->active,
-            'user' => $this->_user->uname,
-            'update_user' => $this->_user->uname
+            'create_by' => $this->_user->id
           );
 
           $id = $this->product_color_model->add($arr);
@@ -94,6 +93,8 @@ class Product_color extends PS_Controller
               $res->group_name = $this->product_color_model->get_group_name($res->group_id);
               $res->member = $this->product_color_model->count_members($id);
               $res->is_active = is_active($res->active);
+              $res->last_modified = thai_date($res->create_at, TRUE);
+              $res->modified_by = display_name($res->create_by);
             }
           }
         }
@@ -139,7 +140,7 @@ class Product_color extends PS_Controller
         {
           $arr = array(
             'name' => $ds->name,
-            'user' => $this->_user->uname
+            'create_by' => $this->_user->id
           );
 
           $id = $this->product_color_model->add_group($arr);
@@ -233,7 +234,7 @@ class Product_color extends PS_Controller
             'group_id' => $ds->group_id,
             'active' => $ds->active,
             'member' => $this->product_color_model->count_members($ds->id),
-            'update_user' => $this->_user->uname
+            'update_by' => $this->_user->id
           );
 
           if($this->product_color_model->is_exists_code($ds->code, $ds->id))
@@ -261,6 +262,8 @@ class Product_color extends PS_Controller
               $res = $this->product_color_model->get($ds->id);
               $res->group_name = $this->product_color_model->get_group_name($res->group_id);
               $res->is_active = is_active($res->active);
+              $res->last_modified = thai_date($res->update_at, TRUE);
+              $res->modified_by = display_name($res->update_by);
             }
           }
         }

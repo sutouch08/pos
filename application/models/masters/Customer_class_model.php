@@ -127,6 +127,9 @@ class Customer_class_model extends CI_Model
 
   public function get_list(array $ds = array(), $perpage = 20, $offset = 0)
   {
+    $order_by = empty($ds['order_by']) ? 'code' : $ds['order_by'];
+    $sort_by = empty($ds['sort_by']) ? 'ASC' : $ds['sort_by'];
+
     if (! empty($ds['code']))
     {
       $this->db
@@ -136,7 +139,10 @@ class Customer_class_model extends CI_Model
         ->group_end();
     }
 
-    $rs = $this->db->order_by('id', 'DESC')->limit($perpage, $offset)->get($this->tb);
+    $rs = $this->db
+    ->order_by($order_by, $sort_by)
+    ->limit($perpage, $offset)
+    ->get($this->tb);
 
     if ($rs->num_rows() > 0)
     {

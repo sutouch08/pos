@@ -58,8 +58,7 @@
 <?php $sort_name = get_sort('name', $order_by, $sort_by); ?>
 <?php $sort_group = get_sort('group_name', $order_by, $sort_by); ?>
 <?php $sort_member = get_sort('member', $order_by, $sort_by); ?>
-<?php $sort_update = get_sort('date_upd', $order_by, $sort_by); ?>
-<?php $sort_user = get_sort('update_user', $order_by, $sort_by); ?>
+<?php $sort_update = get_sort('update_at', $order_by, $sort_by); ?>
 
 <div class="row">
 	<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 table-responsive">
@@ -74,14 +73,16 @@
 					<th class="fix-width-150 middle sorting <?php echo $sort_group; ?>" id="sort-group_name" onclick="sort('group_name')">กลุ่ม</th>
 					<th class="fix-width-100 middle text-center sorting <?php echo $sort_member; ?>" id="sort-member" onclick="sort('member')">สินค้า</th>
 					<th class="min-width-100 middle"></th>
-					<th class="fix-width-150 middle sorting <?php echo $sort_update; ?>" id="sort-date_upd" onclick="sort('date_upd')">แก้ไขล่าสุด</th>
-					<th class="fix-width-150 middle sorting <?php echo $sort_user; ?>" id="sort-update_user" onclick="sort('update_user')">แก้ไขโดย</th>
+					<th class="fix-width-150 middle sorting <?php echo $sort_update; ?>" id="sort-update_at" onclick="sort('update_at')">แก้ไขล่าสุด</th>
+					<th class="fix-width-150 middle">แก้ไขโดย</th>
 				</tr>
 			</thead>
 			<tbody id="color-table">
 				<?php if (!empty($data)) : ?>
-					<?php $no = $this->uri->segment(4) + 1; ?>
+					<?php $no = $this->uri->segment($this->segment) + 1; ?>
 					<?php foreach ($data as $rs) : ?>
+					<?php $last_modified = empty($rs->update_at) ? thai_date($rs->create_at, TRUE) : thai_date($rs->update_at, TRUE); ?>
+					<?php $modified_by = empty($rs->update_by) ? display_name($rs->create_by) : display_name($rs->update_by); ?>
 						<tr id="row-<?php echo $rs->id; ?>">
 							<td class="middle">
 								<?php if ($this->pm->can_edit) : ?>
@@ -102,8 +103,8 @@
 							<td class="middle"><?php echo $rs->group_name; ?></td>
 							<td class="middle text-center"><?php echo number($rs->member); ?></td>
 							<td></td>
-							<td class="middle"><?php echo $rs->date_upd; ?></td>
-							<td class="middle"><?php echo $rs->update_user; ?></td>
+							<td class="middle"><?php echo $last_modified; ?></td>
+							<td class="middle"><?php echo $modified_by; ?></td>
 						</tr>
 						<?php $no++; ?>
 					<?php endforeach; ?>
@@ -165,8 +166,8 @@
 	<td class="middle">{{group_name}}</td>	
 	<td class="middle text-center">{{{member}}}</td>
 	<td></td>
-	<td class="middle">{{date_upd}}</td>
-	<td class="middle">{{update_user}}</td>
+	<td class="middle">{{last_modified}}</td>
+	<td class="middle">{{modified_by}}</td>
 </script>
 
 <script>

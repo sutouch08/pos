@@ -45,7 +45,7 @@ $tab2 = $tab == 'addressTab' ? 'active in' : '';
 					<div class="form-group margin-top-30">
 						<label class="col-lg-3 col-md-3 col-sm-3 col-xs-12 control-label no-padding-right">รหัส</label>
 						<div class="col-lg-2 col-md-2 col-sm-2 col-xs-12">
-							<input type="text" class="form-control input-sm" value="<?php echo $ds->code; ?>" disabled />
+							<input type="text" class="form-control input-sm" value="<?php echo $ds->code; ?>" readonly />
 						</div>
 						<div class="help-block col-lg-9 col-lg-offset-3 col-md-9 col-md-offset-3 col-sm-9 col-sm-offset-3" id="code-error"></div>
 					</div>
@@ -53,7 +53,7 @@ $tab2 = $tab == 'addressTab' ? 'active in' : '';
 					<div class="form-group">
 						<label class="col-lg-3 col-md-3 col-sm-3 col-xs-12 control-label no-padding-right">ชื่อ</label>
 						<div class="col-lg-5 col-md-5 col-sm-6 col-xs-12">
-							<input type="text" id="name" class="form-control input-sm" maxlength="100" value="<?php echo $ds->name; ?>" autocomplete="off" autofocus />
+							<input type="text" id="name" class="form-control input-sm" maxlength="100" value="<?php echo $ds->name; ?>" autocomplete="off" readonly />
 						</div>
 						<div class="help-block col-lg-9 col-lg-offset-3 col-md-9 col-md-offset-3 col-sm-9 col-sm-offset-3" id="name-error"></div>
 					</div>
@@ -61,17 +61,14 @@ $tab2 = $tab == 'addressTab' ? 'active in' : '';
 					<div class="form-group">
 						<label class="col-lg-3 col-md-3 col-sm-3 col-xs-12 control-label no-padding-right">เลขประจำตัว/Tax ID</label>
 						<div class="col-lg-2 col-md-2 col-sm-4 col-xs-12">
-							<input type="text" id="tax-id" class="form-control input-sm" maxlength="32" value="<?php echo $ds->tax_id; ?>" autocomplete="off" />
+							<input type="text" id="tax-id" class="form-control input-sm" maxlength="32" value="<?php echo $ds->tax_id; ?>" autocomplete="off" readonly />
 						</div>
 					</div>
 
 					<div class="form-group">
 						<label class="col-lg-3 col-md-3 col-sm-3 col-xs-12 control-label no-padding-right">กลุ่มลูกค้า</label>
 						<div class="col-lg-3 col-md-3 col-sm-4 col-xs-10">
-							<select id="group" class="form-control input-sm">
-								<option value="">เลือกรายการ</option>
-								<?php echo select_customer_group($ds->group_code); ?>
-							</select>
+							<input type="text" class="form-control input-sm" value="<?php echo customer_group_name($ds->group_id); ?>" readonly />							
 						</div>
 						<div class="help-block col-lg-9 col-lg-offset-3 col-md-9 col-md-offset-3 col-sm-9 col-sm-offset-3" id="group-error"></div>
 					</div>
@@ -79,10 +76,7 @@ $tab2 = $tab == 'addressTab' ? 'active in' : '';
 					<div class="form-group">
 						<label class="col-lg-3 col-md-3 col-sm-3 col-xs-12 control-label no-padding-right">เกรดลูกค้า</label>
 						<div class="col-lg-3 col-md-3 col-sm-4 col-xs-10">
-							<select id="grade" class="form-control input-sm">
-								<option value="">เลือกรายการ</option>
-								<?php echo select_customer_class($ds->class_code); ?>
-							</select>
+							<input type="text" class="form-control input-sm" value="<?php echo customer_class_name($ds->class_id); ?>" readonly />
 						</div>
 						<div class="help-block col-lg-9 col-lg-offset-3 col-md-9 col-md-offset-3 col-sm-9 col-sm-offset-3" id="class-error"></div>
 					</div>
@@ -90,10 +84,7 @@ $tab2 = $tab == 'addressTab' ? 'active in' : '';
 					<div class="form-group">
 						<label class="col-lg-3 col-md-3 col-sm-3 col-xs-12 control-label no-padding-right">ประเภทลูกค้า</label>
 						<div class="col-lg-3 col-md-3 col-sm-4 col-xs-10">
-							<select id="kind" class="form-control input-sm">
-								<option value="">เลือกรายการ</option>
-								<?php echo select_customer_kind($ds->kind_code); ?>
-							</select>
+							<input type="text" class="form-control input-sm" value="<?php echo customer_kind_name($ds->kind_id); ?>" readonly />
 						</div>
 						<div class="help-block col-lg-9 col-lg-offset-3 col-md-9 col-md-offset-3 col-sm-9 col-sm-offset-3" id="kind-error"></div>
 					</div>
@@ -101,9 +92,7 @@ $tab2 = $tab == 'addressTab' ? 'active in' : '';
 					<div class="form-group">
 						<label class="col-lg-3 col-md-3 col-sm-3 col-xs-12 control-label no-padding-right">ชนิดลูกค้า</label>
 						<div class="col-lg-3 col-md-3 col-sm-4 col-xs-10">
-							<select id="type" class="form-control input-sm">
-								<option value="">เลือกรายการ</option>
-								<?php echo select_customer_type($ds->type_code); ?>
+							<input type="text" class="form-control input-sm" value="<?php echo customer_type_name($ds->type_id); ?>" readonly />
 							</select>
 						</div>
 						<div class="help-block col-lg-9 col-lg-offset-3 col-md-9 col-md-offset-3 col-sm-9 col-sm-offset-3" id="type-error"></div>
@@ -112,10 +101,7 @@ $tab2 = $tab == 'addressTab' ? 'active in' : '';
 					<div class="form-group">
 						<label class="col-lg-3 col-md-3 col-sm-3 col-xs-12 control-label no-padding-right">พื้นที่ขาย</label>
 						<div class="col-lg-3 col-md-3 col-sm-4 col-xs-10">
-							<select id="area" class="form-control input-sm">
-								<option value="">เลือกรายการ</option>
-								<?php echo select_customer_area($ds->area_code); ?>
-							</select>
+							<input type="text" class="form-control input-sm" value="<?php echo customer_area_name($ds->area_id); ?>" readonly />
 						</div>
 						<div class="help-block col-lg-9 col-lg-offset-3 col-md-9 col-md-offset-3 col-sm-9 col-sm-offset-3" id="area-error"></div>
 					</div>
@@ -123,10 +109,7 @@ $tab2 = $tab == 'addressTab' ? 'active in' : '';
 					<div class="form-group">
 						<label class="col-lg-3 col-md-3 col-sm-3 col-xs-12 control-label no-padding-right">พนักงานขาย</label>
 						<div class="col-lg-3 col-md-3 col-sm-4 col-xs-10">
-							<select id="sale" class="form-control input-sm">
-								<option value="">เลือกรายการ</option>
-								<?php echo select_saleman($ds->sale_id); ?>
-							</select>
+							<input type="text" class="form-control input-sm" value="<?php echo sale_name($ds->sale_id); ?>" readonly />
 						</div>
 						<div class="help-block col-lg-9 col-lg-offset-3 col-md-9 col-md-offset-3 col-sm-9 col-sm-offset-3" id="sale-error"></div>
 					</div>
@@ -138,6 +121,26 @@ $tab2 = $tab == 'addressTab' ? 'active in' : '';
 						</div>
 						<div class="help-block col-lg-9 col-lg-offset-3 col-md-9 col-md-offset-3 col-sm-9 col-sm-offset-3" id="sale-error"></div>
 					</div>
+					<div class="form-group">
+						<label class="col-lg-3 col-md-3 col-sm-3 col-xs-12 control-label no-padding-right">สร้างเมื่อ</label>
+						<div class="col-lg-9 col-md-9 col-sm-9 col-xs-12" style="padding-top:7px;">
+							<?php echo thai_date($ds->create_at, TRUE); ?> โดย <?php echo display_name($ds->create_by); ?>
+						</div>
+						<div class="help-block col-lg-9 col-lg-offset-3 col-md-9 col-md-offset-3 col-sm-9 col-sm-offset-3" id="sale-error"></div>
+					</div>
+
+					<div class="form-group">
+							<label class="col-lg-3 col-md-3 col-sm-3 col-xs-12 control-label no-padding-right">แก้ไขล่าสุด</label>
+							<div class="col-lg-9 col-md-9 col-sm-9 col-xs-12" style="padding-top:7px;">
+							<?php if( ! empty($ds->update_by)) : ?>
+								<?php echo thai_date($ds->update_at, TRUE); ?> โดย <?php echo display_name($ds->update_by); ?>
+							<?php else : ?>
+								-
+							<?php endif; ?>
+							</div>
+							<div class="help-block col-lg-9 col-lg-offset-3 col-md-9 col-md-offset-3 col-sm-9 col-sm-offset-3" id="sale-error"></div>
+						</div>		
+									
 					<input type="hidden" id="id" value="<?php echo $ds->id; ?>">
 					<input type="hidden" id="code" value="<?php echo $ds->code; ?>">
 				</form>

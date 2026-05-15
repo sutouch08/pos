@@ -74,8 +74,7 @@ class Vat extends PS_Controller
 						'type' => $ds->type === 'S' ? 'S' : 'P',
 						'rate' => $rate,
 						'active' => $ds->active ? 1 : 0,
-						'user' => $this->_user->uname,
-						'update_user' => $this->_user->uname
+						'create_by' => $this->_user->id
 					);
 
 					$id = $this->vat_model->add($arr);
@@ -94,6 +93,8 @@ class Vat extends PS_Controller
 						{
 							$res->is_active = is_active($res->active);
 							$res->vatType = $ds->type === 'S' ? 'Sales' : 'Purchase';
+							$res->last_modified = thai_date($res->create_at, TRUE, '/');
+							$res->modified_by = display_name($res->create_by);
 						}
 					}
 				}				
@@ -184,7 +185,7 @@ class Vat extends PS_Controller
 						'type' => $ds->type === 'S' ? 'S' : 'P',
 						'rate' => $rate,
 						'active' => $ds->active ? 1 : 0,
-						'update_user' => $this->_user->uname
+						'update_by' => $this->_user->id
 					);
 
 					if ($this->vat_model->update_by_id($ds->id, $arr))
@@ -195,6 +196,8 @@ class Vat extends PS_Controller
 						{
 							$res->is_active = is_active($res->active);
 							$res->vatType = $res->type === 'S' ? 'Sales' : 'Purchase';
+							$res->last_modified = thai_date($res->update_at, TRUE, '/');
+							$res->modified_by = display_name($res->update_by);
 						}
 					}
 					else

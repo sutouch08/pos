@@ -63,8 +63,7 @@ class Department extends PS_Controller
           $arr = array(            
             'name' => $ds->name,
             'active' => $ds->active,
-            'user' => $this->_user->uname,
-            'update_user' => $this->_user->uname
+            'create_by' => $this->_user->id
           );
 
           $id = $this->department_model->add($arr);
@@ -82,8 +81,8 @@ class Department extends PS_Controller
             if (! empty($res))
             {
               $res->is_active = is_active($res->active);
-              $res->date_add = thai_date($res->date_add, TRUE, '/');
-              $res->date_upd = thai_date($res->date_upd, TRUE, '/');
+              $res->last_modified = thai_date($res->create_at, TRUE, '/');
+              $res->modified_by = display_name($res->create_by);
             }
           }
         }
@@ -167,7 +166,7 @@ class Department extends PS_Controller
           $arr = array(
             'name' => $ds->name,
             'active' => $ds->active,
-            'update_user' => $this->_user->uname
+            'update_by' => $this->_user->id
           );
 
           if (! $this->department_model->update($ds->id, $arr))
@@ -183,8 +182,8 @@ class Department extends PS_Controller
             if (! empty($res))
             {
               $res->is_active = is_active($res->active);
-              $res->date_add = thai_date($res->date_add, TRUE, '/');
-              $res->date_upd = thai_date($res->date_upd, TRUE, '/');
+              $res->last_modified = thai_date($res->update_at, TRUE, '/');
+              $res->modified_by = display_name($res->update_by);
             }
           }
         }

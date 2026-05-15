@@ -22,6 +22,8 @@
 		</div>
 	</div>
 	<input type="hidden" name="search" value="1">
+	<input type="hidden" name="order_by" id="order_by" value="<?php echo $order_by; ?>" />
+	<input type="hidden" name="sort_by" id="sort_by" value="<?php echo $sort_by; ?>" />
 </form>
 <hr class="margin-top-15">
 
@@ -31,23 +33,30 @@
 	<?php $this->load->view('masters/customer_group/add_control'); ?>
 <?php endif; ?>
 
+<?php $sort_code = get_sort('code', $order_by, $sort_by); ?>
+<?php $sort_name = get_sort('name', $order_by, $sort_by); ?>
+<?php $sort_update = get_sort('update_at', $order_by, $sort_by); ?>
+
 <div class="row">
 	<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 padding-5 table-responsive">
-		<table class="table tableFixHead border-1" style="min-width:640px;">
+		<table class="table tableFixHead dataTable border-1" style="min-width:640px;">
 			<thead>
 				<tr>
 					<th class="fix-width-80 middle"></th>
 					<th class="fix-width-40 middle text-center">#</th>
-					<th class="fix-width-150 middle">รหัส</th>
-					<th class="fix-width-200 middle">ชื่อ</th>
+					<th class="fix-width-150 middle sorting <?php echo $sort_code; ?>" id="sort-code" onclick="sort('code', '<?php echo $sort_code; ?>')">รหัส</th>
+					<th class="fix-width-200 middle sorting <?php echo $sort_name; ?>" id="sort-name" onclick="sort('name', '<?php echo $sort_name; ?>')">ชื่อ</th>
 					<th class="min-width-100 middle"></th>
-					<th class="fix-width-150 middle">แก้ไขล่าสุด</th>
+					<th class="fix-width-150 middle sorting <?php echo $sort_update; ?>" id="sort-update_at" onclick="sort('update_at', '<?php echo $sort_update; ?>')">แก้ไขล่าสุด</th>
+					<th class="fix-width-150 middle">แก้ไขโดย</th>
 				</tr>
 			</thead>
 			<tbody id="data-table">
 				<?php if (!empty($data)) : ?>
 					<?php $no = $this->uri->segment($this->segment) + 1; ?>
 					<?php foreach ($data as $rs) : ?>
+					<?php $last_modified = empty($rs->update_at) ? thai_date($rs->create_at, TRUE, '/') : thai_date($rs->update_at, TRUE, '/'); ?>
+					<?php $modified_by = empty($rs->update_by) ? display_name($rs->create_by) : display_name($rs->update_by); ?>
 						<tr id="row-<?php echo $rs->id; ?>">
 							<td class="middle">
 								<?php if ($this->pm->can_edit) : ?>
@@ -65,7 +74,8 @@
 							<td class="middle"><?php echo $rs->code; ?></td>
 							<td class="middle"><?php echo $rs->name; ?></td>
 							<td class="middle"></td>
-							<td class="middle"><?php echo thai_date($rs->date_upd, TRUE, '/'); ?></td>
+							<td class="middle"><?php echo thai_date($rs->update_at, TRUE, '/'); ?></td>
+							<td class="middle"><?php echo display_name($rs->update_by); ?></td>
 						</tr>
 						<?php $no++; ?>
 					<?php endforeach; ?>
@@ -112,7 +122,8 @@
 	<td class="middle">{{code}}</td>
 	<td class="middle">{{name}}</td>		
 	<td class="middle"></td>
-	<td class="middle">{{date_upd}}</td>
+	<td class="middle">{{last_modified}}</td>
+	<td class="middle">{{modified_by}}</td>
 </script>
 
 <script src="<?php echo base_url(); ?>scripts/masters/customer_group.js?v=<?php echo date('Ymd'); ?>"></script>

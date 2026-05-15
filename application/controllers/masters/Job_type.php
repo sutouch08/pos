@@ -71,8 +71,7 @@ class Job_type extends PS_Controller
             'code' => $ds->code,
             'name' => $ds->name,
             'active' => $ds->active,
-            'user' => $this->_user->uname,
-            'update_user' => $this->_user->uname
+            'create_by' => $this->_user->id
           );
 
           $id = $this->job_type_model->add($arr);
@@ -90,7 +89,8 @@ class Job_type extends PS_Controller
             if (! empty($res))
             {
               $res->is_active = is_active($res->active);
-              $res->date_upd = thai_date($res->date_upd, TRUE, '/');
+              $res->last_modified = thai_date($res->create_at, TRUE, '/');
+              $res->modified_by = display_name($res->create_by);
             }
           }
         }
@@ -174,7 +174,7 @@ class Job_type extends PS_Controller
           $arr = array(            
             'name' => $ds->name,
             'active' => $ds->active,
-            'update_user' => $this->_user->uname
+            'update_by' => $this->_user->id
           );
 
           if (! $this->job_type_model->update($ds->id, $arr))
@@ -190,7 +190,8 @@ class Job_type extends PS_Controller
             if (! empty($res))
             {
               $res->is_active = is_active($res->active);
-              $res->date_upd = thai_date($res->date_upd, TRUE, '/');
+              $res->last_modified = thai_date($res->update_at, TRUE, '/');
+              $res->modified_by = display_name($res->update_by);
             }
           }
         }

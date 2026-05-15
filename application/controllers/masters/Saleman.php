@@ -75,8 +75,7 @@ class Saleman extends PS_Controller
 						'emp_id' => $ds->emp_id,
 						'name' => employee_name($ds->emp_id),
 						'active' => $ds->active,
-						'user' => $this->_user->uname,
-						'update_user' => $this->_user->uname
+						'create_by' => $this->_user->id
 					);					
 
 					$id = $this->slp_model->add($arr);
@@ -94,6 +93,8 @@ class Saleman extends PS_Controller
 						if (! empty($res))
 						{
 							$res->is_active = is_active($res->active);
+							$res->last_modified = thai_date($res->create_at, TRUE, '/');
+							$res->modified_by = display_name($res->create_by);
 						}
 					}
 				}
@@ -186,7 +187,7 @@ class Saleman extends PS_Controller
 						'emp_id' => $ds->emp_id,
 						'name' => employee_name($ds->emp_id),
 						'active' => $ds->active,
-						'update_user' => $this->_user->uname
+						'update_by' => $this->_user->id
 					);
 
 					if (! $this->slp_model->update($ds->id, $arr))
@@ -202,6 +203,8 @@ class Saleman extends PS_Controller
 						if (! empty($res))
 						{
 							$res->is_active = is_active($res->active);
+							$res->last_modified = thai_date($res->update_at, TRUE, '/');
+							$res->modified_by = display_name($res->update_by);
 						}
 					}
 				}

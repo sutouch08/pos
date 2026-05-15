@@ -71,8 +71,7 @@ class Product_category extends PS_Controller
             'code' => $ds->code,
             'name' => $ds->name,
             'active' => $ds->active,
-            'user' => $this->_user->uname,
-            'update_user' => $this->_user->uname
+            'create_by' => $this->_user->id
           );
 
           $id = $this->product_category_model->add($arr);
@@ -90,6 +89,8 @@ class Product_category extends PS_Controller
             if (! empty($res))
             {
               $res->is_active = is_active($res->active);
+              $res->last_modified = thai_date($res->create_at, TRUE);
+              $res->modified_by = display_name($res->create_by);
             }
           }
         }
@@ -181,7 +182,7 @@ class Product_category extends PS_Controller
             'name' => $ds->name,
             'active' => $ds->active,
             'member' => $this->product_category_model->count_members($ds->id),
-            'update_user' => $this->_user->uname
+            'update_by' => $this->_user->id
           );
 
           if (! $this->product_category_model->update($ds->id, $arr))
@@ -197,6 +198,8 @@ class Product_category extends PS_Controller
             if (! empty($res))
             {
               $res->is_active = is_active($res->active);
+              $res->last_modified = thai_date($res->update_at, TRUE);
+              $res->modified_by = display_name($res->update_by);
             }
           }
         }

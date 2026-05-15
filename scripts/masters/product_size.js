@@ -118,9 +118,7 @@ async function add() {
     active: active,
     group_id: groupId
   };
-
-  loadIn();
-
+  
   try {
     const response = await fetch(url, {
       method: 'POST',
@@ -131,31 +129,23 @@ async function add() {
     });
 
     const res = await response.text();
-    setTimeout(() => {
-      loadOut();
-      if (isJson(res)) {
-        const ds = JSON.parse(res);
-        if (ds.status === 'success') {
-          swal({
-            title: 'Success',
-            type: 'success',
-            timer: 1000
-          });
 
-          const template = $('#new-row-template').html();
-          const output = $('#size-table');
-          renderPrepend(template, ds.data, output);
-          reIndex();
-          clearInput();
-        }
-        else {
-          showError(ds.message)
-        }
+    if (isJson(res)) {
+      const ds = JSON.parse(res);
+      if (ds.status === 'success') {        
+        const template = $('#new-row-template').html();
+        const output = $('#size-table');
+        renderPrepend(template, ds.data, output);
+        reIndex();
+        clearInput();
       }
       else {
-        showError(res);
+        showError(ds.message)
       }
-    }, 300);
+    }
+    else {
+      showError(res);
+    }
 
     click = 0;
   }
