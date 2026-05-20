@@ -44,6 +44,11 @@ const goBack = () => {
   window.location.href = HOME;
 }
 
+
+const refresh = () => {
+  window.location.reload();
+}
+
 const clearFilter = () => {
   fetch(`${HOME}clear_filter`)
     .then(() => {

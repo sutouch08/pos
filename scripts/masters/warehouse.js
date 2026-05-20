@@ -1,194 +1,326 @@
-var HOME = BASE_URL + 'masters/warehouse';
+let click = 0;
 
-function goBack(){
-  window.location.href = HOME;
+function addNew() {
+  window.location.href = `${HOME}add_new`;
 }
 
-function getSearch(){
-  $('#searchForm').submit();
+function edit(id) {
+  window.location.href = `${HOME}edit/${id}`;
+}
+
+function viewDetail(id) {
+  const width = 800;
+  const height = 800;
+  const left = (screen.width - width) / 2;
+  const top = (screen.height - height) / 2;
+  window.open(`${HOME}view_details/${id}?nomenu&nonavbar`, '_blank', `width=${width},height=${height},top=${top},left=${left}`);
+}
+
+async function validateCode(id = null) {
+  const code = document.getElementById('code');
+  const codeError = document.getElementById('code-error');
+  
+  if (code.value.trim() === '') {
+    setError(code, codeError, 'Code is required');
+    return false;
+  }
+
+  //--- check duplicated
+  const url = `${HOME}is_exists_code`;
+  const res = await validateRemote(url, { code: code.value.trim(), id: id });
+  if (res === 'exists') {
+    setError(code, codeError, 'Code already exists');
+    return false;
+  }
+
+  clearError(code, codeError);
+
+  return true;
+}
+
+async function validateName(id = null) {
+  const name = document.getElementById('name');
+  const nameError = document.getElementById('name-error'); 
+  if (name.value.trim() === '') {
+    setError(name, nameError, 'Name is required');
+    return false;
+  }
+
+  //--- check duplicated
+  const url = `${HOME}is_exists_name`;
+  const res = await validateRemote(url, { name: name.value.trim(), id: id });
+  if (res === 'exists') {
+    setError(name, nameError, 'Name already exists');
+    return false;
+  }
+
+  clearError(name, nameError);
+
+  return true;
 }
 
 
-function clearFilter(){
-  $.get(HOME +'/clear_filter', function(){
-    goBack();
-  });
-}
+async function add() {
+  if(click !== 0) {
+    return false;
+  }
 
+  click = 1;
 
+  const code = document.getElementById('code').value.trim();
+  const name = document.getElementById('name').value.trim();
+  const role = document.getElementById('role').value;
+  const active = document.querySelector('input[name="active"]:checked').value;
+  const auz = document.querySelector('input[name="auz"]:checked').value;
 
-function getEdit(code){
-  window.location.href = HOME + '/edit/'+code;
-}
+  if (! await validateCode() || ! await validateName()) {
+    click = 0;
+    return false;
+  }
 
+  const url = `${HOME}add`;
+  const data = {
+    code: code,
+    name: name,
+    role: role,
+    active: active,
+    auz: auz
+  };
 
-
-function getDelete(code){
-  swal({
-    title:'Are sure ?',
-    text:'ต้องการลบ ' + code + ' หรือไม่ ?',
-    type:'warning',
-    showCancelButton: true,
-		confirmButtonColor: '#FA5858',
-		confirmButtonText: 'ใช่, ฉันต้องการลบ',
-		cancelButtonText: 'ยกเลิก',
-		closeOnConfirm: false
-  },function(){
-    $.ajax({
-      url: HOME + '/delete/' + code,
-      type:'GET',
-      cache:false,
-      success:function(rs){
-        if(rs === 'success'){
-          swal({
-            title:'Deleted',
-            text:'ลบคลัง '+code+' เรียบร้อยแล้ว',
-            type:'success',
-            timer:1000
-          });
-          $('#row-'+code).remove();
-          reIndex();
-        }else{
-          swal({
-            title:'Error!',
-            text:rs,
-            type:'error'
-          });
+  try {
+    const response = await postData(url, data);
+    const res = await response.text();
+    if (res === 'success') {
+      click = 0;
+      swal({
+        title: 'Success',
+        type:'success',
+        text:'เพิ่มคลังสินค้าเรียบร้อยแล้ว <br>ต้องการเพิ่มอีกหรือไม่ ?',
+        html:true,
+        showCancelButton: true,
+        confirmButtonColor: '#5cb85c',
+        confirmButtonText: 'Yes, add more',
+        cancelButtonText: 'No, go back'     
+      },
+      function(isConfirm){
+        if(isConfirm) {
+          addNew();
         }
+        else {
+          goBack();
+        }
+      });
+    }
+    else {
+      click = 0;
+      showError(res);
+    }
+  }
+  catch (error) {
+    click = 0;
+    showError(error.message);
+  }
+}
+
+
+async function update() {
+  if(click !== 0) {
+    return false;
+  }
+  click = 1;
+
+  const id = document.getElementById('id').value;
+  const code = document.getElementById('code').value.trim();
+  const name = document.getElementById('name').value.trim();
+  const role = document.getElementById('role').value;
+  const active = document.querySelector('input[name="active"]:checked').value;
+  const auz = document.querySelector('input[name="auz"]:checked').value;
+
+  if (! await validateCode(id) || ! await validateName(id)) {
+    click = 0;
+    return false;
+  }
+
+  const url = `${HOME}update`;
+  const data = {
+    id: id,
+    code: code,
+    name: name,
+    role: role,
+    active: active,
+    auz: auz
+  };
+
+  try {
+    const response = await postData(url, data);
+    const res = await response.text();
+    if (res === 'success') {
+      click = 0;
+      swal({
+        title: 'Success',
+        type:'success',
+        text:'แก้ไขคลังสินค้าเรียบร้อยแล้ว',
+        html:true,
+        timer:1000
+      });
+    }
+    else {
+      click = 0;
+      showError(res);
+    }
+  }
+  catch (error) {
+    click = 0;
+    showError(error.message);
+  }
+}
+
+
+function confirmDelete(id, code) {
+  swal({
+    title: 'Are sure ?',
+    text: `Do you want to delete ${code} ?`,
+    type: 'warning',
+    html:true,
+    showCancelButton: true,
+    confirmButtonColor: '#DD6B55',
+    confirmButtonText: 'Yes, delete',
+    cancelButtonText: 'No, cancel',
+    closeOnConfirm: true
+  },
+  function(isConfirm){
+    if (isConfirm) {
+      setTimeout(() => {
+        doDelete(id);
+      }, 100);
+    }
+  });
+}
+
+
+async function doDelete(id) {
+  const url = `${HOME}delete`;
+  try {
+    const response = await postData(url, { id: id });
+    const res = await response.text();
+    if (res === 'success') {
+      swal({
+        title: 'Deleted!',
+        text: 'Your warehouse has been deleted.',
+        type: 'success',
+        html: true,
+        timer: 1000
+      });
+
+      const row = document.getElementById(`row-${id}`);
+      if (row) {
+        row.remove();
       }
-    })
 
-  })
-}
-
-function toggleConsignment(option)
-{
-  $('#is_consignment').val(option);
-  if(option == 1){
-    $('#btn-cm-yes').addClass('btn-success');
-    $('#btn-cm-no').removeClass('btn-danger');
-  }
-  else
-  {
-    $('#btn-cm-yes').removeClass('btn-success');
-    $('#btn-cm-no').addClass('btn-danger');
+      reIndex();
+    } 
+    else {
+      showError(res);
+    }
+  } 
+  catch (error) {
+    showError(error.message);
   }
 }
 
 
-function toggleSell(option)
-{
-  $('#sell').val(option);
-  if(option == 1){
-    $('#btn-sell-yes').addClass('btn-success');
-    $('#btn-sell-no').removeClass('btn-danger');
-  }
-  else
-  {
-    $('#btn-sell-yes').removeClass('btn-success');
-    $('#btn-sell-no').addClass('btn-danger');
-  }
-}
-
-
-function togglePrepare(option)
-{
-  $('#prepare').val(option);
-  if(option == 1){
-    $('#btn-prepare-yes').addClass('btn-success');
-    $('#btn-prepare-no').removeClass('btn-danger');
-  }
-  else
-  {
-    $('#btn-prepare-yes').removeClass('btn-success');
-    $('#btn-prepare-no').addClass('btn-danger');
-  }
-}
-
-
-function toggleAuz(option)
-{
-  $('#auz').val(option);
-  if(option == 1){
-    $('#btn-auz-yes').addClass('btn-success');
-    $('#btn-auz-no').removeClass('btn-danger');
-  }
-  else
-  {
-    $('#btn-auz-yes').removeClass('btn-success');
-    $('#btn-auz-no').addClass('btn-danger');
-  }
-}
-
-
-function toggleActive(option)
-{
-  $('#active').val(option);
-  if(option == 1){
-    $('#btn-active-yes').addClass('btn-success');
-    $('#btn-active-no').removeClass('btn-danger');
-  }
-  else
-  {
-    $('#btn-active-yes').removeClass('btn-success');
-    $('#btn-active-no').addClass('btn-danger');
-  }
-}
-
-
-function syncData(){
-  load_in();
-  $.get(HOME +'/syncData', function(){
-    load_out();
-    swal({
-      title:'Completed',
-      type:'success',
-      timer:1000
-    });
-    setTimeout(function(){
-      goBack();
-    }, 1500);
+function restore(id, code) {
+  swal({
+    title: 'Are sure ?',
+    text: `Do you want to restore ${code} ?`,
+    type: 'warning',
+    html:true,
+    showCancelButton: true,
+    confirmButtonColor: '#5cb85c',
+    confirmButtonText: 'Yes, restore',
+    cancelButtonText: 'No, cancel',
+    closeOnConfirm: true
+  },
+  function(isConfirm){
+    if (isConfirm) {
+      setTimeout(() => {
+        doRestore(id);
+      }, 100);
+    }
   });
 }
 
 
-function syncAllData() {
-  load_in();
+async function doRestore(id) {
+  const url = `${HOME}restore`;
+  try {
+    const response = await postData(url, { id: id });
+    const res = await response.text();
+    if (res === 'success') {
+      swal({
+        title: 'Restored!',
+        text: 'Your warehouse has been restored.',
+        type: 'success',
+        html: true,
+        timer: 1000
+      });
 
-  $.get(HOME + '/syncAllData', function() {
-    load_out();
-    swal({
-      title:'Completed',
-      type:'success',
-      timer:1000
-    });
+      setTimeout(() => {
+        refresh();
+      }, 1200);
+    } 
+    else {
+      showError(res);
+    }
+  } 
+  catch (error) {
+    showError(error.message);
+  }
+}
 
-    setTimeout(function() {
-      goBack();
-    }, 1500);
+
+function confirmPermanentDelete(id, code) {
+  swal({
+    title: 'Are sure ?',
+    text: `Do you want to permanently delete ${code} ? This action cannot be undone.`,
+    type: 'warning',
+    html:true,
+    showCancelButton: true,
+    confirmButtonColor: '#d9534f',
+    confirmButtonText: 'Yes, delete permanently',
+    cancelButtonText: 'No, cancel',
+    closeOnConfirm: true
+  },
+  function(isConfirm){
+    if (isConfirm) {
+      setTimeout(() => {
+        doPermanentDelete(id);                
+      }, 100);
+    }
   });
 }
 
-function exportFilter(){
-  let code = $('#code').val();
-  let name = $('#name').val();
-  let role = $('#role').val();
-  let is_consignment = $('#is_consignment').val();
-  let sell = $('#sell').val();
-  let prepare = $('#prepare').val();
-  let active = $('#active').val();
-  let auz = $('#auz').val();
-
-  $('#export-code').val(code);
-  $('#export-name').val(name);
-  $('#export-role').val(role);
-  $('#export-is-consignment').val(is_consignment);
-  $('#export-sell').val(sell);
-  $('#export-prepare').val(prepare);
-  $('#export-active').val(active);
-  $('#export-auz').val(auz);
-
-  var token = $('#token').val();
-  get_download(token);
-  $('#exportForm').submit();
+async function doPermanentDelete(id) {
+  const url = `${HOME}permanent_delete`;
+  try {
+    const response = await postData(url, { id: id });
+    const res = await response.text();
+    if (res === 'success') {
+      swal({
+        title: 'Deleted!',
+        text: 'Your warehouse has been permanently deleted.',
+        type: 'success',
+        html: true,
+        timer: 1000
+      }, function() {
+         refresh();
+      });     
+    }
+    else {
+      showError(res);
+    }
+  } 
+  catch (error) {
+    showError(error.message);
+  }
 }

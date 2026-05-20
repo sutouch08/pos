@@ -13,6 +13,7 @@ class Warehouse extends PS_Controller
     parent::__construct();
     $this->home = base_url().'masters/warehouse';
     $this->load->model('masters/warehouse_model');
+    $this->load->model('masters/zone_model');
     $this->load->helper('warehouse');
   }
 
@@ -21,12 +22,11 @@ class Warehouse extends PS_Controller
     $filter = array(
       'code' => get_filter('code', 'wh_code', ''),
       'name' => get_filter('name', 'wh_name', ''),
-      'role' => get_filter('role', 'wh_role', 'all'),
-      'is_consignment' => get_filter('is_consignment', 'is_consignment', 'all'),
+      'role' => get_filter('role', 'wh_role', 'all'),      
       'active' => get_filter('active', 'wh_active', 'all'),
-      'sell' => get_filter('sell', 'wh_sell', 'all'),
-      'prepare' => get_filter('prepare', 'wh_prepare', 'all'),
-      'auz' => get_filter('auz', 'wh_auz', 'all')
+      'auz' => get_filter('auz', 'wh_auz', 'all'),
+      'order_by' => get_filter('order_by', 'wh_order_by', 'code'),
+      'sort_by' => get_filter('sort_by', 'wh_sort_by', 'ASC')
     );
 
 		//--- แสดงผลกี่รายการต่อหน้า
@@ -37,8 +37,7 @@ class Warehouse extends PS_Controller
 			$perpage = 20;
 		}
 
-		$rows = $this->warehouse_model->count_rows($filter);
-		//--- ส่งตัวแปรเข้าไป 4 ตัว base_url ,  total_row , perpage = 20, segment = 3
+		$rows = $this->warehouse_model->count_rows($filter);		
 		$init = pagination_config($this->home.'/index/', $rows, $perpage, $this->segment);
 		$list = $this->warehouse_model->get_list($filter, $perpage, $this->uri->segment($this->segment));
 
@@ -46,7 +45,7 @@ class Warehouse extends PS_Controller
     {
       foreach($list as $rs)
       {
-        $rs->zone_count = $this->warehouse_model->count_zone($rs->code);
+        $rs->zone_count = $this->warehouse_model->count_zone($rs->id);
       }
     }
 
@@ -57,280 +56,376 @@ class Warehouse extends PS_Controller
   }
 
 
-
-  public function edit($code)
+  public function add_new()
   {
-    if($this->pm->can_edit)
-    {
-      $ds['ds'] = $this->warehouse_model->get($code);
-      $this->load->view('masters/warehouse/warehouse_edit', $ds);
-    }
-    else
-    {
-      set_error("คุณไม่มีสิทธิ์แก้ไขคลังสินค้า");
-      redirect($this->home);
-    }
+    $this->title = 'เพิ่ม คลังสินค้า';
+    $this->load->view('masters/warehouse/warehouse_add');
   }
 
 
-
-  public function update()
-  {
-    if($this->pm->can_edit)
-    {
-      if($this->input->post('code'))
-      {
-        $code = $this->input->post('code');
-        $arr = array(
-          'role' => $this->input->post('role'),
-          'sell' => $this->input->post('sell'),
-          'prepare' => $this->input->post('prepare'),
-          'auz' => $this->input->post('auz'),
-          'active' => $this->input->post('active'),
-          'is_consignment' => get_null($this->input->post('is_consignment')),
-          'update_user' => get_cookie('uname')
-        );
-
-        if($this->warehouse_model->update($code, $arr))
-        {
-          set_message("Update Successfull");
-          redirect($this->home.'/edit/'.$code);
-        }
-        else
-        {
-          set_error("Update Fail");
-          redirect($this->home.'/edit/'.$code);
-        }
-      }
-      else
-      {
-        set_error('ไม่พบรหัสคลังสินค้า');
-        redirect($this->home);
-      }
-    }
-    else
-    {
-      set_error('คุณไม่มีสิทธิ์แก้ไขคลังสินค้า');
-      redirect($this->home);
-    }
-  }
-
-
-  public function delete($code)
+  public function add()
   {
     $sc = TRUE;
+    $ds = json_decode(file_get_contents('php://input'));
 
-    if($this->pm->can_delete)
+    if($this->pm->can_add)
     {
-      //---- count member if exists reject action
-      if($this->warehouse_model->has_zone($code))
+      if(!empty($ds) && !empty($ds->code) && !empty($ds->name))
       {
-        $sc = FALSE;
-        $this->error = 'ไม่สามารถลบคลังได้เนื่องจากยังมีโซนอยู่';
-      }
-      //--- check warehouse in SAP if exists reject action
-      else if($this->warehouse_model->is_sap_exists($code))
-      {
-        $sc = FALSE;
-        $this->error = 'ไม่สามารถลบคลังได้เนื่องจากยังไม่ได้ลบคลังใน SAP';
+        if($sc === TRUE && $this->warehouse_model->is_exists_code($ds->code))
+        {
+          $sc = FALSE;
+          set_error('exists', $ds->code);
+        }
+
+        if($sc === TRUE && $this->warehouse_model->is_exists_name($ds->name))
+        {
+          $sc = FALSE;
+          set_error('exists', $ds->name);
+        }
+
+        if($sc === TRUE)
+        {
+          $this->db->trans_begin();
+
+          $arr = array(
+            'code' => $ds->code,
+            'name' => $ds->name,
+            'role' => $ds->role,
+            'active' => $ds->active,
+            'auz' => $ds->auz,
+            'create_by' => $this->_user->id
+          );
+
+          $id = $this->warehouse_model->add($arr);
+
+          if( ! $id)
+          {
+            $sc = FALSE;
+            set_error('insert');
+          }
+
+          if($sc === TRUE)
+          {
+            //-- create system zone for this warehouse
+            $arr = array(
+              'code' => $ds->code.'-SYSTEM',
+              'name' => $ds->code.'-SYSTEM',
+              'warehouse_id' => $id,
+              'warehouse_code' => $ds->code,
+              'system' => 1,
+              'create_by' => $this->_user->id
+            );              
+           
+           if( ! $this->zone_model->add($arr))
+           {
+             $sc = FALSE;
+             $this->error = "สร้างโซนระบบไม่สำเร็จ";
+           }
+          }
+
+          if($sc === TRUE)
+          {
+            $this->db->trans_commit();
+          }
+          else 
+          {
+            $this->db->trans_rollback();
+          }
+        }
       }
       else
       {
-        if($this->warehouse_model->delete($code) === FALSE)
-        {
-          $sc = FALSE;
-          $this->error = 'ลบคลังไม่สำเร็จ';
-        }
+        $sc = FALSE;
+        set_error('required');
       }
     }
     else
     {
       $sc = FALSE;
-      $this->error = 'คุณไม่มีสิทธิ์ลบคลังสินค้า';
+      set_error('permission');
     }
 
-    echo $sc === TRUE ? 'success' : $this->error;
+    $this->_response($sc);
   }
 
 
-  public function syncData()
+  public function edit($id)
   {
-    $last_sync = $this->warehouse_model->get_last_sync_date();
-    //$last_sync = date('Y-m-d H:i:s', strtotime('2019-01-01 00:00:00'));
-    $newData = $this->warehouse_model->get_new_data($last_sync);
-
-    if(!empty($newData))
+    if($this->pm->can_edit)
     {
-      foreach($newData as $rs)
+      $this->title = 'แก้ไข คลังสินค้า';
+      $rs = $this->warehouse_model->get($id);
+      if( ! empty($rs))
       {
-        if($this->warehouse_model->is_exists($rs->code))
-        {
-          $ds = array(
-            'name' => $rs->name,
-            'active' => $rs->Inactive == 'Y' ? 0 : 1,
-            'last_sync' => date('Y-m-d H:i:s'),
-            'update_user' => 'SAP',
-            'old_code' => $rs->old_code,
-            'limit_amount' => 0 //$rs->limit_amount
-          );
-
-          $this->warehouse_model->update($rs->code, $ds);
-        }
-        else
-        {
-          $ds = array(
-            'code' => $rs->code,
-            'name' => $rs->name,
-            'active' => $rs->Inactive == 'Y' ? 0 : 1,
-            'last_sync' => date('Y-m-d H:i:s'),
-            'update_user' => 'SAP',
-            'old_code' => $rs->old_code,
-            'limit_amount' => 0 //$rs->limit_amount
-          );
-
-          $this->warehouse_model->add($ds);
-        }
+        $this->load->view('masters/warehouse/warehouse_edit', array('data' => $rs));        
+      }
+      else 
+      {
+        $this->page_not_found();
       }
     }
-
-    echo 'done';
+    else
+    {
+      $this->deny_page();
+    }
   }
 
 
-  public function syncAllData()
+  public function update()
   {
-    $last_sync = date('Y-m-d H:i:s', strtotime('2019-01-01 00:00:00'));
-    $newData = $this->warehouse_model->get_new_data($last_sync);
+    $sc = TRUE;
+    $ds = json_decode(file_get_contents('php://input'));
 
-    if(!empty($newData))
+    if($this->pm->can_edit)
     {
-      foreach($newData as $rs)
+      if(!empty($ds) && !empty($ds->id) && !empty($ds->name))
       {
-        if($this->warehouse_model->is_exists($rs->code))
+        if($sc === TRUE && $this->warehouse_model->is_exists_name($ds->name, $ds->id))
         {
-          $ds = array(
-            'name' => $rs->name,
-            'active' => $rs->Inactive == 'Y' ? 0 : 1,
-            'last_sync' => date('Y-m-d H:i:s'),
-            'update_user' => 'SAP',
-            'old_code' => $rs->old_code,
-            'limit_amount' => 0 //$rs->limit_amount
-          );
-
-          $this->warehouse_model->update($rs->code, $ds);
+          $sc = FALSE;
+          set_error('exists', $ds->name);
         }
-        else
+
+        if($sc === TRUE)
         {
-          $ds = array(
-            'code' => $rs->code,
-            'name' => $rs->name,
-            'active' => $rs->Inactive == 'Y' ? 0 : 1,
-            'last_sync' => date('Y-m-d H:i:s'),
-            'update_user' => 'SAP',
-            'old_code' => $rs->old_code,
-            'limit_amount' => 0//$rs->limit_amount
+          $arr = array(
+            'name' => $ds->name,
+            'role' => $ds->role,
+            'active' => $ds->active,
+            'auz' => $ds->auz,
+            'update_by' => $this->_user->id
           );
 
-          $this->warehouse_model->add($ds);
+          if( ! $this->warehouse_model->update($ds->id, $arr))
+          {
+            $sc = FALSE;
+            set_error('update');
+          }
         }
       }
+      else
+      {
+        $sc = FALSE;
+        set_error('required');
+      }
+    }
+    else
+    {
+      $sc = FALSE;
+      set_error('permission');
     }
 
-    echo 'done';
+    $this->_response($sc);
   }
 
 
-  public function export_filter()
+  public function delete()
   {
-    $filter = array(
-      'code' => get_filter('whCode', 'wh_code', ''),
-      'name' => get_filter('whName', 'wh_name', ''),
-      'role' => get_filter('whRole', 'wh_role', 'all'),
-      'is_consignment' => get_filter('whIsConsignment', 'is_consignment', 'all'),
-      'active' => get_filter('whActive', 'wh_active', 'all'),
-      'sell' => get_filter('whSell', 'wh_sell', 'all'),
-      'prepare' => get_filter('whPrepare', 'wh_prepare', 'all'),
-      'auz' => get_filter('whAuz', 'wh_auz', 'all')
-    );
+    $sc = TRUE;
+    $ds = json_decode(file_get_contents('php://input'));
 
-    $token = $this->input->post('token');
-
-    $list = $this->warehouse_model->get_list($filter);
-
-    //--- load excel library
-    $this->load->library('excel');
-
-    $this->excel->setActiveSheetIndex(0);
-    $this->excel->getActiveSheet()->setTitle('Zone master data');
-
-    //--- set Table header
-
-
-    $this->excel->getActiveSheet()->setCellValue('A1', 'No.');
-    $this->excel->getActiveSheet()->setCellValue('B1', 'Code');
-    $this->excel->getActiveSheet()->setCellValue('C1', 'Description');
-    $this->excel->getActiveSheet()->setCellValue('D1', 'Role');
-    $this->excel->getActiveSheet()->setCellValue('E1', 'Bin Location');
-    $this->excel->getActiveSheet()->setCellValue('F1', 'Sell');
-    $this->excel->getActiveSheet()->setCellValue('G1', 'Pick');
-    $this->excel->getActiveSheet()->setCellValue('H1', 'Can be negative');
-    $this->excel->getActiveSheet()->setCellValue('I1', 'Active');
-    $this->excel->getActiveSheet()->setCellValue('J1', 'Is Consignment');
-    $this->excel->getActiveSheet()->setCellValue('K1', 'Limit Amount');
-
-
-    //---- กำหนดความกว้างของคอลัมภ์
-    $this->excel->getActiveSheet()->getColumnDimension('B')->setWidth(20);
-    $this->excel->getActiveSheet()->getColumnDimension('C')->setWidth(40);
-    $this->excel->getActiveSheet()->getColumnDimension('D')->setWidth(20);
-    $this->excel->getActiveSheet()->getColumnDimension('E')->setWidth(20);
-    $this->excel->getActiveSheet()->getColumnDimension('F')->setWidth(20);
-    $this->excel->getActiveSheet()->getColumnDimension('G')->setWidth(20);
-    $this->excel->getActiveSheet()->getColumnDimension('H')->setWidth(20);
-    $this->excel->getActiveSheet()->getColumnDimension('I')->setWidth(20);
-    $this->excel->getActiveSheet()->getColumnDimension('J')->setWidth(20);
-    $this->excel->getActiveSheet()->getColumnDimension('K')->setWidth(20);
-
-
-    $row = 2;
-
-
-    if(! empty($list))
+    if($this->pm->can_delete)
     {
-      $no = 1;
-
-      foreach($list as $rs)
+      if(!empty($ds) && !empty($ds->id))
       {
-        $this->excel->getActiveSheet()->setCellValue('A'.$row, $no);
-        $this->excel->getActiveSheet()->setCellValue('B'.$row, $rs->code);
-        $this->excel->getActiveSheet()->setCellValue('C'.$row, $rs->name);
-        $this->excel->getActiveSheet()->setCellValue('D'.$row, $rs->role_name);
-        $this->excel->getActiveSheet()->setCellValue('E'.$row, $this->warehouse_model->count_zone($rs->code));
-        $this->excel->getActiveSheet()->setCellValue('F'.$row, ($rs->sell ? 'Y' : 'N'));
-        $this->excel->getActiveSheet()->setCellValue('G'.$row, ($rs->prepare ? 'Y' : 'N'));
-        $this->excel->getActiveSheet()->setCellValue('H'.$row, ($rs->auz ? 'Y' : 'N'));
-        $this->excel->getActiveSheet()->setCellValue('I'.$row, ($rs->active ? 'Y' : 'N'));
-        $this->excel->getActiveSheet()->setCellValue('J'.$row, ($rs->is_consignment ? 'Y' : 'N'));
-        $this->excel->getActiveSheet()->setCellValue('K'.$row, $rs->limit_amount);
-        $no++;
-        $row++;
+        if( ! $this->warehouse_model->delete($ds->id))
+        {
+          $sc = FALSE;
+          set_error('delete');
+        }
       }
-
-      setToken($token);
-      $file_name = "Warehouse Master Data.xlsx";
-      header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'); /// form excel 2007 XLSX
-      header('Content-Disposition: attachment;filename="'.$file_name.'"');
-      $writer = PHPExcel_IOFactory::createWriter($this->excel, 'Excel2007');
-      $writer->save('php://output');
+      else
+      {
+        $sc = FALSE;
+        set_error('required');
+      }
     }
+    else
+    {
+      $sc = FALSE;
+      set_error('permission');
+    }
+
+    $this->_response($sc);
+  }
+
+
+  public function restore()
+  {
+    $sc = TRUE;
+    $ds = json_decode(file_get_contents('php://input'));
+
+    if($this->pm->can_approve)
+    {
+      if(!empty($ds) && !empty($ds->id))
+      {
+        $arr = array(
+          'active' => 1,
+          'update_by' => $this->_user->id,
+          'delete_by' => NULL,
+          'delete_at' => NULL
+        );
+
+        if( ! $this->warehouse_model->update($ds->id, $arr))
+        {
+          $sc = FALSE;
+          set_error('restore');
+        }
+      }
+      else
+      {
+        $sc = FALSE;
+        set_error('required');
+      }
+    }
+    else
+    {
+      $sc = FALSE;
+      set_error('permission');
+    }
+
+    $this->_response($sc);
+  }
+
+
+  public function permanent_delete()
+  {
+    $sc = TRUE;
+    $ds = json_decode(file_get_contents('php://input'));
+
+    if($this->pm->can_delete && $this->pm->can_approve)
+    {
+      if(!empty($ds) && !empty($ds->id))
+      {
+        //-- check if this warehouse has any zone
+        $zone_count = $this->warehouse_model->count_zone($ds->id);
+        $system_zone = $this->zone_model->get_system_zone($ds->id);
+
+        if(($system_zone === NULL && $zone_count > 0) || ($system_zone !== NULL && $zone_count > 1))
+        {
+          $sc = FALSE;
+          set_error('transection', '', 'ยังมีโซนที่อยู่ในคลังนี้');
+        }
+        
+        //--- check system zone has transection or not
+        if($sc === TRUE && ! empty($system_zone))        
+        {
+          if($this->zone_model->has_transaction($system_zone->id))
+          {
+            $sc = FALSE;
+            set_error('transection', 'system zone');
+          }
+        }
+
+        //-- zone has stock or not
+         if($sc === TRUE && ! empty($system_zone))        
+        {
+          if($this->zone_model->has_stock($system_zone->id))
+          {
+            $sc = FALSE;
+            set_error('delete', 'system zone', '<br>Stock in system zone must be zero');
+          }
+        }
+        
+        if($sc === TRUE)
+        {
+          $this->db->trans_begin();
+
+          if ($sc === TRUE)
+          {
+            if (! $this->zone_model->delete($system_zone->id, FALSE))
+            {
+              $sc = FALSE;
+              set_error('delete', 'system zone');
+            }
+          }
+
+          if($sc === TRUE)
+          {
+            if( ! $this->warehouse_model->delete($ds->id, FALSE))
+            {
+              $sc = FALSE;
+              set_error('delete');
+            }
+          }
+        }
+
+        if($sc === TRUE)
+        {
+          $this->db->trans_commit();
+        }
+        else 
+        {
+          $this->db->trans_rollback();
+        }        
+      }
+      else
+      {
+        $sc = FALSE;
+        set_error('required');
+      }
+    }
+    else
+    {
+      $sc = FALSE;
+      set_error('permission');
+    }
+
+    $this->_response($sc);
+  }
+
+  public function view_details($id)
+  {
+    $this->title = 'รายละเอียด คลังสินค้า';
+    $rs = $this->warehouse_model->get($id);
+
+    if($rs === NULL)
+    {
+      $this->page_not_found();
+    }
+    else
+    {
+      $this->load->view('masters/warehouse/warehouse_detail', array('data' => $rs));
+    }
+  }
+
+
+  public function is_exists_code()
+  {
+    $exists = FALSE;
+    $ds = json_decode(file_get_contents('php://input'));
+
+    if (! empty($ds) && ! empty($ds->code))
+    {
+      $exists = $this->warehouse_model->is_exists_code($ds->code, isset($ds->id) ? $ds->id : NULL);
+    }
+
+    echo $exists ? 'exists' : 'not_exists';
+  }
+
+
+  public function is_exists_name()
+  {
+    $exists = FALSE;
+    $ds = json_decode(file_get_contents('php://input'));
+
+    if (! empty($ds) && ! empty($ds->name))
+    {
+      $exists = $this->warehouse_model->is_exists_name($ds->name, isset($ds->id) ? $ds->id : NULL);
+    }
+
+    echo $exists ? 'exists' : 'not_exists';
   }
 
 
   public function clear_filter()
   {
-    $filter = array('wh_code', 'wh_name', 'wh_role', 'is_consignment', 'wh_active', 'wh_sell', 'wh_prepare', 'wh_auz');
+    $filter = array('wh_code', 'wh_name', 'wh_role', 'wh_active', 'wh_auz', 'wh_order_by', 'wh_sort_by');
     clear_filter($filter);
   }
+
+
 
 } //--- end class
 

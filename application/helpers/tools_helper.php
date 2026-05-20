@@ -162,7 +162,7 @@ function is_checked($val1, $val2)
 function is_active($val, $showIcon = TRUE)
 {
 	$val = strtolower(strval($val));
-	return ($val === '1' || $val === 'y') || $val ? '<i class="fa fa-check green"></i>' : ($showIcon ? '<i class="fa fa-times red"></i>' : '');
+	return ($val === '1' || $val === 'y') || $val ? '<i class="fa fa-check fa-lg green" title="Active"></i>' : ($showIcon ? '<i class="fa fa-times fa-lg red" title="Inactive"></i>' : '');
 }
 
 
@@ -299,23 +299,23 @@ function get_discount_amount($price, $disc = 0)
 }
 
 
-function set_error($key, $name = "data")
+function set_error($key, $name = "data", $message = '')
 {
 	$error = array(
-		'insert' => "Insert {$name} failed.",
-		'update' => "Update {$name} failed.",
-		'delete' => "Delete {$name} failed.",
-		'permission' => "You don't have permission to perform this operation.",
-		'required' => "Missing required parameter.",
-		'exists' => "'{$name}' already exists.",
-		'status' => "Invalid document status",
-		'notfound' => "Data or document number not found",
-		'not_found' => "Data or document number not found",
-		'transection' => "Unable to delete {$name} because transactions exists or link to other module.",
-		'transections' => "Unable to delete {$name} because transactions exists or link to other module.",
-		'transaction' => "Unable to delete {$name} because transactions exists or link to other module.",
-		'transactions' => "Unable to delete {$name} because transactions exists or link to other module."
-	);
+		'insert' => "Insert {$name} failed.{$message}",
+		'update' => "Update {$name} failed.{$message}",
+		'delete' => "Delete {$name} failed.{$message}",
+		'permission' => "You don't have permission to perform this operation.{$message}",
+		'required' => "Missing required parameter.{$message}",
+		'exists' => "'{$name}' already exists.{$message}",
+		'status' => "Invalid document status.{$message}",
+		'notfound' => "Data or document number not found.{$message}",
+		'not_found' => "Data or document number not found.{$message}",
+		'transection' => "Unable to delete {$name} because transactions exists or link to other module.{$message}",
+		'transections' => "Unable to delete {$name} because transactions exists or link to other module.{$message}",
+		'transaction' => "Unable to delete {$name} because transactions exists or link to other module.{$message}",
+		'transactions' => "Unable to delete {$name} because transactions exists or link to other module.{$message}"
+	);	
 
 	$ci = &get_instance();
 

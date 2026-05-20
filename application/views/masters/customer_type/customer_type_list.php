@@ -48,6 +48,7 @@
 					<th class="fix-width-200 middle sorting <?php echo $sort_name; ?>" id="sort-name" onclick="sort('name', '<?php echo $sort_name; ?>')">ชื่อ</th>
 					<th class="min-width-100 middle"></th>
 					<th class="fix-width-150 middle sorting <?php echo $sort_update; ?>" id="sort-update" onclick="sort('update_at', '<?php echo $sort_update; ?>')">แก้ไขล่าสุด</th>
+					<th class="fix-width-150 middle">แก้ไขโดย</th>
 				</tr>
 			</thead>
 			<tbody id="data-table">

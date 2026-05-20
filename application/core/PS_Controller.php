@@ -86,7 +86,12 @@ class PS_Controller extends CI_Controller
   {
 		$error = array('error_message' => $err);
     return $this->load->view('page_error', $error);
-  }  
+  }
+
+  public function page_not_found()
+  {
+    return $this->load->view('page_not_found');
+  }
 
 }
 

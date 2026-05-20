@@ -30,6 +30,10 @@
 	<script src="<?php echo base_url(); ?>assets/js/select2.js"></script>
 	<script src="<?php echo base_url(); ?>assets/js/chosen.jquery.js"></script>
 	<link rel="stylesheet" type="text/css" href="<?php echo base_url(); ?>assets/css/sweet-alert.css">
+	<script type="text/javascript">
+		var BASE_URL = '<?php echo base_url(); ?>';
+		var HOME = '<?php echo $this->home; ?>/';
+	</script>
 </head>
 
 <body class="no-skin">
@@ -38,79 +42,71 @@
 		<div class="loader-spinner"></div>
 		<div class="loader-text"></div>
 	</div>
-	<div id="navbar" class="navbar navbar-default">
-		<script type="text/javascript">
-			var BASE_URL = '<?php echo base_url(); ?>';
-			var HOME = '<?php echo $this->home; ?>/';
-		</script>
-		<div class="navbar-container" id="navbar-container">
-			<?php if (! isset($_GET['nomenu'])) : ?>
-				<!-- #section:basics/sidebar.mobile.toggle -->
-				<button type="button" class="navbar-toggle menu-toggler pull-left" id="menu-toggler" data-target="#sidebar">
-					<span class="sr-only">Toggle sidebar</span>
-					<span class="icon-bar"></span>
-					<span class="icon-bar"></span>
-					<span class="icon-bar"></span>
-				</button>
-			<?php endif; ?>
-			<div class="navbar-header pull-left">
-				<a href="<?php echo (!isset($_GET['nomenu']) ? base_url() : '#'); ?>" class="navbar-brand">
-					<small>
-						<?php echo getConfig('APP_TITLE'); ?>
-					</small>
-				</a>
-			</div>
-			<?php if (! isset($_GET['nomenu'])) : ?>
-				<?php $this->load->view('include/top_menu'); ?>
-
-				<div class="navbar-buttons navbar-header pull-right" role="navigation">
-					<ul class="nav ace-nav">
-
-						<li class="light-blue">
-							<a data-toggle="dropdown" href="#" class="dropdown-toggle">
-
-								<span class="user-info">
-									<small>Welcome</small>
-									<?php echo get_cookie('displayName'); ?>
-								</span>
-
-								<i class="ace-icon fa fa-caret-down"></i>
-							</a>
-
-							<ul class="user-menu dropdown-menu-right dropdown-menu dropdown-yellow dropdown-caret dropdown-close">
-								<li>
-									<a href="JavaScript:void(0)" onclick="changeUserPwd('<?php echo get_cookie('uname'); ?>')">
-										<i class="ace-icon fa fa-keys"></i>
-										เปลี่ยนรหัสผ่าน
-									</a>
-								</li>
-								<li class="divider"></li>
-								<li>
-									<a href="<?php echo base_url(); ?>users/authentication/logout">
-										<i class="ace-icon fa fa-power-off"></i>
-										ออกจากระบบ
-									</a>
-								</li>
-							</ul>
-						</li>
-					</ul>
+	<?php if (! isset($_GET['nonavbar'])) : ?>
+		<div id="navbar" class="navbar navbar-default">
+			<div class="navbar-container" id="navbar-container">
+				<?php if (! isset($_GET['nomenu'])) : ?>
+					<!-- #section:basics/sidebar.mobile.toggle -->
+					<button type="button" class="navbar-toggle menu-toggler pull-left" id="menu-toggler" data-target="#sidebar">
+						<span class="sr-only">Toggle sidebar</span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+					</button>
+				<?php endif; ?>
+				<div class="navbar-header pull-left">
+					<a href="<?php echo (!isset($_GET['nomenu']) ? base_url() : '#'); ?>" class="navbar-brand">
+						<small>
+							<?php echo getConfig('APP_TITLE'); ?>
+						</small>
+					</a>
 				</div>
-			<?php endif; ?>
+				<?php if (! isset($_GET['nomenu'])) : ?>
+					<?php $this->load->view('include/top_menu'); ?>
+
+					<div class="navbar-buttons navbar-header pull-right" role="navigation">
+						<ul class="nav ace-nav">
+
+							<li class="light-blue">
+								<a data-toggle="dropdown" href="#" class="dropdown-toggle">
+
+									<span class="user-info">
+										<small>Welcome</small>
+										<?php echo get_cookie('displayName'); ?>
+									</span>
+
+									<i class="ace-icon fa fa-caret-down"></i>
+								</a>
+
+								<ul class="user-menu dropdown-menu-right dropdown-menu dropdown-yellow dropdown-caret dropdown-close">
+									<li>
+										<a href="JavaScript:void(0)" onclick="changeUserPwd('<?php echo get_cookie('uname'); ?>')">
+											<i class="ace-icon fa fa-keys"></i>
+											เปลี่ยนรหัสผ่าน
+										</a>
+									</li>
+									<li class="divider"></li>
+									<li>
+										<a href="<?php echo base_url(); ?>users/authentication/logout">
+											<i class="ace-icon fa fa-power-off"></i>
+											ออกจากระบบ
+										</a>
+									</li>
+								</ul>
+							</li>
+						</ul>
+					</div>
+				<?php endif; ?>
+			</div>
 		</div>
-	</div>
+	<?php endif; ?>
 
 	<!-- /section:basics/navbar.layout -->
-	<div class="main-container" id="main-container">		
+	<div class="main-container" id="main-container">
 		<?php if (! isset($_GET['nomenu'])) : ?>
-			<!-- #section:basics/sidebar -->
-			<div id="sidebar" class="sidebar responsive <?php echo get_cookie('sidebar_layout'); ?>" data-sidebar="true" data-sidebar-scoll="true" data-sidebar-hover="true">				
-				<?php $this->load->view("include/side_menu"); ?>
-				<div class="sidebar-toggle sidebar-collapse" id="sidebar-collapse" onclick="toggleLayout()">
-					<i class="ace-icon fa fa-angle-double-left" data-icon1="ace-icon fa fa-angle-double-left" data-icon2="ace-icon fa fa-angle-double-right"></i>
-				</div>
-			</div>
+			<?php $this->load->view("include/side_menu"); ?>
 		<?php endif; ?>
-		<!-- /section:basics/sidebar -->
+
 		<div class="main-content">
 			<div class="main-content-inner">
 				<div class="page-content">
