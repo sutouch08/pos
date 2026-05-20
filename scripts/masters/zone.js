@@ -1,523 +1,351 @@
-var HOME = BASE_URL + 'masters/zone';
+let click = 0;
 
-
-function goBack(){
-  window.location.href = HOME;
+const addNew = () => {
+  window.location.href = `${HOME}add_new`;
 }
 
-function getSearch(){
-  $('#searchForm').submit();
+const edit = (id) => {
+  window.location.href = `${HOME}edit/${id}`;
+}
+
+const viewDetail = (id) => {
+  const url = `${HOME}view_detail/${id}?nomenu&nonavbar`;
+  const width = 800;
+  const height = 800;
+  const left = (window.innerWidth - width) / 2;
+  const top = (window.innerHeight - height) / 2;
+  window.open(url, '_blank', `width=${width},height=${height},left=${left},top=${top}`);
+}
+
+const checkAll = () => {
+  const isChecked = document.getElementById('chk-all').checked;
+
+  if (isChecked) {
+    document.querySelectorAll('.chk').forEach(el => el.checked = true);
+  } else {
+    document.querySelectorAll('.chk').forEach(el => el.checked = false);
+  }
+}
+
+async function validateCode(id = null) {
+  const inputCode = document.getElementById('code');
+  const codeError = document.getElementById('code-error');
+  const code = inputCode.value.trim();
+
+  if (code === '') {
+    setError(inputCode, codeError, 'Code is required');
+    return false;
+  }
+
+  const url = `${HOME}is_exists_code`;
+  const res = await validateRemote(url, { code: code, id: id });
+  if (res === 'exists') {
+    setError(inputCode, codeError, 'Code already exists');
+    return false;
+  }
+
+  clearError(inputCode, codeError);
+
+  return true;
 }
 
 
-function clearFilter(){
-  $.get(HOME +'/clear_filter', function(){
-    goBack();
-  });
+async function validateName(id = null) {
+  const inputName = document.getElementById('name');
+  const nameError = document.getElementById('name-error');
+  const name = inputName.value.trim();
+  if (name === '') {
+    setError(inputName, nameError, 'Name is required');
+    return false;
+  }
+
+  const url = `${HOME}is_exists_name`;
+  const res = await validateRemote(url, { name: name, id: id });
+  if (res === 'exists') {
+    setError(inputName, nameError, 'Name already exists');
+    return false;
+  }
+
+  clearError(inputName, nameError);
+
+  return true;
 }
 
 
-function getEdit(code){
-  window.location.href = HOME + '/edit/'+code;
-}
+async function add() {
+  if (click !== 0) {
+    return false;
+  }
 
+  click = 1;
 
-function toggleCheckAll() {
-  if($('#chk-all').is(':checked')) {
-    $('.chk').prop('checked', true);
+  const code = document.getElementById('code').value.trim();
+  const name = document.getElementById('name').value.trim();
+  const warehouseId = document.getElementById('warehouse').value;
+  const active = document.querySelector('input[name="active"]:checked').value;
+  const pickface = document.querySelector('input[name="pickface"]:checked').value;
+  const fastmove = document.querySelector('input[name="fastmove"]:checked').value;
+
+  if (! await validateCode() || ! await validateName()) {
+    click = 0;
+    return false;
+  }
+
+  if (warehouseId === '') {
+    setError(document.getElementById('warehouse'), document.getElementById('warehouse-error'), 'Warehouse is required');
+    click = 0;
+    return false;
   }
   else {
-    $('.chk').prop('checked', false);
+    clearError(document.getElementById('warehouse'), document.getElementById('warehouse-error'));
   }
-}
 
+  const data = {
+    code: code,
+    name: name,
+    warehouse_id: warehouseId,
+    active: active,
+    pickface: pickface,
+    fastmove: fastmove
+  };
 
-function togglePosApi(id) {
-  let is_api = $('#is-api-'+id).val();
+  const url = `${HOME}add`;
+  try {
+    const response = await postData(url, data);
+    const res = await response.text();
 
-  is_api = is_api == '1' ? '0' : '1';
-
-  $.ajax({
-    url:HOME + '/update_pos_api/',
-    type:'POST',
-    cache:false,
-    data:{
-      'id' : id,
-      'is_api' : is_api
-    },
-    success:function(rs) {
-      if(rs == 'success') {
-        $('#is-api-'+id).val(is_api);
-        if(is_api == '1') {
-          $('#pos-api-label-'+id).text('Yes');
+    if (res === 'success') {
+      click = 0;
+      swal({
+        title: 'Success',
+        text: 'เพิ่มโซนเรียบร้อยแล้วม ตั้องการเพิ่มโซนอีกหรือไม่ ?',
+        type: 'success',
+        showCancelButton: true,
+        confirmButtonText: 'Yes',
+        cancelButtonText: 'No',
+        confirmButtonColor: '#5cb85c'
+      }, function (isConfirm) {
+        if (isConfirm) {
+          window.location.href = `${HOME}add_new`;
         }
         else {
-          $('#pos-api-label-'+id).html('No');
+          goBack();
         }
-      }
-      else {
-        swal({
-          title:'Failed !',
-          text:rs,
-          type:'error'
-        })
-      }
+      });
     }
-  })
-}
-
-
-function togglePickface(id) {
-  let is_pickface = $('#is-pickface-'+id).val();
-
-  is_pickface = is_pickface == '1' ? '0' : '1';
-
-  $.ajax({
-    url:HOME + '/update_pickface/',
-    type:'POST',
-    cache:false,
-    data:{
-      'id' : id,
-      'is_pickface' : is_pickface
-    },
-    success:function(rs) {
-      if(rs == 'success') {
-        $('#is-pickface-'+id).val(is_pickface);
-        if(is_pickface == '1') {
-          $('#pickface-label-'+id).text('Yes');
-        }
-        else {
-          $('#pickface-label-'+id).html('No');
-        }
-      }
-      else {
-        swal({
-          title:'Failed !',
-          text:rs,
-          type:'error'
-        })
-      }
+    else {
+      click = 0;
+      showError(res);
     }
-  })
-}
-
-
-function setFastMove(option) {
-  let h = {
-    'is_fast_move' : option == 1 ? 1 :  0,
-    'zoneList' : []
   }
-
-  if($('.chk:checked').length > 0) {
-    $('.chk:checked').each(function() {
-      h.zoneList.push($(this).val());
-    });
-  }
-
-  if(h.zoneList.length > 0) {
-    load_in();
-
-    $.ajax({
-      url:HOME + '/toggle_fast_move',
-      type:'POST',
-      cache:false,
-      data:{
-        'data' : JSON.stringify(h)
-      },
-      success:function(rs) {
-        load_out();
-
-        if(rs.trim() === 'success') {
-          swal({
-            title:'Success',
-            type:'success',
-            timer:1000
-          });
-
-          setTimeout(() => {
-            refresh();
-          }, 1200);
-        }
-        else {
-          beep();
-          showError(rs);
-        }
-      },
-      error:function(rs) {
-        beep();
-        showError(rs);
-      }
-    })
+  catch (error) {
+    click = 0;
+    showError(error);
   }
 }
 
-function update() {
-  let code = $('#zone_code').val();
-  let user_id = $('#user_id').val();
-  let pos_api = $('#pos-api').val();
-  let is_pickface = $('#is-pickface').is(':checked') ? 1 : 0;
-  let is_fast_move = $('#is-fast-move').is(':checked') ? 1 : 0;
 
-  $.ajax({
-    url:HOME + '/update',
-    type:'POST',
-    cache:false,
-    data:{
-      'zone_code' : code,
-      'user_id' : user_id,
-      'pos_api' : pos_api,
-      'is_pickface' : is_pickface,
-      'is_fast_move' : is_fast_move
-    },
-    success:function(rs) {
-      if(rs == 'success') {
-        swal({
-          title:'Success',
-          type:'success',
-          timer:1000
-        });
+async function update() {
+  if (click !== 0) {
+    return false;
+  }
+  click = 1;
 
-        $('#user_id').attr('disabled', 'disabled');
-        $('#pos-api').attr('disabled', 'disabled');
-        $('#is-pickface').attr('disabled', 'disabled');
-        $('#btn-u-update').addClass('hide');
-        $('#btn-u-edit').removeClass('hide');
-      }
-      else {
-        swal({
-          title:'Error!',
-          text:rs,
-          type:'error'
-        })
-      }
-    }
-  })
-}
-
-
-function addEmployee(){
-  let code = $('#zone_code').val();
-  let id = $('#empID').val();
-  let name = $('#empID option:selected').data('name');
-
-  if(code === undefined){
-    swal('ไม่พบรหัสโซน');
+  const id = document.getElementById('id').value;
+  const code = document.getElementById('code').value.trim();
+  const name = document.getElementById('name').value.trim();
+  const warehouseId = document.getElementById('warehouse').value;
+  const active = document.querySelector('input[name="active"]:checked').value;
+  const pickface = document.querySelector('input[name="pickface"]:checked').value;
+  const fastmove = document.querySelector('input[name="fastmove"]:checked').value;
+  if (! await validateCode(id) || ! await validateName(id)) {
+    click = 0;
     return false;
   }
 
-  if(id == '' || name.length == 0){
-    swal('ชื่อพนักงานไม่ถูกต้อง');
+  if (warehouseId === '') {
+    setError(document.getElementById('warehouse'), document.getElementById('warehouse-error'), 'Warehouse is required');
+    click = 0;
     return false;
   }
+  else {
+    clearError(document.getElementById('warehouse'), document.getElementById('warehouse-error'));
+  }
 
-  load_in();
+  const data = {
+    id: id,
+    code: code,
+    name: name,
+    warehouse_id: warehouseId,
+    active: active,
+    pickface: pickface,
+    fastmove: fastmove
+  };
 
-  $.ajax({
-    url:HOME + '/add_employee',
-    type:'POST',
-    cache:false,
-    data:{
-      'zone_code' : code,
-      'empID' : id,
-      'empName' : name
-    },
-    success:function(rs){
-      load_out();
-      if(rs === 'success'){
-        swal({
-          title:'Success',
-          text:'เพิ่มพนักงานเรียบร้อยแล้ว',
-          type:'success',
-          timer:1000
-        });
+  const url = `${HOME}update`;
+  try {
+    const response = await postData(url, data);
+    const res = await response.text();
+    if (res === 'success') {
+      click = 0;
+      swal({
+        title: 'Success',
+        type: 'success',
+        timer: 1000
+      });
+    }
+    else {
+      click = 0;
+      showError(res);
+    }
+  }
+  catch (error) {
+    click = 0;
+    showError(error.message);
+  }
+}
 
-        setTimeout(function(){
-          window.location.reload();
-        }, 1200);
-      }else{
-        swal({
-          title:'Error!',
-          text:rs,
-          type:'error'
-        });
-      }
+
+const confirmDelete = (id, name) => {
+  swal({
+    title: 'Are you sure ?',
+    text: `Do you want to delete zone ${name} ?`,
+    type: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Yes, Delete it!',
+    cancelButtonText: 'No, cancel!',
+    confirmButtonColor: '#d33',
+    closeOnConfirm:true    
+  }, function (isConfirm) {
+    if (isConfirm) {
+      setTimeout(() => {
+        doDelete(id);
+      }, 100);
     }
   });
 }
 
 
-$('#search-box').autocomplete({
-  source:BASE_URL + 'auto_complete/get_customer_code_and_name',
-  autoFocus:true,
-  close:function(){
-    let arr = $(this).val().split(' | ');
-    if(arr.length == 2){
-      let code = arr[0];
-      let name = arr[1];
-      $(this).val(name);
-      $('#customer_code').val(code);
-    }else{
-      $(this).val('');
-      $('#customer_code').val('');
+async function doDelete(id) {
+  const url = `${HOME}delete`;
+  const data = { id: id };
+  try {
+    const response = await postData(url, data);
+    const res = await response.text();
+    if (res === 'success') {
+      swal({
+        title: 'Deleted!',
+        text: 'The zone has been deleted.',
+        type: 'success',
+        timer: 1000
+      });
+      
+      const row = document.getElementById(`row-${id}`);
+
+      if (row) {
+        row.remove();
+        reIndex();
+      }      
+    }
+    else {
+      showError(res);
     }
   }
-});
-
-
-$('#search-box').keyup(function(e){
-  if(e.keyCode == 13){
-    addCustomer();
+  catch (error) {
+    showError(error.message);
   }
-});
+}
 
 
-function addCustomer(){
-  let code = $('#zone_code').val();
-  let customer_code = $('#customer_code').val();
-  let customer_name = $('#search-box').val();
-  if(code === undefined){
-    swal('ไม่พบรหัสโซน');
-    return false;
-  }
-
-  if(customer_code == '' || customer_name.length == 0){
-    swal('ชื่อลูกค้าไม่ถูกต้อง');
-    return false;
-  }
-
-  load_in();
-
-  $.ajax({
-    url:HOME + '/add_customer',
-    type:'POST',
-    cache:false,
-    data:{
-      'zone_code' : code,
-      'customer_code' : customer_code
-    },
-    success:function(rs){
-      load_out();
-      if(rs === 'success'){
-        swal({
-          title:'Success',
-          text:'เพิ่มลูกค้าเรียบร้อยแล้ว',
-          type:'success',
-          timer:1000
-        });
-
-        setTimeout(function(){
-          window.location.reload();
-        }, 1200);
-      }else{
-        swal({
-          title:'Error!',
-          text:rs,
-          type:'error'
-        });
-      }
+function restore(id, name) {
+  swal({
+    title: 'Are you sure ?',
+    text: `Do you want to restore zone ${name} ?`,
+    type: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Yes, Restore it!',
+    cancelButtonText: 'No, cancel!',
+    confirmButtonColor: '#5cb85c',
+    closeOnConfirm:true    
+  }, function (isConfirm) {
+    if (isConfirm) {
+      setTimeout(() => {
+        doRestore(id);
+      }, 100);
     }
   });
 }
 
 
-function getDelete(code){
-  swal({
-    title:'Are sure ?',
-    text:'ต้องการลบ ' + code + ' หรือไม่ ?',
-    type:'warning',
-    showCancelButton: true,
-		confirmButtonColor: '#FA5858',
-		confirmButtonText: 'ใช่, ฉันต้องการลบ',
-		cancelButtonText: 'ยกเลิก',
-		closeOnConfirm: false
-  },function(){
-    $.ajax({
-      url: HOME + '/delete/' + code,
-      type:'GET',
-      cache:false,
-      success:function(rs){
-        if(rs === 'success'){
-          swal({
-            title:'Deleted',
-            text:'ลบ '+code+' เรียบร้อยแล้ว',
-            type:'success',
-            timer:1000
-          });
-          $('#row-'+code).remove();
-          reIndex();
-        }else{
-          swal({
-            title:'Error!',
-            text:rs,
-            type:'error'
-          });
-        }
-      }
-    })
-
-  })
+async function doRestore(id) {
+  const url = `${HOME}restore`;
+  const data = { id: id };
+  try {
+    const response = await postData(url, data);
+    const res = await response.text();
+    if (res === 'success') {
+      swal({
+        title: 'Restored!',
+        text: 'The zone has been restored.',
+        type: 'success',
+        timer: 1000
+      });
+      
+      setTimeout(() => {
+        refresh();
+      }, 1200);     
+    }
+    else {
+      showError(res);
+    }
+  }
+  catch (error) {
+    showError(error.message);
+  }
 }
 
 
-function deleteCustomer(id,code){
+function confirmPermanentDelete(id, name) {
   swal({
-    title:'Are sure ?',
-    text:'ต้องการลบ ' + code + ' หรือไม่ ?',
-    type:'warning',
+    title: 'Are you sure ?',
+    text: `Do you want to permanently delete zone ${name} ? This action cannot be undone.`,
+    type: 'warning',
     showCancelButton: true,
-		confirmButtonColor: '#FA5858',
-		confirmButtonText: 'ใช่, ฉันต้องการลบ',
-		cancelButtonText: 'ยกเลิก',
-		closeOnConfirm: false
-  },function(){
-    $.ajax({
-      url: HOME + '/delete_customer/' + id,
-      type:'GET',
-      cache:false,
-      success:function(rs){
-        if(rs === 'success'){
-          swal({
-            title:'Deleted',
-            text:'ลบ '+code+' เรียบร้อยแล้ว',
-            type:'success',
-            timer:1000
-          });
-          $('#row-'+id).remove();
-          reIndex();
-          $('#search-box').focus();
-        }else{
-          swal({
-            title:'Error!',
-            text:rs,
-            type:'error'
-          });
-        }
-      }
-    })
-
-  })
-}
-
-
-function deleteEmployee(id,name){
-  swal({
-    title:'Are sure ?',
-    text:'ต้องการลบ ' + name + ' หรือไม่ ?',
-    type:'warning',
-    showCancelButton: true,
-		confirmButtonColor: '#FA5858',
-		confirmButtonText: 'ใช่, ฉันต้องการลบ',
-		cancelButtonText: 'ยกเลิก',
-		closeOnConfirm: false
-  },function(){
-    $.ajax({
-      url: HOME + '/delete_employee/' + id,
-      type:'GET',
-      cache:false,
-      success:function(rs){
-        if(rs === 'success'){
-          swal({
-            title:'Deleted',
-            text:'ลบ '+name+' เรียบร้อยแล้ว',
-            type:'success',
-            timer:1000
-          });
-          $('#emp-'+id).remove();
-          reIndex();
-          $('#search-box').focus();
-        }else{
-          swal({
-            title:'Error!',
-            text:rs,
-            type:'error'
-          });
-        }
-      }
-    })
-
-  })
-}
-
-
-function syncData(){
-  load_in();
-  $.get(HOME +'/syncData', function(){
-    load_out();
-    swal({
-      title:'Completed',
-      type:'success',
-      timer:1000
-    });
-    setTimeout(function(){
-      goBack();
-    }, 1500);
+    confirmButtonText: 'Yes, Delete it!',
+    cancelButtonText: 'No, cancel!',
+    confirmButtonColor: '#d33', 
+    closeOnConfirm:true   
+  }, function (isConfirm) {
+    if (isConfirm) {
+      setTimeout(() => {
+        doPermanentDelete(id);
+      }, 100);
+    }
   });
 }
 
 
-function exportFilter(){
-  let code = $('#code').val();
-  let uname = $('#u-name').val();
-  let customer = $('#customer').val();
-  let warehouse = $('#warehouse').val();
-
-  $('#export-code').val(code);
-  $('#export-uname').val(uname);
-  $('#export-customer').val(customer);
-  $('#export-warehouse').val(warehouse);
-
-  var token = $('#token').val();
-  get_download(token);
-  $('#exportForm').submit();
-}
-
-
-function editZone() {
-  $('#user_id').removeAttr('disabled').focus();
-  $('#pos-api').removeAttr('disabled');
-  $('#is-pickface').removeAttr('disabled');
-  $('#is-fast-move').removeAttr('disabled');
-  $('#btn-u-edit').addClass('hide');
-  $('#btn-u-update').removeClass('hide');
-}
-
-
-function generateQrcode() {
-  if($('.chk:checked').length) {
-
-    let h = [];
-
-    $('.chk:checked').each(function() {
-      let code = $(this).data('code');
-      let name = $(this).data('name');
-
-      h.push({'code' : code, 'name' : name});
-    });
-
-    if(h.length) {
-
-      var mapForm = document.createElement('form');
-      mapForm.target = "Map";
-      mapForm.method = "POST";
-      mapForm.action = HOME + "/generate_qrcode";
-
-      var mapInput = document.createElement("input");
-      mapInput.type = "hidden";
-      mapInput.name = "data";
-      mapInput.value = JSON.stringify(h);
-
-      mapForm.appendChild(mapInput);
-
-      document.body.appendChild(mapForm);
-
-      map = window.open("", "Map", "status=0,title=0,height=900,width=800,scrollbars=1");
-
-      if(map) {
-        mapForm.submit();
-      }
-      else {
-        swal('You must allow popups for this map to work.');
-      }
+async function doPermanentDelete(id) {
+  const url = `${HOME}permanent_delete`;
+  const data = { id: id };
+  try {
+    const response = await postData(url, data);
+    const res = await response.text();
+    if (res === 'success') {
+      swal({
+        title: 'Deleted!',
+        text: 'The zone has been permanently deleted.',
+        type: 'success'
+      }, function(){
+        refresh();
+      });
+    }
+    else {
+      showError(res);
     }
   }
+  catch (error) {
+    showError(error.message);
+  }
 }
+

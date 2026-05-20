@@ -162,7 +162,22 @@ function is_checked($val1, $val2)
 function is_active($val, $showIcon = TRUE)
 {
 	$val = strtolower(strval($val));
-	return ($val === '1' || $val === 'y') || $val ? '<i class="fa fa-check fa-lg green" title="Active"></i>' : ($showIcon ? '<i class="fa fa-times fa-lg red" title="Inactive"></i>' : '');
+	$icon = "";
+	
+	if(($val === '1' || $val === 'y'))
+	{
+		$icon = '<i class="fa fa-check fa-lg green" title="Active"></i>';
+	} 
+	else if($val === '-1')
+	{
+		$icon = '<i class="fa fa-minus-circle fa-lg red" title="Deleted"></i>';
+	}
+	else 
+	{
+		$icon = $showIcon ? '<i class="fa fa-times fa-lg red" title="Inactive"></i>' : '';
+	}
+	
+	return $icon;
 }
 
 

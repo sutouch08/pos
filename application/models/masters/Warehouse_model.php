@@ -177,6 +177,35 @@ class Warehouse_model extends CI_Model
   }
 
 
+  public function get_all_by_role($role = 1, $active = TRUE)
+  {
+    if($active)
+    {
+      $this->db->where('active', 1);
+    }
+
+    if(is_array($role))
+    {
+      $this->db->where_in('role', $role);
+    }
+    else
+    {
+      $this->db->where('role', $role);
+    }
+    
+    $rs = $this->db
+    ->order_by('code', 'ASC')
+    ->get($this->tb);
+
+    if($rs->num_rows() > 0)
+    {
+      return $rs->result();
+    }
+
+    return NULL;
+  }
+
+
   public function is_exists_code($code, $id = NULL)
   {
     if(!empty($id))

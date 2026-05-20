@@ -6,13 +6,14 @@ class Zone extends PS_Controller
 	public $menu_group_code = 'DB';
   public $menu_sub_group_code = 'WAREHOUSE';
 	public $title = 'เพิ่ม/แก้ไข โซน';
-  public $error;
+  public $segment = 4;
 
   public function __construct()
   {
     parent::__construct();
     $this->home = base_url().'masters/zone';
     $this->load->model('masters/zone_model');
+    $this->load->model('masters/warehouse_model');
     $this->load->helper('zone');
     $this->load->helper('warehouse');
   }
@@ -21,59 +22,134 @@ class Zone extends PS_Controller
   {
     $filter = array(
       'code' => get_filter('code', 'z_code', ''),
-      'warehouse' => get_filter('warehouse', 'z_warehouse', ''),
-      'customer' => get_filter('customer', 'z_customer', ''),
-      'user_id' => get_filter('user_id', 'z_user_id', 'all'),
+      'name' => get_filter('name', 'z_name', ''),
+      'warehouse_id' => get_filter('warehouse_id', 'z_warehouse_id', 'all'),
       'active' => get_filter('active', 'z_active', 'all'),
-      'is_pickface' => get_filter('is_pickface', 'z_pickface', 'all')
-    );
+      'fastmove' => get_filter('fastmove', 'z_fastmove', 'all'),
+      'system' => get_filter('system', 'z_system', 'all'),
+      'pickface' => get_filter('is_pickface', 'z_pickface', 'all'),
+      'order_by' => get_filter('order_by', 'z_order_by', 'code'),
+      'sort_by' => get_filter('sort_by', 'z_sort_by', 'ASC')
+    );      
 
-		//--- แสดงผลกี่รายการต่อหน้า
-		$perpage = get_rows();
-
-		$segment  = 4; //-- url segment
-		$rows = $this->zone_model->count_rows($filter);
-		//--- ส่งตัวแปรเข้าไป 4 ตัว base_url ,  total_row , perpage = 20, segment = 3
-		$init = pagination_config($this->home.'/index/', $rows, $perpage, $segment);
-		$list = $this->zone_model->get_list($filter, $perpage, $this->uri->segment($segment));
-
-    if(!empty($list))
+    if($this->input->post('search'))
     {
-      foreach($list as $rs)
-      {
-        $rs->customer_count = $this->zone_model->count_customer($rs->code);
-      }
+      redirect($this->home);
     }
+    else 
+    {
+      $perpage = get_rows();
+      $rows = $this->zone_model->count_rows($filter);
+      $init = pagination_config($this->home . '/index/', $rows, $perpage, $this->segment);
+      $this->pagination->initialize($init);
 
-    $filter['list'] = $list;
-
-		$this->pagination->initialize($init);
-    $this->load->view('masters/zone/zone_list', $filter);
+      $filter['list'] = $this->zone_model->get_list($filter, $perpage, $this->uri->segment($this->segment));
+      $this->load->view('masters/zone/zone_list', $filter);
+    }		
   }
 
 
-
-  public function edit($code)
+  public function add_new()
   {
-    if($this->pm->can_edit)
+    if($this->pm->can_add)
     {
-      $this->load->helper('employee');
-      $zone = $this->zone_model->get($code);
-      $ds['ds'] = $zone;
-      $ds['customers'] = $this->zone_model->get_customers($code);
-      $ds['employees'] = NULL;
+      $this->title = 'เพิ่มโซน';
+      $this->load->view('masters/zone/zone_add');      
+    }
+    else 
+    {
+      $this->deny_page();
+    }    
+  }
 
-      if($zone->role == 8)
+
+  public function add()
+  {
+    $sc = TRUE;
+    $ds = json_decode(file_get_contents('php://input'));
+
+    if($this->pm->can_add)
+    {
+      if( ! empty($ds) && ! empty($ds->code) && ! empty($ds->name) && ! empty($ds->warehouse_id))
       {
-        $ds['employees'] = $this->zone_model->get_employee($code);
-      }
+        if($this->zone_model->is_exists_code(trim($ds->code)))
+        {
+          $sc = FALSE;
+          set_error('exists', $ds->code);
+        }
 
-      $this->load->view('masters/zone/zone_edit', $ds);
+        if($sc === TRUE && $this->zone_model->is_exists_name(trim($ds->name)))
+        {
+          $sc = FALSE;
+          set_error('exists', $ds->name);
+        }
+
+        if($sc === TRUE)
+        {
+          $whs = $this->warehouse_model->get($ds->warehouse_id);
+
+          if(empty($whs))
+          {
+            $sc = FALSE;
+            set_error('not_found', 'Warehouse');
+          }
+
+          if($sc === TRUE)
+          {
+            $arr = array(
+              'code' => trim($ds->code),
+              'name' => trim($ds->name),
+              'warehouse_id' => $ds->warehouse_id,
+              'warehouse_code' => $whs->code,
+              'pickface' => $ds->pickface,
+              'fastmove' => $ds->fastmove,
+              'active' => $ds->active,
+              'create_by' => $this->_user->id
+            );
+
+            if( ! $this->zone_model->add($arr))
+            {
+              $sc = FALSE;
+              set_error('insert');
+            }
+          }
+        }        
+      }
+      else
+      {
+        $sc = FALSE;
+        set_error('required');
+      }          
     }
     else
     {
-      set_error("คุณไม่มีสิทธิ์แก้ไข");
-      redirect($this->home);
+      $sc = FALSE;
+     set_error('permission');
+    }
+
+    $this->_response($sc);
+  }
+
+
+  public function edit($id)
+  {
+    if($this->pm->can_edit)
+    {
+      $ds = $this->zone_model->get($id);
+
+      if( ! empty($ds))
+      {
+        $this->title = 'แก้ไขโซน';
+        $this->load->view('masters/zone/zone_edit', $ds);
+      }
+      else
+      {
+        $this->load->view('page_error');
+      }
+    }
+    else
+    {
+      $this->deny_page();
     }
   }
 
@@ -81,500 +157,265 @@ class Zone extends PS_Controller
   public function update()
   {
     $sc = TRUE;
-
-    if($this->input->post('zone_code'))
-    {
-      $zone_code = $this->input->post('zone_code');
-      $user_id = get_null($this->input->post('user_id'));
-      $pickface = $this->input->post('is_pickface') == 1 ? 1 : 0;
-
-      $zone = $this->zone_model->get($zone_code);
-
-      if( ! empty($zone))
-      {
-        $arr = array(
-          'user_id' => $user_id,
-          'is_pickface' => $pickface
-        );
-
-        if( ! $this->zone_model->update($zone->id, $arr))
-        {
-          $sc = FALSE;
-          $this->error = "Update data failed";
-        }
-      }
-      else
-      {
-        $sc = FALSE;
-        $this->error = "Invalid Zone Code";
-      }
-    }
-    else
-    {
-      $sc = FALSE;
-      $this->error = "Missing required parameter : zone_code";
-    }
-
-    echo $sc === TRUE ? 'success' : $this->error;
-  }
-
-
-  public function update_pickface()
-  {
-    $sc = TRUE;
-    $id = $this->input->post('id');
-    $is_pickface = $this->input->post('is_pickface') == 1 ? 1 : 0;
-
-    $arr = array('is_pickface' => $is_pickface);
-
-    if( ! $this->zone_model->update($id, $arr))
-    {
-      $sc = FALSE;
-      $this->error = "Update failed";
-    }
-
-    echo $sc === TRUE ? 'success' : $this->error;
-  }
-  
-
-  public function update_owner()
-  {
-    $sc = TRUE;
-    if($this->input->post('zone_code'))
-    {
-      $zone_code = $this->input->post('zone_code');
-      $user_id = get_null($this->input->post('user_id'));
-
-      $zone = $this->zone_model->get($zone_code);
-
-      if( ! empty($zone))
-      {
-        $arr = array('user_id' => $user_id);
-
-        if( ! $this->zone_model->update($zone->id, $arr))
-        {
-          $sc = FALSE;
-          $this->error = "Update data failed";
-        }
-      }
-      else
-      {
-        $sc = FALSE;
-        $this->error = "Invalid Zone Code";
-      }
-    }
-    else
-    {
-      $sc = FALSE;
-      $this->error = "Missing required parameter : zone_code";
-    }
-
-    echo $sc === TRUE ? 'success' : $this->error;
-  }
-
-
-
-  public function delete($code)
-  {
-    $sc = TRUE;
-    if($this->pm->can_delete)
-    {
-      if($this->zone_model->count_customer($code) > 0)
-      {
-        $sc = FALSE;
-        $this->error = "ไม่สามารถลบโซนได้เนื่องจากมีการเชื่อมโยงลูกค้าไว้";
-      }
-      else
-      {
-        if($this->zone_model->is_sap_exists($code))
-        {
-          $sc = FALSE;
-          $this->error = "กรุณาลบโซนใน SAP ก่อน";
-        }
-      }
-
-      if($sc === TRUE)
-      {
-        if( ! $this->zone_model->delete($code))
-        {
-          $sc = FALSE;
-          $this->error = "ลบโซนไม่สำเร็จ";
-        }
-      }
-
-    }
-    else
-    {
-      $sc = FALSE;
-      $this->error = "คุณไมมีสิทธิ์ลบโซน";
-    }
-
-    echo $sc === TRUE ? 'success' : $this->error;
-  }
-
-
-
-
-  public function add_customer()
-  {
-    $sc = TRUE;
-    if($this->pm->can_edit)
-    {
-      if($this->input->post('zone_code') && $this->input->post('customer_code'))
-      {
-        $this->load->model('masters/customers_model');
-        $code = $this->input->post('zone_code');
-        $customer_code = $this->input->post('customer_code');
-        $customer = $this->customers_model->get($customer_code);
-        if(!empty($customer))
-        {
-          if($this->zone_model->is_exists_customer($code, $customer->code))
-          {
-            $sc = FALSE;
-            $this->error = "มีลูกค้าในโซนนี้อยู่แล้ว";
-          }
-          else
-          {
-            $arr = array(
-              'zone_code' => $code,
-              'customer_code' => $customer->code,
-              'customer_name' => $customer->name
-            );
-
-            if( ! $this->zone_model->add_customer($arr))
-            {
-              $sc = FALSE;
-              $this->error = "เพิ่มลูกค้าไม่สำเร็จ";
-            }
-          }
-        }
-        else
-        {
-          $sc = FALSE;
-          $this->error = "รหัสลูกค้าไม่ถูกต้อง";
-        }
-      }
-      else
-      {
-        $sc = FALSE;
-        $this->error = "ไม่พบข้อมูล";
-      }
-
-    }
-    else
-    {
-      $sc = FALSE;
-      $this->error = "คุณไม่มีสิทธิ์ในการเพิ่มข้อมูล";
-    }
-
-    echo $sc === TRUE ? 'success' : $this->error;
-  }
-
-
-
-  public function delete_customer($id)
-  {
-    $sc = TRUE;
+    $ds = json_decode(file_get_contents('php://input'));
 
     if($this->pm->can_edit)
     {
-      if( ! $this->zone_model->delete_customer($id))
+      if( ! empty($ds) && ! empty($ds->id) && ! empty($ds->code) && ! empty($ds->name) && ! empty($ds->warehouse_id))
       {
-        $sc = FALSE;
-        $this->error = "ลบรายการไม่สำเร็จ";
-      }
-    }
-    else
-    {
-      $sc = FALSE;
-      $this->error = "คุณไม่มีสิทธิ์ลบข้อมูล";
-    }
+        $id = $ds->id;        
 
-    echo $sc === TRUE ? 'success' : $this->error;
-  }
-
-
-
-  public function add_employee()
-  {
-    $sc = TRUE;
-    if($this->pm->can_edit)
-    {
-      if($this->input->post('zone_code') && $this->input->post('empID'))
-      {
-        $this->load->model('masters/employee_model');
-        $code = $this->input->post('zone_code');
-        $empName = $this->input->post('empName');
-        $empID = $this->input->post('empID');
-        $emp = $this->employee_model->get($empID);
-        $zone = $this->zone_model->get($code);
-
-        if($zone->role != 8)
+        if($sc === TRUE && $this->zone_model->is_exists_name(trim($ds->name), $id))
         {
           $sc = FALSE;
-          $this->error = "โซนนี้ไม่อยู่ในประเภทคลังยืมสินค้า";
+          set_error('exists', $ds->name);
         }
 
         if($sc === TRUE)
         {
-          if(!empty($emp))
-          {
-            if($this->zone_model->is_exists_employee($code, $empID))
-            {
-              $sc = FALSE;
-              $this->error = "มีพนักงานนี้ในโซนอยู่แล้ว";
-            }
-            else
-            {
-              $arr = array(
-                'zone_code' => $code,
-                'empID' => $empID,
-                'empName' => $empName
-              );
+          $whs = $this->warehouse_model->get($ds->warehouse_id);
 
-              if( ! $this->zone_model->add_employee($arr))
-              {
-                $sc = FALSE;
-                $this->error = "เพิ่มพนักงานไม่สำเร็จ";
-              }
-            }
-          }
-          else
+          if(empty($whs))
           {
             $sc = FALSE;
-            $this->error = "ชื่อพนักงานไม่ถูกต้อง";
+            set_error('not_found', 'Warehouse');
+          }
+
+          if($sc === TRUE)
+          {
+            $arr = array(
+              'code' => trim($ds->code),
+              'name' => trim($ds->name),
+              'warehouse_id' => $ds->warehouse_id,
+              'warehouse_code' => $whs->code,
+              'pickface' => $ds->pickface,
+              'fastmove' => $ds->fastmove,
+              'active' => $ds->active,
+              'update_by' => $this->_user->id
+            );
+
+            if( ! $this->zone_model->update($id, $arr))
+            {
+              $sc = FALSE;
+              set_error('update');
+            }
           }
         }
       }
       else
       {
         $sc = FALSE;
-        $this->error = "ไม่พบข้อมูล";
-      }
-
+        set_error('required');
+      }          
     }
     else
     {
       $sc = FALSE;
-      $this->error = "คุณไม่มีสิทธิ์ในการเพิ่มข้อมูล";
+     set_error('permission');
     }
 
-    echo $sc === TRUE ? 'success' : $this->error;
+    $this->_response($sc);
   }
 
 
-
-  public function delete_employee($id)
+  public function delete()
   {
     $sc = TRUE;
+    $ds = json_decode(file_get_contents('php://input'));
 
-    if($this->pm->can_edit)
+    if($this->pm->can_delete)
     {
-      if( ! $this->zone_model->delete_employee($id))
+      if( ! empty($ds) && ! empty($ds->id))
+      {
+        $arr = array(
+          'active' => -1,
+          'delete_by' => $this->_user->id,
+          'delete_at' => now()
+        );
+
+        if( ! $this->zone_model->update($ds->id, $arr))
+        {
+          $sc = FALSE;
+          set_error('update');
+        }        
+      }
+      else
       {
         $sc = FALSE;
-        $this->error = "ลบรายการไม่สำเร็จ";
+        set_error('required');
       }
     }
     else
     {
       $sc = FALSE;
-      $this->error = "คุณไม่มีสิทธิ์ลบข้อมูล";
+     set_error('permission');
     }
 
-    echo $sc === TRUE ? 'success' : $this->error;
+    $this->_response($sc);
   }
 
 
-  public function syncData()
+  public function restore()
   {
-    $newData = $this->zone_model->get_all_zone();
+    $sc = TRUE;
+    $ds = json_decode(file_get_contents('php://input'));
 
-    if(!empty($newData))
+    if($this->pm->can_approve)
     {
-      foreach($newData as $rs)
+      if( ! empty($ds) && ! empty($ds->id))
       {
-        if($this->zone_model->is_exists_id($rs->id))
+        $zone = $this->zone_model->get($ds->id);
+
+        if(empty($zone))
         {
-          $ds = array(
-            'code' => $rs->code,
-            'name' => is_null($rs->name) ? $rs->code : $rs->name,
-						'warehouse_code' => $rs->warehouse_code,
-            'old_code' => $rs->old_code,
-            'active' => $rs->Disabled == 'N' ? 1 : 0,
-            'last_sync' => date('Y-m-d H:i:s'),
+          $sc = FALSE;
+          set_error('not_found', '', "<br> Zone your're trying to restore might be deleted permanently");
+        }
+
+        if($sc === TRUE)
+        {
+          $arr = array(
+            'active' => 1,
+            'delete_by' => NULL,
+            'delete_at' => NULL,
+            'update_by' => $this->_user->id
           );
 
-          $this->zone_model->update($rs->id, $ds);
-        }
-        else
-        {
-          $ds = array(
-            'id' => $rs->id,
-            'code' => $rs->code,
-            'name' => is_null($rs->name) ? $rs->code : $rs->name,
-            'warehouse_code' => $rs->warehouse_code,
-            'active' => $rs->Disabled == 'N' ? 1 : 0,
-            'last_sync' => date('Y-m-d H:i:s'),
-            'old_code' => $rs->old_code
-          );
-
-          $this->zone_model->add($ds);
-        }
+          if (! $this->zone_model->update($ds->id, $arr))
+          {
+            $sc = FALSE;
+            set_error('update');
+          }
+        }               
       }
-    }
-
-    echo 'done';
-  }
-
-
-
-  //--- check zone
-  public function get_zone_code()
-  {
-    $sc = TRUE;
-    if($this->input->get('barcode'))
-    {
-      $barcode = trim($this->input->get('barcode'));
-      $code = $this->zone_model->get_zone_code($barcode);
-
-      if($code === FALSE)
+      else
       {
         $sc = FALSE;
-      }
-    }
-
-    echo $sc === TRUE ? $code : 'not_exists';
-  }
-
-
-
-  public function get_warehouse_zone()
-  {
-    $sc = TRUE;
-    $code = trim($this->input->get('barcode'));
-    $warehouse_code = trim($this->input->get('warehouse_code'));
-    if(!empty($code) && !empty($warehouse_code))
-    {
-      $zone = $this->zone_model->get_zone_detail_in_warehouse($code, $warehouse_code);
-      if($zone === FALSE)
-      {
-        $sc = FALSE;
-        $this->error = "ไม่พบโซน";
+        set_error('required');
       }
     }
     else
     {
       $sc = FALSE;
-      $this->error = "รหัสโซนหรือรหัสคลังไม่ถูกต้อง : {$code} | {$warehouse_code}";
+     set_error('permission');
     }
 
-    echo $sc === TRUE ? json_encode($zone) : 'not_exists';
+    $this->_response($sc);
   }
 
 
-
-
-  public function export_filter()
+  public function permanent_delete()
   {
-    $ds = array(
-      'code' => $this->input->post('zone_code'),
-      'uname' => $this->input->post('zone_uname'),
-      'customer' => $this->input->post('zone_customer'),
-      'warehouse' => $this->input->post('zone_warehouse')
-    );
+    $sc = TRUE;
+    $ds = json_decode(file_get_contents('php://input'));
 
-    $token = $this->input->post('token');
-
-    $list = $this->zone_model->get_list($ds);
-
-    //--- load excel library
-    $this->load->library('excel');
-
-    $this->excel->setActiveSheetIndex(0);
-    $this->excel->getActiveSheet()->setTitle('Zone master data');
-
-    //--- set Table header
-
-
-    $this->excel->getActiveSheet()->setCellValue('A1', 'ลำดับ');
-    $this->excel->getActiveSheet()->setCellValue('B1', 'รหัสโซน');
-    $this->excel->getActiveSheet()->setCellValue('C1', 'ชื่อโซน');
-    $this->excel->getActiveSheet()->setCellValue('D1', 'รหัสคลัง');
-    $this->excel->getActiveSheet()->setCellValue('E1', 'คลังสินค้า');
-    $this->excel->getActiveSheet()->setCellValue('F1', 'รหัสเก่า');
-    $this->excel->getActiveSheet()->setCellValue('G1', 'เจ้าของโซน');
-    $this->excel->getActiveSheet()->setCellValue('H1', 'ผู้รับผิดชอบ');
-    $this->excel->getActiveSheet()->setCellValue('I1', 'Active');
-
-
-    //---- กำหนดความกว้างของคอลัมภ์
-    $this->excel->getActiveSheet()->getColumnDimension('B')->setWidth(20);
-    $this->excel->getActiveSheet()->getColumnDimension('C')->setWidth(30);
-    $this->excel->getActiveSheet()->getColumnDimension('D')->setWidth(20);
-    $this->excel->getActiveSheet()->getColumnDimension('E')->setWidth(30);
-    $this->excel->getActiveSheet()->getColumnDimension('F')->setWidth(20);
-    $this->excel->getActiveSheet()->getColumnDimension('G')->setWidth(20);
-    $this->excel->getActiveSheet()->getColumnDimension('H')->setWidth(30);
-    $this->excel->getActiveSheet()->getColumnDimension('I')->setWidth(15);
-
-
-    $row = 2;
-
-
-    if(!empty($list))
+    if ($this->pm->can_delete && $this->pm->can_approve)
     {
-      $no = 1;
-
-      foreach($list as $rs)
+      if (!empty($ds) && !empty($ds->id))
       {
-        //--- ลำดับ
-        $this->excel->getActiveSheet()->setCellValue('A'.$row, $no);
+        $zone = $this->zone_model->get($ds->id);
 
-        //--- zone code
-        $this->excel->getActiveSheet()->setCellValue('B'.$row, $rs->code);
+        if( ! empty($zone))
+        {
+         if($zone->system == 1)
+         {
+           $sc = FALSE;
+           $this->error = "System zone cannot be deleted";
+         }
+         
+         if($sc === TRUE && $this->zone_model->has_stock($ds->id))
+          {
+            $sc = FALSE;
+            set_error('delete', 'zone', '\r Stock in zone must be zero');
+          }
 
-        //--- zone name
-        $this->excel->getActiveSheet()->setCellValue('C'.$row, $rs->name);
+          if($sc === TRUE && $this->zone_model->has_transaction($ds->id))
+          {
+            $sc = FALSE;
+            set_error('transection', 'zone');
+          }
 
-        //--- warehouse code
-        $this->excel->getActiveSheet()->setCellValue('D'.$row, $rs->warehouse_code);
-
-        //---- waehouser name
-        $this->excel->getActiveSheet()->setCellValue('E'.$row, $rs->warehouse_name);
-        //--- old code
-        $this->excel->getActiveSheet()->setCellValue('F'.$row, "{$rs->old_code}");
-
-        //--- user name
-        $this->excel->getActiveSheet()->setCellValue('G'.$row, $rs->uname);
-
-        $this->excel->getActiveSheet()->setCellValue('H'.$row, $rs->display_name);
-
-        $this->excel->getActiveSheet()->setCellValue('I'.$row, ($rs->active ? 'Y' : 'N'));
-
-
-
-        $no++;
-        $row++;
+          if($sc === TRUE)
+          {
+            if( ! $this->zone_model->delete($ds->id))
+            {
+              $sc = FALSE;
+              set_error('delete', 'zone');
+            }
+          }
+        }
+        else 
+        {
+          $sc = FALSE;
+          set_error('not_found');
+        }        
       }
+      else
+      {
+        $sc = FALSE;
+        set_error('required');
+      }
+    }
+    else
+    {
+      $sc = FALSE;
+      set_error('permission');
+    }
 
-      setToken($token);
-      $file_name = "Zone Master Data.xlsx";
-      header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'); /// form excel 2007 XLSX
-      header('Content-Disposition: attachment;filename="'.$file_name.'"');
-      $writer = PHPExcel_IOFactory::createWriter($this->excel, 'Excel2007');
-      $writer->save('php://output');
+    $this->_response($sc);
+  }
+
+
+  public function view_detail($id)
+  {
+    $this->title = 'รายละเอียดโซน';
+    $ds = $this->zone_model->get($id);
+
+    if( ! empty($ds))
+    {
+      $this->load->view('masters/zone/zone_detail', $ds);
+    }
+    else
+    {
+      $this->page_not_found();
     }
   }
 
+
+  public function is_exists_code()
+  {
+    $exists = FALSE;
+    $ds = json_decode(file_get_contents('php://input'));
+
+    if( ! empty($ds) && ! empty($ds->code))
+    {
+      $exists = $this->zone_model->is_exists_code(trim($ds->code), isset($ds->id) ? $ds->id : NULL);
+    }
+    
+    echo $exists ? 'exists' : 'not_exists';
+  }
+
+
+  public function is_exists_name()
+  {
+    $exists = FALSE;
+    $ds = json_decode(file_get_contents('php://input'));
+
+    if( ! empty($ds) && ! empty($ds->name))
+    {
+      $exists = $this->zone_model->is_exists_name(trim($ds->name), isset($ds->id) ? $ds->id : NULL);
+    }
+    
+    echo $exists ? 'exists' : 'not_exists';
+  }
 
 
   public function clear_filter()
   {
-    $filter = array('z_code', 'z_uname', 'z_customer', 'z_warehouse', 'z_active', 'z_pickface');
-    clear_filter($filter);
+   $filter = array('z_code', 'z_name', 'z_warehouse_id', 'z_active', 'z_pickface', 'z_fastmove', 'z_system', 'z_order_by', 'z_sort_by');
+
+   return clear_filter($filter);
   }
 
 } //--- end class
 
- ?>

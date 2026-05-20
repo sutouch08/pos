@@ -110,13 +110,4 @@
 		<div class="main-content">
 			<div class="main-content-inner">
 				<div class="page-content">
-
-					<!-- PAGE CONTENT BEGINS -->
-					<?php
-					//--- if user don't have permission to access this page then deny_page;
-					//_can_view_page($this->pm->can_view);
-					if ($this->pm->can_view == 0)
-					{
-						$this->load->view('deny_page');
-					}
-					?>
+					

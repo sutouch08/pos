@@ -39,9 +39,13 @@ class PS_Controller extends CI_Controller
     }
 
     //--- get permission for user
-    $this->pm = get_permission($this->menu_code, $uid, $this->_user->id_profile);      
-  }
+    $this->pm = get_permission($this->menu_code, $uid, $this->_user->id_profile);
 
+    if (! empty($this->pm) && ! $this->pm->can_view)
+    {
+      $this->deny_page();
+    }
+  }
 
   public function is_expire_password($last_pass_change)
   {
