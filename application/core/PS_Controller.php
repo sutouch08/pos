@@ -20,7 +20,7 @@ class PS_Controller extends CI_Controller
     $uid = get_cookie('uid');
 
 		$this->_user = $this->user_model->get_by_uid($uid);		
-		$this->_SuperAdmin = $this->_user->id_profile == -987654321 ? TRUE : FALSE;
+		$this->_SuperAdmin = $this->_user->profile_id == '40a11bc9bc4740a2' ? TRUE : FALSE;
 		$this->close_system = getConfig('CLOSE_SYSTEM'); //--- ปิดระบบทั้งหมดหรือไม่
 
     if($this->close_system == 1 && $this->_SuperAdmin === FALSE)
@@ -39,12 +39,7 @@ class PS_Controller extends CI_Controller
     }
 
     //--- get permission for user
-    $this->pm = get_permission($this->menu_code, $uid, $this->_user->id_profile);
-
-    if (! empty($this->pm) && ! $this->pm->can_view)
-    {
-      $this->deny_page();
-    }
+    $this->pm = get_permission($this->menu_code, $uid);
   }
 
   public function is_expire_password($last_pass_change)

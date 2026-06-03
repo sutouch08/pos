@@ -11,12 +11,7 @@ const regex = /[^a-zA-Z0-9-_.@]+/gi;
 
 window.addEventListener('load', () => {
   if (inputUname) {
-    inputUname.addEventListener('keyup', () => validInput(inputUname, regex));
-    inputUname.addEventListener('focusout', debounce(() => validateUserName(), 300));
-  }
-
-  if (inputDname) {
-    inputDname.addEventListener('focusout', debounce(() => validateDisplayName(), 300));
+    inputUname.addEventListener('input', () => validInput(inputUname, regex));
   }
 
   if (inputPwd && inputCmPwd) {
@@ -25,92 +20,45 @@ window.addEventListener('load', () => {
   }
 })
 
-function debounce(fn, delay = 300) {
-  let timer = null;
-  return (...args) => {
-    clearTimeout(timer);
-    timer = setTimeout(() => fn(...args), delay);
-  };
-}
 
-// function setError(input, errorBox, message) {
-//   errorBox.textContent = message;
-//   input.classList.add('has-error');
-// }
+async function validateUname(uid = null) {
+  const uname = document.getElementById('uname');
+  const unameError = document.getElementById('uname-error');
+  const value = uname.value.trim();
 
-// function clearError(input, errorBox) {
-//   errorBox.textContent = '';
-//   input.classList.remove('has-error');
-// }
-
-async function validateRemote(url, data = {}) {
-  try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(data)
-    });
-
-    return (await response.text()).trim();
-  } catch (err) {
-    console.error('Validation error:', err);
-    return 'error';
-  }
-}
-
-
-async function validateUserName() {
-  const input = document.getElementById('uname');
-  const errorBox = document.getElementById('uname-error');
-  const id = document.getElementById('user-id').value.trim();
-  const value = input.value.trim();
-
-  if (!value) {
-    setError(input, errorBox, 'User name is required!');
-    validUname = false;
+  if (value === '') {
+    setError(uname, unameError, 'User name is required!');
     return false;
   }
 
   const url = `${HOME}valid_uname`;
-  const result = await validateRemote(url, { uname: value, id: id });
-
-  if (result === 'exists') {
-    setError(input, errorBox, 'User name already exists!');
-    validUname = false;
+  const res = await validateRemote(url, { uname: value, id: uid });
+  if (res === 'exists') {
+    setError(uname, unameError, 'User name already exists!');
     return false;
   }
 
-  clearError(input, errorBox);
-  validUname = true;
+  clearError(uname, unameError);
   return true;
 }
 
-
-async function validateDisplayName() {
-  const input = document.getElementById('dname');
-  const errorBox = document.getElementById('dname-error');
-  const id = document.getElementById('user-id').value.trim();
-  const value = input.value.trim();
-
-  if (!value) {
-    setError(input, errorBox, 'Display name is required!');
-    validDname = false;
+async function validateDname(uid = null) {
+  const dname = document.getElementById('dname');
+  const dnameError = document.getElementById('dname-error');
+  const value = dname.value.trim();
+  if (value === '') {
+    setError(dname, dnameError, 'Display name is required!');
     return false;
   }
 
   const url = `${HOME}valid_dname`;
-  const result = await validateRemote(url, { dname: value, id: id });
-
-  if (result === 'exists') {
-    setError(input, errorBox, 'Display name already exists!');
-    validDname = false;
+  const res = await validateRemote(url, { dname: value, id: uid });
+  if (res === 'exists') {
+    setError(dname, dnameError, 'Display name already exists!');
     return false;
   }
 
-  clearError(input, errorBox);
-  validDname = true;
+  clearError(dname, dnameError);
   return true;
 }
 
@@ -217,14 +165,14 @@ const changePassword = async () => {
 }
 
 
-const add = async () => {
+async function add() {
   if (click !== 0) {
     return false;
   }
 
   click = 1;
 
-  if (!validUname || !validDname || !validPwd) {
+  if (! await validateUname() || ! await validateDname() || !validatePwd()) {
     click = 0;
     return false;
   }
@@ -233,9 +181,11 @@ const add = async () => {
   const dname = document.getElementById('dname');
   const pwd = document.getElementById('pwd');
   const profile = document.getElementById('profile');
+  const employee = document.getElementById('employee');
   const sale = document.getElementById('sale-id');
   const status = document.querySelector('input[name="status"]:checked');
   const profileError = document.getElementById('profile-error');
+  const forceReset = document.getElementById('force-reset').checked ? 1 : 0;
 
   const url = `${HOME}add`;
 
@@ -244,8 +194,10 @@ const add = async () => {
     dname: dname.value.trim(),
     pwd: pwd.value.trim(),
     id_profile: profile.value.trim(),
+    id_employee: employee.value.trim(),
     sale_id: sale.value.trim(),
-    active: status.value
+    active: status.value,
+    force_reset: forceReset
   };
 
   if (data.id_profile === "") {
@@ -291,7 +243,7 @@ const add = async () => {
   }
 
   click = 0;
-};
+}
 
 
 const update = async () => {
@@ -301,15 +253,18 @@ const update = async () => {
 
   click = 1;
 
-  if (!validUname || !validDname) {
+  const id = document.getElementById('user-id').value;
+
+  if (! await validateDname(id)) {
     click = 0;
     return false;
   }
 
-  const id = document.getElementById('user-id').value;
+  const uid = document.getElementById('uid').value;
   const uname = document.getElementById('uname');
   const dname = document.getElementById('dname');
   const profile = document.getElementById('profile');
+  const employee = document.getElementById('employee');
   const sale = document.getElementById('sale-id');
   const status = document.querySelector('input[name="status"]:checked');
   const profileError = document.getElementById('profile-error');
@@ -318,9 +273,11 @@ const update = async () => {
 
   const data = {
     id: id,
+    uid: uid,
     uname: uname.value.trim(),
     dname: dname.value.trim(),
     id_profile: profile.value.trim(),
+    id_employee: employee.value.trim(),
     sale_id: sale.value.trim(),
     active: status.value
   };
@@ -331,36 +288,29 @@ const update = async () => {
     return false;
   }
 
+  clearError(profile, profileError);
+
   loadIn();
 
   try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
+    const response = await postData(url, data);
+    const res = await response.json();
 
-    const text = await response.text();
     setTimeout(() => {
       loadOut();
-
-      if (isJson(text)) {
-        const ds = JSON.parse(text);
-
-        if (ds.status === 'success') {
-          swal({
-            title: 'Success',
-            type: 'success',
-            timer: 1000
-          });
-        } else {
-          showError(ds.message);
-        }
-      } else {
-        showError(text);
+      if (res.status === 'success') {
+        swal({
+          title: 'Updated',
+          type: 'success',
+          timer: 1000
+        });
+      }
+      else {
+        showError(res.message);
       }
     }, 500)
-  } catch (err) {
+  }
+  catch (err) {
     loadOut();
     showError(err);
   }

@@ -2,7 +2,7 @@
 class User_model extends CI_Model
 {
   private $tb = "user";
-  private $superadmin = -987654321;
+  private $superadmin = -1;
 
   public function __construct()
   {
@@ -17,6 +17,15 @@ class User_model extends CI_Model
     ->select('p.name AS profile_name')
     ->from('user AS u')
     ->join('profile AS p', 'u.id_profile = p.id', 'left');
+
+    if( ! $this->_SuperAdmin)
+    {
+      $this->db->where('u.id >', 0);
+    }
+    else 
+    {
+      $this->db->where('u.id >', -1);
+    }    
 
     if( ! $all)
     {
@@ -122,7 +131,13 @@ class User_model extends CI_Model
 		$this->db
 		->select('user.*, user.name AS dname, profile.name AS pname')
 		->from($this->tb)
-		->join('profile', 'user.id_profile = profile.id', 'left');
+		->join('profile', 'user.id_profile = profile.id', 'left')
+    ->where('user.id >', -1);
+
+    if( ! $this->_SuperAdmin)
+    {
+      $this->db->where('user.id_profile >', 0);
+    }    
 
 		if( ! empty($ds['uname']))
 		{
@@ -156,7 +171,12 @@ class User_model extends CI_Model
 
 
   public function count_rows(array $ds = array())
-  {		
+  {
+    if (! $this->_SuperAdmin)
+    {
+      $this->db->where('user.id_profile >', 0);
+    }
+    
 		if( ! empty($ds['uname']))
 		{
 			$this->db->like('uname', $ds['uname']);
@@ -196,7 +216,7 @@ class User_model extends CI_Model
     {
       $ds = FALSE;
 
-      if($menu->valid OR $id_profile == $this->superadmin)
+      if( ! $menu->valid OR $id_profile == $this->superadmin)
       {
         $ds = (object) array(
           'can_view' => 1,
@@ -262,33 +282,40 @@ class User_model extends CI_Model
 
   public function get_user_credentials($uname)
   {
-    $rs = $this->db->where('uname', $uname)->get($this->tb);    
-    return $rs->num_rows() === 1 ? $rs->row() : NULL;
+    $user = $this->db->where('uname', $uname)->get($this->tb);
+    return $user->num_rows() === 1 ? $user->row() : NULL;    
   }
 
 
   public function verify_uid($uid)
   {
-    $count = $this->db->where('uid', $uid)->where('active', 1)->count_all_results($this->tb);
-    return $count === 1 ? TRUE : FALSE;
+    return $this->db->where('uid', $uid)->count_all_results($this->tb) === 1;
   }
 
 
-  public function get_user_credentials_by_skey($skey)
-  {
-    if( ! empty($skey))
+	public function has_transection($user_id)
+	{
+		$tables = [
+      'customers',
+      'user',
+      'warehouse',
+      'zone'
+    ];
+
+    foreach($tables as $table)
     {
-      $rs = $this->db->where('skey', $skey)->get($this->tb);
-      return $rs->num_rows() === 1 ? $rs->row() : NULL;     
+      $count = $this->db
+      ->where('create_by', $user_id)
+      ->or_where('update_by', $user_id)
+      ->or_where('delete_by', $user_id)
+      ->count_all_results($table);
+
+      if($count > 0)
+      {
+        return TRUE;
+      }
     }
 
-    return NULL;
-  }
-
-
-	public function has_transection($uname)
-	{
-		//return TRUE;
 		return FALSE;
 	}
 

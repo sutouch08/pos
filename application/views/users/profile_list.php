@@ -1,7 +1,7 @@
 <?php $this->load->view('include/header'); ?>
 <div class="row">
 	<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 padding-5 padding-top-5">
-		<h4 class="title"><?php echo $this->title; ?></h4>
+		<h3 class="title"><?php echo $this->title; ?></h3>
 	</div>
 	<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 padding-5 text-right">
 		<p class="pull-right top-p">
@@ -37,8 +37,8 @@
 	<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 padding-5 table-responsive">
 		<table class="table table-bordered tableFixHead">
 			<thead>
-				<tr class="fint-size-11">
-					<th class="fix-width-60"></th>
+				<tr>
+					<th class="fix-width-100"></th>
 					<th class="fix-width-40 text-center">#</th>
 					<th class="min-width-100">ชื่อ</th>
 					<th class="fix-width-100 text-center">สมาชิก</th>

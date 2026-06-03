@@ -8,6 +8,17 @@ class Profile_model extends CI_Model
     parent::__construct();
   }
 
+  public function get_all()
+  {
+    $rs = $this->db->where('id >', 0)->get($this->tb);
+
+    if($rs->num_rows() > 0)
+    {
+      return $rs->result();
+    }
+
+    return NULL;
+  }
   
   public function get($id)
   {
@@ -21,6 +32,31 @@ class Profile_model extends CI_Model
     return NULL;
   }
 
+
+  public function get_by_uid($uid)
+  {
+    $rs = $this->db->where('uid', $uid)->get($this->tb);
+
+    if($rs->num_rows() === 1)
+    {
+      return $rs->row();
+    }
+
+    return NULL;
+  }
+
+
+  public function get_uid($id)
+  {
+    $rs = $this->db->select('uid')->where('id', $id)->get($this->tb);
+
+    if($rs->num_rows() === 1)
+    {
+      return $rs->row()->uid;
+    }
+
+    return NULL;
+  }
 
   public function get_name($id)
   {

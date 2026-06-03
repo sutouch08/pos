@@ -3,15 +3,14 @@
   var USE_STRONG_PWD = <?php echo getConfig('USE_STRONG_PWD'); ?>;
 </script>
 <div class="row">
-  <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 padding-5 padding-top-5">
-    <h4 class="title"><?php echo $this->title; ?></h4>
-  </div>
-  <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 padding-5 text-right">
-    <button type="button" class="btn btn-white btn-warning top-btn" onclick="goBack()"><i class="fa fa-arrow-left"></i> Back</button>
+  <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 padding-5 padding-top-5">
+    <h3 class="title">
+      <a href="javascript:goBack()"><i class="fa fa-chevron-left"></i></a>&nbsp; <?php echo $this->title; ?>
+    </h3>
   </div>
 </div><!-- End Row -->
 <hr />
-<form class="form-horizontal margin-top-30">
+<div class="form-horizontal margin-top-30">
   <div class="form-group">
     <label class="col-lg-4-harf col-md-4-harf col-sm-4-harf col-xs-12 control-label no-padding-right">User name</label>
     <div class="col-lg-3 col-md-3 col-sm-3 col-xs-12">
@@ -50,8 +49,8 @@
       <label>
         <input type="checkbox" class="ace" id="force-reset" value="1" checked />
         <span class="lbl">&nbsp; &nbsp; User must change after login</span>
-      </label>      
-    </div>    
+      </label>
+    </div>
   </div>
 
   <div class="divider-hidden"></div>
@@ -61,16 +60,11 @@
   <div class="form-group">
     <label class="col-lg-4-harf col-md-4-harf col-sm-4-harf col-xs-12 control-label no-padding-right"></label>
     <div class="col-lg-3 col-md-3 col-sm-3 col-xs-12">
-      <p class="pull-right">
-        <button type="button" class="btn btn-sm btn-success" onclick="changePassword()"><i class="fa fa-save"></i> Change Password</button>
-      </p>
-    </div>
-    <div class="help-block col-xs-12 col-sm-reset inline">
-      &nbsp;
-    </div>
+        <button type="button" class="btn btn-white btn-success btn-100 btn-xs-block" onclick="changePassword()"><i class="fa fa-key"></i>&nbsp; Change Password</button>     
+    </div>    
   </div>
   <input type="hidden" id="user-id" value="<?php echo $user->id; ?>" />
-</form>
+</div>
 
 <script src="<?php echo base_url(); ?>scripts/users/users.js?v=<?php date('Ymd'); ?>"></script>
 <script src="<?php echo base_url(); ?>scripts/users/user_add.js?v=<?php date('Ymd'); ?>"></script>

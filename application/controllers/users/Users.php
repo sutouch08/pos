@@ -1,98 +1,133 @@
 <?php
-defined('BASEPATH') OR exit('No direct script access allowed');
+defined('BASEPATH') or exit('No direct script access allowed');
 
-class Users extends PS_Controller{
-	public $menu_code = 'SCUSER'; 
+class Users extends PS_Controller
+{
+	public $menu_code = 'SCUSER';
 	public $menu_group_code = 'SC';
 	public $title = 'Users';
 	public $segment = 4;
 
-  public function __construct()
-  {
-    parent::__construct();
-    $this->home = base_url().'users/users';
+	public function __construct()
+	{
+		parent::__construct();
+		$this->home = base_url() . 'users/users';
+		$this->load->model('users/profile_model');
 		$this->load->helper('profile');
 		$this->load->helper('saleman');
-  }
+		$this->load->helper('employee');
+	}
 
 
-  public function index()
-  {
+	public function index()
+	{
 		$filter = array(
 			'uname' => get_filter('uname', 'user', ''),
 			'dname' => get_filter('dname', 'dname', ''),
 			'profile' => get_filter('profile', 'profile', 'all'),
 			'status' => get_filter('status', 'status', 'all')
 		);
-		
-		if($this->input->post('search'))
+
+		if ($this->input->post('search'))
 		{
 			redirect($this->home);
 		}
-		else 
+		else
 		{
-			$perpage = get_rows();				
+			$perpage = get_rows();
 			$rows = $this->user_model->count_rows($filter);
 			$filter['data'] = $this->user_model->get_list($filter, $perpage, $this->uri->segment($this->segment));
-			$init	= pagination_config($this->home.'/index/', $rows, $perpage, $this->segment);
+			$init	= pagination_config($this->home . '/index/', $rows, $perpage, $this->segment);
 			$this->pagination->initialize($init);
 			$this->load->view('users/user_list', $filter);
 		}
-  }
+	}
 
-	
+
 	public function add_new()
-  {				
-    $this->load->view('users/user_add');
-  }
+	{
+		$this->title = 'Create New User';
+
+		if($this->pm->can_add)
+		{
+			$this->load->view('users/user_add');
+		}
+		else
+		{
+			$this->deny_page();
+		}
+	}
 
 
 	public function add()
 	{
 		$sc = TRUE;
 		$ds = json_decode(file_get_contents('php://input'));
-		
-		if( ! empty($ds) && ! empty($ds->uname) && ! empty($ds->dname) && ! empty($ds->pwd))
+
+		if ($this->pm->can_add)
 		{
-			if($this->user_model->is_exists_uname($ds->uname))
+			if (! empty($ds) && ! empty($ds->uname) && ! empty($ds->dname) && ! empty($ds->pwd) && ! empty($ds->id_profile))
+			{
+				if ($this->user_model->is_exists_uname($ds->uname))
+				{
+					$sc = FALSE;
+					$this->error = "{$ds->uname} already exists !";
+				}
+
+				if ($sc === TRUE)
+				{
+					if ($this->user_model->is_exists_dname($ds->dname))
+					{
+						$sc = FALSE;
+						$this->error = "{$ds->dname} already exists !";
+					}
+				}
+
+				if ($sc === TRUE)
+				{
+					$profile = $this->profile_model->get($ds->id_profile);
+
+					if (empty($profile))
+					{
+						$sc = FALSE;
+						$this->error = "Profile not found !";
+					}
+				}
+
+				if ($sc === TRUE)
+				{
+					$arr = array(
+						'uname' => $ds->uname,
+						'name' => $ds->dname,
+						'pwd' => password_hash($ds->pwd, PASSWORD_DEFAULT),
+						'uid' => genUid(32),
+						'id_profile' => get_null($ds->id_profile),
+						'profile_id' => $profile->uid,
+						'emp_id' => get_null($ds->id_employee),
+						'sale_id' => get_null($ds->sale_id),
+						'active' => $ds->active,
+						'last_pass_change' => date('Y-m-d'),
+						'force_reset' => $ds->force_reset == 1 ? 1 : 0,
+						'create_by' => $this->_user->id
+					);
+
+					if (! $this->user_model->add($arr))
+					{
+						$sc = FALSE;
+						set_error('insert');
+					}
+				}
+			}
+			else
 			{
 				$sc = FALSE;
-				$this->error = "{$ds->uname} already exists !";
-			}
-
-			if($sc === TRUE)
-			{
-				if($this->user_model->is_exists_dname($ds->dname))
-				{
-					$sc = FALSE;
-					$this->error = "{$ds->dname} already exists !";
-				}
-			}
-
-			if($sc === TRUE)
-			{								
-				$arr = array(
-					'uname' => $ds->uname,
-					'name' => $ds->dname,
-					'pwd' => password_hash($ds->pwd, PASSWORD_DEFAULT),
-					'uid' => genUid(),
-					'id_profile' => get_null($ds->id_profile),
-					'sale_id' => get_null($ds->sale_id),
-					'active' => $ds->active,
-					'last_pass_change' => date('Y-m-d')
-				);
-
-				if( ! $this->user_model->add($arr))
-				{
-					$sc = FALSE;
-					set_error('insert');
-				}
+				set_error('required');
 			}
 		}
-		else 
+		else
 		{
 			$sc = FALSE;
-			set_error('required');
+			set_error('permission');
 		}
 
 		$arr = array(
@@ -103,11 +138,28 @@ class Users extends PS_Controller{
 		echo json_encode($arr);
 	}
 
-	
-	public function edit($id)
-	{		
-		$ds['user'] = $this->user_model->get_by_id($id);
-		$this->load->view('users/user_edit', $ds);
+
+	public function edit($uid)
+	{
+		$this->title = 'Edit User';
+
+		if($this->pm->can_edit)
+		{
+			$user = $this->user_model->get_by_uid($uid);
+
+			if( ! empty($user))
+			{
+				$this->load->view('users/user_edit', array('user' => $user));
+			}
+			else
+			{
+				$this->page_not_found();
+			}
+		}
+		else 
+		{
+			$this->deny_page();			
+		}		
 	}
 
 
@@ -116,39 +168,59 @@ class Users extends PS_Controller{
 		$sc = TRUE;
 		$ds = json_decode(file_get_contents('php://input'));
 
-		if (! empty($ds) && ! empty($ds->id) && ! empty($ds->uname) && ! empty($ds->dname))
+		if (! empty($ds) && ! empty($ds->uid) && ! empty($ds->uname) && ! empty($ds->dname))
 		{
-			if ($this->user_model->is_exists_uname($ds->uname, $ds->id))
+			$user = $this->user_model->get_by_uid($ds->uid);
+
+			if( ! empty($user))
+			{
+				$id = $user->id;				
+
+				if ($sc === TRUE)
+				{
+					if ($this->user_model->is_exists_dname($ds->dname, $id))
+					{
+						$sc = FALSE;
+						$this->error = "{$ds->dname} already exists !";
+					}
+				}
+
+				if($sc === TRUE)
+				{
+					$profile = $this->profile_model->get($ds->id_profile);
+
+					if (empty($profile))
+					{
+						$sc = FALSE;
+						$this->error = "Profile not found !";
+					}
+				}
+
+				if ($sc === TRUE)
+				{
+					$arr = array(
+						'uname' => $ds->uname,
+						'name' => $ds->dname,
+						'id_profile' => get_null($ds->id_profile),
+						'profile_id' => $profile->uid,
+						'emp_id' => get_null($ds->id_employee),
+						'sale_id' => get_null($ds->sale_id),
+						'active' => $ds->active,
+						'update_by' => $this->_user->id
+					);
+
+					if (! $this->user_model->update($id, $arr))
+					{
+						$sc = FALSE;
+						set_error('update');
+					}
+				}
+			}
+			else 
 			{
 				$sc = FALSE;
-				$this->error = "{$ds->uname} already exists !";
-			}
-
-			if ($sc === TRUE)
-			{
-				if ($this->user_model->is_exists_dname($ds->dname, $ds->id))
-				{
-					$sc = FALSE;
-					$this->error = "{$ds->dname} already exists !";
-				}
-			}
-
-			if ($sc === TRUE)
-			{
-				$arr = array(
-					'uname' => $ds->uname,
-					'name' => $ds->dname,
-					'id_profile' => get_null($ds->id_profile),
-					'sale_id' => get_null($ds->sale_id),
-					'active' => $ds->active
-				);
-
-				if (! $this->user_model->update($ds->id, $arr))
-				{
-					$sc = FALSE;
-					set_error('update');
-				}
-			}
+				set_error('notfound');
+			}			
 		}
 		else
 		{
@@ -165,11 +237,153 @@ class Users extends PS_Controller{
 	}
 
 
-	public function reset_password($id)
+	public function restore()
 	{
-			$this->title = 'Reset Password';
-			$data['user'] = $this->user_model->get_by_id($id);
-			$this->load->view('users/user_reset_pwd', $data);
+		$sc = TRUE;
+		$ds = json_decode(file_get_contents('php://input'));
+
+		if(! empty($ds) && ! empty($ds->uid))
+		{
+			if($this->pm->can_approve)
+			{
+				$user = $this->user_model->get_by_uid($ds->uid);
+
+				if( ! empty($user))
+				{
+					$arr = array(
+						'active' => 1,
+						'delete_by' => NULL,
+						'delete_at' => NULL,
+						'update_by' => $this->_user->id
+					);
+
+					if( ! $this->user_model->update($user->id, $arr))
+					{
+						$sc = FALSE;
+						set_error('update');
+					}
+				}
+				else 
+				{
+					$sc = FALSE;
+					set_error('notfound');
+				}
+			}
+			else 
+			{
+				$sc = FALSE;
+				set_error('permission');
+			}
+		}
+		else 
+		{
+			$sc = FALSE;
+			set_error('required');
+		}
+
+		$arr = array(
+			'status' => $sc === TRUE ? 'success' : 'failed',
+			'message' => $sc === TRUE ? 'success' : $this->error
+		);
+
+		echo json_encode($arr);
+	}
+
+
+	public function permanent_delete()
+	{
+		$sc = TRUE;
+		$ds = json_decode(file_get_contents('php://input'));
+
+		if(! empty($ds) && ! empty($ds->uid))
+		{
+			if($this->pm->can_delete && $this->pm->can_approve)
+			{
+				$user = $this->user_model->get_by_uid($ds->uid);
+
+				if( ! empty($user))
+				{
+					// check user transection before delete
+
+					if( $this->user_model->has_transection($user->id))
+					{
+						$sc = FALSE;
+						$this->error = "This user has transaction history. Can't delete permanently !";
+					}
+
+					if($sc === TRUE)
+					{
+						if( ! $this->user_model->delete($user->id))
+						{
+							$sc = FALSE;
+							set_error('delete');
+						}
+					}
+				}
+				else 
+				{
+					$sc = FALSE;
+					set_error('notfound');
+				}
+			}
+			else 
+			{
+				$sc = FALSE;
+				set_error('permission');
+			}
+		}
+		else 
+		{
+			$sc = FALSE;
+			set_error('required');
+		}
+
+		$arr = array(
+			'status' => $sc === TRUE ? 'success' : 'failed',
+			'message' => $sc === TRUE ? 'success' : $this->error
+		);
+
+		echo json_encode($arr);
+	}
+	
+
+	public function view_detail($uid)
+	{
+		$this->title = 'User Detail';
+		$user = $this->user_model->get_by_uid($uid);
+
+		if( ! empty($user))
+		{
+			$this->load->view('users/user_detail', array('user' => $user));
+		}
+		else
+		{
+			$this->page_not_found();
+		}
+	}
+	
+
+	public function reset_password($uid)
+	{
+		if($this->pm->can_edit)
+		{
+			$user = $this->user_model->get_by_uid($uid);
+
+			if( ! empty($user))
+			{
+				$this->title = 'Reset Password';
+				$data['user'] = $user;
+				$this->load->view('users/user_reset_pwd', $data);
+			}
+			else 
+			{
+				$this->page_not_found();				
+			}
+		}
+		else
+		{
+			$this->deny_page();			
+		}		
 	}
 
 
@@ -178,31 +392,31 @@ class Users extends PS_Controller{
 		$sc = TRUE;
 		$ds = json_decode(file_get_contents('php://input'));
 
-		if( ! empty($ds) && ! empty($ds->id) && $ds->pwd != '')
+		if (! empty($ds) && ! empty($ds->id) && $ds->pwd != '')
 		{
 			$user = $this->user_model->get_by_id($ds->id);
 
-			if( ! empty($user))
+			if (! empty($user))
 			{
 				$arr = array(
 					'pwd' => $pwd = password_hash($ds->pwd, PASSWORD_DEFAULT),
 					'force_reset' => $ds->force,
 					'last_pass_change' => now()
 				);
-				
-				if( ! $this->user_model->update($ds->id, $arr))
+
+				if (! $this->user_model->update($ds->id, $arr))
 				{
 					$sc = FALSE;
 					$this->error = "Update password failed";
 				}
 			}
-			else 
+			else
 			{
 				$sc = FALSE;
 				set_error('notfound');
 			}
 		}
-		else 
+		else
 		{
 			$sc = FALSE;
 			set_error('required');
@@ -212,54 +426,56 @@ class Users extends PS_Controller{
 	}
 
 
-	public function delete_user()
+	public function delete()
 	{
 		$sc = TRUE;
-		$id = $this->input->post('id');
-		$user = NULL;
+		$ds = json_decode(file_get_contents('php://input'));
 
-		if(empty($id))
+		if(! empty($ds) && ! empty($ds->uid))
+		{
+			if($this->pm->can_delete)
+			{
+				$user = $this->user_model->get_by_uid($ds->uid);
+
+				if( ! empty($user))
+				{
+					$arr = array(
+						'active' => -1,
+						'delete_by' => $this->_user->id,
+						'delete_at' => now(),
+						'update_by' => $this->_user->id
+					);
+
+					if( ! $this->user_model->update($user->id, $arr))
+					{
+						$sc = FALSE;
+						set_error('update');
+					}
+				}
+				else 
+				{
+					$sc = FALSE;
+					set_error('notfound');
+				}
+			}
+			else 
+			{
+				$sc = FALSE;
+				set_error('permission');
+			}
+		}
+		else 
 		{
 			$sc = FALSE;
 			set_error('required');
 		}
 
-		if ($sc === TRUE && ! $this->pm->can_delete)
-		{
-			$sc = FALSE;
-			set_error('permission');
-		}
+		$arr = array(
+			'status' => $sc === TRUE ? 'success' : 'failed',
+			'message' => $sc === TRUE ? 'success' : $this->error
+		);
 
-		if($sc === TRUE)
-		{
-			$user = $this->user_model->get_by_id($id);
-
-			if(empty($user))
-			{
-				$sc = FALSE;
-				set_error('notfound');
-			}			
-		}
-
-		if($sc === TRUE && ! empty($user))
-		{
-			if($this->user_model->has_transection($user->uname))
-			{
-				$sc = FALSE;
-				set_error('transection');
-			}
-		}
-		
-		if($sc === TRUE)
-		{
-			if( ! $this->user_model->delete($id))
-			{
-				$sc = FALSE;
-				set_error('delete');
-			}
-		}
-
-		$this->_response($sc);		
+		echo json_encode($arr);
 	}
 
 
@@ -286,13 +502,13 @@ class Users extends PS_Controller{
 	{
 		$ds = json_decode(file_get_contents('php://input'));
 
-		if( ! empty($ds))
+		if (! empty($ds))
 		{
-			if($this->user_model->is_exists_uname($ds->uname, $ds->id))
+			if ($this->user_model->is_exists_uname($ds->uname, $ds->id))
 			{
 				echo 'exists';
 			}
-			else 
+			else
 			{
 				echo 'not_exists';
 			}
@@ -300,23 +516,23 @@ class Users extends PS_Controller{
 	}
 
 
-	public function get_permission($id)
+	public function get_permission($uid)
 	{
 		$sc = TRUE;
 		$this->load->model('users/permission_model');
 
 		$ds = [];
 
-		$user = $this->user_model->get_by_id($id);
+		$user = $this->user_model->get_by_uid($uid);
 
-		if( ! empty($user))
+		if (! empty($user))
 		{
 			$ds['header'] = "Permission : \"{$user->uname}\"";
 			$ds['group'] = [];
 
 			$groups = $this->menu_model->get_active_menu_groups();
 
-			if( ! empty($groups))
+			if (! empty($groups))
 			{
 				foreach ($groups as $gp)
 				{
@@ -348,19 +564,19 @@ class Users extends PS_Controller{
 										'ce' => $pm->can_edit ? 1 : 0,
 										'cd' => $pm->can_delete ? 1 : 0,
 										'cp' => $pm->can_approve ? 1 : 0
-									);									
+									);
 								}
 							}
 
 							$menuGroup['menu'] = $item;
 						}
 
-						$ds['group'][] = $menuGroup;						
+						$ds['group'][] = $menuGroup;
 					}
 				}
 			}
 		}
-		else 
+		else
 		{
 			$sc = FALSE;
 			set_error('notfound');
@@ -384,18 +600,18 @@ class Users extends PS_Controller{
 
 		$user = $this->user_model->get_by_id($id);
 
-		if( ! empty($user))
+		if (! empty($user))
 		{
 			$ds['header'] = "Permission : \"{$user->uname}\"";
 			$ds['group'] = array();
 
 			$groups = $this->menu_model->get_active_menu_groups();
 
-			if( ! empty($groups))
+			if (! empty($groups))
 			{
-				foreach($groups as $gp)
+				foreach ($groups as $gp)
 				{
-					if($gp->pm)
+					if ($gp->pm)
 					{
 						$menuGroup = array(
 							'group_code' => $gp->code,
@@ -405,13 +621,13 @@ class Users extends PS_Controller{
 
 						$menus = $this->menu_model->get_menus_by_group($gp->code);
 
-						if( ! empty($menus))
+						if (! empty($menus))
 						{
 							$item = array();
 
-							foreach($menus as $menu)
+							foreach ($menus as $menu)
 							{
-								if($menu->valid)
+								if ($menu->valid)
 								{
 									$pm = $this->permission_model->get_permission($menu->code, $user->id_profile);
 
@@ -427,7 +643,6 @@ class Users extends PS_Controller{
 
 									array_push($item, $arr);
 								}
-
 							}
 
 							$menuGroup['menu'] = $item;
@@ -455,17 +670,17 @@ class Users extends PS_Controller{
 		$this->load->model('users/permission_model');
 		$this->load->model('users/profile_model');
 		$token = $this->input->post('token');
-		$id = $this->input->post('user_id');
+		$uid = $this->input->post('uid');
 
-		$user = $this->user_model->get_by_id($id);
+		$user = $this->user_model->get_by_uid($uid);
 		$uname = empty($user) ? 'no data' : $user->uname;
 
-    //--- load excel library
-    $this->load->library('excel');
-    $this->excel->setActiveSheetIndex(0);
-    $this->excel->getActiveSheet()->setTitle($uname);
+		//--- load excel library
+		$this->load->library('excel');
+		$this->excel->setActiveSheetIndex(0);
+		$this->excel->getActiveSheet()->setTitle($uname);
 
-		if( ! empty($user))
+		if (! empty($user))
 		{
 			$this->excel->getActiveSheet()->getColumnDimension('A')->setWidth('30');
 			$this->excel->getActiveSheet()->getColumnDimension('B')->setWidth('15');
@@ -486,7 +701,7 @@ class Users extends PS_Controller{
 			$this->excel->getActiveSheet()->setCellValue('B2', $this->profile_model->get_name($user->id_profile));
 			$this->excel->getActiveSheet()->mergeCells('B2:C2');
 			$this->excel->getActiveSheet()->setCellValue('D2', "Status : ")->getStyle('D2')->getAlignment()->setHorizontal('right');
-			$this->excel->getActiveSheet()->setCellValue('E2', ($user->active == 1 ? 'Active' : 'Inactive'));
+			$this->excel->getActiveSheet()->setCellValue('E2', ($user->active == 1 ? 'Active' : ($user->active == -1 ? 'Deleted' : 'Inactive')));
 			$this->excel->getActiveSheet()->mergeCells('E2:F2');
 
 			$row = 4;
@@ -494,11 +709,11 @@ class Users extends PS_Controller{
 
 			$groups = $this->menu_model->get_active_menu_groups();
 
-			if( ! empty($groups))
+			if (! empty($groups))
 			{
-				foreach($groups as $gp)
+				foreach ($groups as $gp)
 				{
-					if($gp->pm)
+					if ($gp->pm)
 					{
 						$this->excel->getActiveSheet()->setCellValue("A{$row}", $gp->name);
 						$this->excel->getActiveSheet()->setCellValue("B{$row}", 'ดู');
@@ -519,11 +734,11 @@ class Users extends PS_Controller{
 
 						$menus = $this->menu_model->get_menus_by_group($gp->code);
 
-						if( ! empty($menus))
+						if (! empty($menus))
 						{
-							foreach($menus as $menu)
+							foreach ($menus as $menu)
 							{
-								if($menu->valid)
+								if ($menu->valid)
 								{
 									$pm = $this->permission_model->get_permission($menu->code, $user->id_profile);
 
@@ -541,7 +756,7 @@ class Users extends PS_Controller{
 					} //-- endif
 				} //--- end foreach
 
-				if($row > 3)
+				if ($row > 3)
 				{
 					$this->excel->getActiveSheet()->getStyle("B3:F{$row}")->getAlignment()->setHorizontal('center');
 				}
@@ -549,11 +764,11 @@ class Users extends PS_Controller{
 		}
 
 		setToken($token);
-    $file_name = "{$uname} Permission.xlsx";
-    header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'); /// form excel 2007 XLSX
-    header('Content-Disposition: attachment;filename="'.$file_name.'"');
-    $writer = PHPExcel_IOFactory::createWriter($this->excel, 'Excel2007');
-    $writer->save('php://output');
+		$file_name = "{$uname} Permission.xlsx";
+		header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'); /// form excel 2007 XLSX
+		header('Content-Disposition: attachment;filename="' . $file_name . '"');
+		$writer = PHPExcel_IOFactory::createWriter($this->excel, 'Excel2007');
+		$writer->save('php://output');
 	}
 
 
@@ -571,11 +786,11 @@ class Users extends PS_Controller{
 
 		$groups = $this->menu_model->get_active_menu_groups();
 
-		if( ! empty($groups))
+		if (! empty($groups))
 		{
-			foreach($groups as $group)
+			foreach ($groups as $group)
 			{
-				if($group->pm)
+				if ($group->pm)
 				{
 					$arr = array(
 						'name' => $group->name,
@@ -584,13 +799,13 @@ class Users extends PS_Controller{
 
 					$menus = $this->menu_model->get_menus_by_group($group->code);
 
-					if( ! empty($menus))
+					if (! empty($menus))
 					{
 						$items = array();
 
-						foreach($menus as $menu)
+						foreach ($menus as $menu)
 						{
-							if($menu->valid)
+							if ($menu->valid)
 							{
 								$items[] = array(
 									'code' => $menu->code,
@@ -605,23 +820,22 @@ class Users extends PS_Controller{
 
 				$ds[] = $arr;
 			}
-
 		}
 
 
-    //--- load excel library
-    $this->load->library('excel');
+		//--- load excel library
+		$this->load->library('excel');
 
-		if( ! empty($users))
+		if (! empty($users))
 		{
 			$index = 0;
 
-			foreach($users as $user)
+			foreach ($users as $user)
 			{
 				$worksheet = new PHPExcel_Worksheet($this->excel, $user->uname);
 				$this->excel->addSheet($worksheet, $index);
 				$this->excel->setActiveSheetIndex($index);
-				$tabColor = $user->active == 1 ? '54c784' : 'c96b65';
+				$tabColor = $user->active == 1 ? '54c784' : ($user->active == -1 ? 'f2c96b' : 'c96b65');
 				$this->excel->getActiveSheet()->getTabColor()->setARGB($tabColor);
 
 				$this->excel->getActiveSheet()->getColumnDimension('A')->setWidth('30');
@@ -643,14 +857,14 @@ class Users extends PS_Controller{
 				$this->excel->getActiveSheet()->setCellValue('B2', $this->profile_model->get_name($user->id_profile));
 				$this->excel->getActiveSheet()->mergeCells('B2:C2');
 				$this->excel->getActiveSheet()->setCellValue('D2', "Status : ")->getStyle('D2')->getAlignment()->setHorizontal('right');
-				$this->excel->getActiveSheet()->setCellValue('E2', ($user->active == 1 ? 'Active' : 'Inactive'));
+				$this->excel->getActiveSheet()->setCellValue('E2', ($user->active == 1 ? 'Active' : ($user->active == -1 ? 'Deleted' : 'Inactive')));
 				$this->excel->getActiveSheet()->mergeCells('E2:F2');
 
 				$row = 4;
 
-				if( ! empty($ds))
+				if (! empty($ds))
 				{
-					foreach($ds as $rs)
+					foreach ($ds as $rs)
 					{
 						$this->excel->getActiveSheet()->setCellValue("A{$row}", $rs['name']);
 						$this->excel->getActiveSheet()->setCellValue("B{$row}", 'ดู');
@@ -671,9 +885,9 @@ class Users extends PS_Controller{
 
 						$menus = $rs['menus'];
 
-						if( ! empty($menus))
+						if (! empty($menus))
 						{
-							foreach($menus as $menu)
+							foreach ($menus as $menu)
 							{
 								$pm = $this->permission_model->get_permission($menu['code'], $user->id_profile);
 
@@ -689,7 +903,7 @@ class Users extends PS_Controller{
 						}
 					} //--- end foreach
 
-					if($row > 4)
+					if ($row > 4)
 					{
 						$this->excel->getActiveSheet()->getStyle("B3:F{$row}")->getAlignment()->setHorizontal('center');
 					}
@@ -700,23 +914,18 @@ class Users extends PS_Controller{
 		}
 
 		setToken($token);
-    $file_name = "Users Permission.xlsx";
-    header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'); /// form excel 2007 XLSX
-    header('Content-Disposition: attachment;filename="'.$file_name.'"');
-    $writer = PHPExcel_IOFactory::createWriter($this->excel, 'Excel2007');
-    $writer->save('php://output');
+		$file_name = "Users Permission.xlsx";
+		header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'); /// form excel 2007 XLSX
+		header('Content-Disposition: attachment;filename="' . $file_name . '"');
+		$writer = PHPExcel_IOFactory::createWriter($this->excel, 'Excel2007');
+		$writer->save('php://output');
 	}
 
 
 
 	public function clear_filter()
 	{
-		$filter = array('user', 'dname', 'profile');
-		clear_filter($filter);
-		echo 'done';
+		$filter = ['uname', 'dname', 'profile', 'status'];
+		return clear_filter($filter);
 	}
-
-}//--- end class
-
-
- ?>
+} //--- end class

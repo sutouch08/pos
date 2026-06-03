@@ -4,64 +4,179 @@ const addNew = () => {
 }
 
 
-const edit = (id) => {
-  window.location.href = `${HOME}edit/${id}`;
+const edit = (uid) => {
+  window.location.href = `${HOME}edit/${uid}`;
 }
 
 
-const getReset = (id) => {
-  window.location.href = `${HOME}reset_password/${id}`;
+const getReset = (uid) => {
+  window.location.href = `${HOME}reset_password/${uid}`;
 }
 
 
-function getDelete(id, uname){
+const viewDetail = (uid) => {
+  const url = `${HOME}view_detail/${uid}?nomenu&nonavbar`;
+  const width = 900;
+  const height = 800;
+  const left = (screen.width - width) / 2;
+  const top = (screen.height - height) / 2;
+  window.open(url, '_blank', `width=${width},height=${height},top=${top},left=${left}`);
+}
+
+
+const confirmDelete = (id, uid, name) => {
   swal({
-    title:'Are sure ?',
-    text:'ต้องการลบ '+ uname +' หรือไม่ ?',
-    type:'warning',
+    title: 'Are you sure ?',
+    text: `Do you want to delete ${name} ?`,
+    type: 'warning',
     showCancelButton: true,
-		confirmButtonColor: '#FA5858',
-		confirmButtonText: 'ใช่, ฉันต้องการลบ',
-		cancelButtonText: 'ยกเลิก',
-		closeOnConfirm: false
-  },function(){
-    $.ajax({
-      url: `${HOME}delete_user`,
-      type:'POST',
-      cache:false,
-      data:{
-        'id' : id
-      },
-      success:function(rs){
-        if(rs.trim() == 'success'){
-          swal({
-            title:'Deleted',
-            title:'User deleted',
-            type:'success',
-            timer: 1000
-          });
-
-          $(`#row-${id}`).remove();
-
-          reIndex();          
-        }
-        else{
-          showError(rs);          
-        }
-      },
-      error:function(rs) {
-        showError(rs);
-      }
-    })
-  })
+    confirmButtonColor: '#FA5858',
+    confirmButtonText: 'Yes, I want to delete',
+    cancelButtonText: 'Cancel',
+    closeOnConfirm: true
+  }, function() {
+    doDelete(id, uid);
+  });
 }
 
 
-const getPermission = async (id) => {
+async function doDelete(id, uid) {
+  const url = `${HOME}delete`;
+  const data = { uid:uid };  
   loadIn();
-  document.getElementById('user-id').value = id;
+  try {
+    const response = await postData(url, data);
+    const res = await response.json();
+
+    setTimeout(() => {
+      loadOut();
+      if (res.status === 'success') {
+        swal({
+          title: 'Deleted',
+          text: `User has been deleted`,
+          type: 'success',
+          timer: 1000
+        });
+
+        $(`#row-${id}`).remove();
+
+        reIndex();
+      }
+      else {
+        showError(res.message);
+      }
+    }, 500);
+  }
+  catch (err) {    
+    loadOut();
+    showError(err);
+  }
+}
+
+
+const confirmRestore = (uid, name) => {
+  swal({
+    title: 'Are you sure ?',
+    text: `Do you want to restore <b class="blue">${name}</b> ?`,
+    type: 'warning',
+    html:true,
+    showCancelButton: true,
+    confirmButtonColor: '#5CB85C',
+    confirmButtonText: 'Yes, I want to restore',
+    cancelButtonText: 'Cancel',
+    closeOnConfirm: true
+  }, function() {
+    doRestore(uid);
+  });
+}
+
+
+async function doRestore(uid) {
+  const url = `${HOME}restore`;
+  const data = { uid:uid };  
+  loadIn();
+  try {
+    const response = await postData(url, data);
+    const res = await response.json();
+
+    setTimeout(() => {
+      loadOut();
+      if (res.status === 'success') {
+        swal({
+          title: 'Restored',
+          text: `User has been restored`,
+          type: 'success',
+          timer: 1000
+        });
+
+        setTimeout(() => { refresh(); }, 1200);
+      }
+      else {
+        showError(res.message);
+      }
+    }, 500);
+  }
+  catch (err) {    
+    loadOut();
+    showError(err);
+  }
+}
+
+
+const confirmPermanentDelete = (uid, name) => {
+  swal({
+    title: 'Are you sure ?',
+    text: `Do you want to permanently delete <b class="red">${name}</b> ?<br><br><span class="red">This action cannot be undone.</span>`,
+    type: 'warning',
+    html:true,
+    showCancelButton: true,
+    confirmButtonColor: '#FA5858',
+    confirmButtonText: 'Yes, I want to delete',
+    cancelButtonText: 'Cancel',
+    closeOnConfirm: true
+  }, function() {
+    doPermanentDelete(uid);
+  });
+}
+
+
+async function doPermanentDelete(uid) {
+  const url = `${HOME}permanent_delete`;
+  const data = { uid:uid };  
+  loadIn();
+  try {
+    const response = await postData(url, data);
+    const res = await response.json();
+
+    setTimeout(() => {
+      loadOut();
+      if (res.status === 'success') {
+        swal({
+          title: 'Deleted',
+          text: `User has been permanently deleted`,
+          type: 'success',
+          timer: 1000
+        });
+
+        setTimeout(() => { refresh(); }, 1200);
+      }
+      else {
+        showError(res.message);
+      }
+    }, 500);
+  }
+  catch (err) {    
+    loadOut();
+    showError(err);
+  }
+}
+
+
+const getPermission = async (uid) => {
+  loadIn();
   
-  const url = `${HOME}get_permission/${id}`;
+  document.getElementById('uid').value = uid;
+  const url = `${HOME}get_permission/${uid}`;
 
   try {
     const response = await fetch(url);
@@ -98,25 +213,11 @@ const getPermission = async (id) => {
 }
 
 
-
-function doExport() {
-  let token = generateUID();
-  $('#token').val(token);
-  $('#permission-modal').modal('hide');
-  getDownload(token);
-  $('#permission-form').submit();
+const exportPermission = () => {
+  const url = `${HOME}export_permission`;
+  const uid = document.getElementById('uid').value;  
+  const data = { uid:uid };  
+  $('#permission-modal').modal('hide');  
+  downloadExcel(url, data);
 }
-
-
-function getAllPermission() {
-  $('#all-permission-modal').modal('show');
-}
-
-function exportAll(option) {
-  let token = Date.now();
-  $('#all').val(option);
-  $('#all-token').val(token);
-  $('#all-permission-modal').modal('hide');
-  get_download(token);
-  $('#all-permission-form').submit();
-}
+  

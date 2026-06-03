@@ -4,31 +4,27 @@ class User_pwd extends PS_Controller
 {
   public $title = 'เปลี่ยนรหัสผ่าน';
 	public $menu_code = 'change password';
-	public $menu_group_code = 'SC';
-	public $pm;
-  public $error;
+	public $menu_group_code = 'SC';	
 
 	public function __construct()
 	{
-		parent::__construct();
-		_check_login();
-		$this->pm = new stdClass();
+		parent::__construct();				
 		$this->pm->can_view = 1;
-    $this->load->model('users/user_model');
     $this->home = base_url().'user_pwd';
-
+    $this->load->model('users/user_model');
 	}
-
 
 	public function index()
 	{
-    $code = get_cookie('uname');
-    if(!empty($code))
+    $uid = $this->_user->uid;
+
+    if(!empty($uid))
     {
-      $user = $this->user_model->get($code);
+      $user = $this->user_model->get_by_uid($uid);
+
       if(!empty($user))
       {
-        $ds['data'] = $user;
+        $ds['user'] = $user;
         $this->load->view('users/change_pwd', $ds);
       }
       else
@@ -42,18 +38,20 @@ class User_pwd extends PS_Controller
       //--- ถ้าไม่มีข้อมูล ให้ไป login ใหม่
   		redirect(base_url().'users/authentication');
     }
+  }
 
-	}
 
-
-  public function change($code)
+  public function change()
 	{
-    if(!empty($code))
+    $uid = $this->_user->uid;
+
+    if(!empty($uid))
     {
-      $user = $this->user_model->get($code);
+      $user = $this->user_model->get_by_uid($uid);
+
       if(!empty($user))
       {
-        $ds['data'] = $user;
+        $ds['user'] = $user;
         $this->load->view('users/change_pwd', $ds);
       }
       else
@@ -70,48 +68,67 @@ class User_pwd extends PS_Controller
 	}
 
 
-	public function check_current_password()
+	public function validate_current_password()
 	{
-		$uname = $this->input->post('uname');
-		$pwd = $this->input->post('pwd');
+    $ds = json_decode(file_get_contents('php://input'));
 
-		$user = $this->user_model->get_user_credentials($uname);
+    if( ! empty($ds) && ! empty($ds->uid) && ! empty($ds->pwd))
+    {
+      if($ds->uid != $this->_user->uid)
+      {
+        echo "Request user name is not match with current user name";
+        return;
+      }
 
-		if(!empty($user))
-		{
-			if(password_verify($pwd, $user->pwd))
-			{
-				echo "valid";
-			}
-			else
-			{
-				echo "invalid";
-			}
-		}
-		else
-		{
-			echo "Invalid user name : {$uname}";
-		}
+      $user = $this->user_model->get_by_uid($ds->uid);
 
-	}
+      if(empty($user))
+      {
+        echo "Invalid user name : {$ds->uid}";
+        return;
+      }
 
+      if(password_verify($ds->pwd, $user->pwd))
+      {
+        echo "valid";
+      }
+      else
+      {
+        echo "invalid";
+      }
+    }
+    else    
+    {
+      echo "Invalid request";
+    }      
+  }		
 
 
   public function change_password()
 	{
 		$sc = TRUE;
-		$uname = $this->input->post('uname');
-		$pwd = $this->input->post('pwd');
-		$new_pwd = $this->input->post('new_pwd');
+    $ds = json_decode(file_get_contents('php://input'));
 
-		$user = $this->user_model->get_user_credentials($uname);
+    if( empty($ds) || empty($ds->uid) || empty($ds->pwd) || empty($ds->new_pwd))
+    {
+      echo "Invalid request";
+      return;
+    }
+
+    if($ds->uid != $this->_user->uid)
+    {
+      echo "Request user name is not match with current user name";
+      return;
+    }
+
+    $user = $this->user_model->get_by_uid($ds->uid);		
 
 		if(!empty($user))
 		{
-			if(password_verify($pwd, $user->pwd))
+			if(password_verify($ds->pwd, $user->pwd))
 			{				
 				$arr = array(
-					'pwd' => password_hash($new_pwd, PASSWORD_DEFAULT),
+					'pwd' => password_hash($ds->new_pwd, PASSWORD_DEFAULT),
 					'force_reset' => 0,
 					'last_pass_change' => now()
 				);
@@ -120,7 +137,7 @@ class User_pwd extends PS_Controller
 				{
 					$sc = FALSE;
 					$this->error = "เปลี่ยนรหัสผ่านไม่สำเร็จ";
-				}				
+				}
 			}
 			else
 			{
@@ -131,49 +148,10 @@ class User_pwd extends PS_Controller
 		else
 		{
 			$sc = FALSE;
-			$this->error = "Invalid Username : {$uname}";
+			$this->error = "Invalid Username or User not found";
 		}
 
 		echo $sc === TRUE ? 'success' : $this->error;
 	}
-
-
-  public function change_skey()
-  {
-    $sc = TRUE;
-    $uid = trim($this->input->post('uid'));
-    $user = $this->user_model->get_by_uid($uid);
-
-    if( ! empty($user))
-    {
-      $skey = trim($this->input->post('skey'));
-      $skey = md5($skey);
-     
-      if($this->user_model->is_skey_exists($skey, $uid))
-      {
-        $sc = FALSE;
-        $this->error = "ไม่สามารถใช้รหัสนี้ได้กรุณากำหนดรหัสอื่น";
-      }
-
-      if($sc === TRUE)
-      {
-        $arr = array('skey' => $skey);
-
-        if(! $this->user_model->update($user->id, $arr))
-        {
-          $sc = FALSE;
-          $this->error = "เปลี่ยนรหัสลับไม่สำเร็จ";
-        }
-      }
-    }
-    else
-    {
-      $sc = FALSE;
-      $this->error = "ไม่พบ user หรือ user ไม่ถูกต้อง";
-    }
-
-    $this->_response($sc);
-  }
-
+  
 }
- ?>

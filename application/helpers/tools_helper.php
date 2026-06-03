@@ -488,23 +488,79 @@ function statusBgColor($status = 'O')
 }
 
 
-function genUid($lenght = 13)
+function genUid($length = 16, $version = 4)
 {
+	$length = $length > 32 ? 32 : ($length < 16 ? 16 : $length);
+	$length = $version === 7 ? ($length <= 24 ? 24 : $length) : $length;
+	$version = $version == 7 ? 7 : 4;
 
-	if (function_exists("random_bytes"))
-	{
-		$bytes = random_bytes(ceil($lenght / 2));
+	if($version === 7)
+	{		
+		$uuid = uuid_v7();
 	}
-	elseif (function_exists("openssl_random_pseudo_bytes"))
+	else if($version === 4)
 	{
-		$bytes = openssl_random_pseudo_bytes(ceil($lenght / 2));
-	}
-	else
-	{
-		$bytes = uniqid('', TRUE);
+		$uuid = uuid_v4();
 	}
 
-	return substr(bin2hex($bytes), 0, $lenght);
+	//--- Remove dashes
+	$uuid = str_replace('-', '', $uuid);
+
+	//---Normalize length
+	if($length === NULL OR $length >= strlen($uuid))
+	{
+		return $uuid;
+	}
+
+	return substr($uuid, 0, $length);
+}
+
+
+function uuid_v7()
+{
+	// Get time in milliseconds	
+	$time = (int) floor((microtime(true) * 1000));
+
+	// Split time into high and low parts
+	$timeHigh = ($time >> 32) & 0xffffffff; // Higher 32 bits
+	$timeLow = $time & 0xffffffff; // Lower 32 bits
+
+	// Generate random bytes for the rest of the UUID
+	$rand = random_bytes(10);
+
+	// Set version to 0111 (version 7) and variant to 10xx (RFC 9562)
+	$rand[0] = chr((ord($rand[0]) & 0x0f) | 0x70); // Set Version 7 in the first byte of random
+	$rand[2] = chr((ord($rand[2]) & 0x3f) | 0x80); // Set Variant 10xx in the third byte of random
+
+	$uuid = sprintf(
+		'%04x%08x%04x%04x%012x',
+		$timeHigh,
+		$timeLow,
+		hexdec(bin2hex(substr($rand, 0, 2))),
+		hexdec(bin2hex(substr($rand, 2, 2))),
+		hexdec(bin2hex(substr($rand, 4, 6)))
+	);
+
+	return $uuid;
+}
+
+
+function uuid_v4()
+{
+	$data = random_bytes(16);
+	$data[6] = chr((ord($data[6]) & 0x0f) | 0x40); // Set version to 0100
+	$data[8] = chr((ord($data[8]) & 0x3f) | 0x80); // Set variant to 10xx
+
+	$uuid = sprintf(
+		'%08s-%04s-%04s-%04s-%12s',
+		bin2hex(substr($data, 0, 4)),
+		bin2hex(substr($data, 4, 2)),
+		bin2hex(substr($data, 6, 2)),
+		bin2hex(substr($data, 8, 2)),
+		bin2hex(substr($data, 10, 6))
+	);
+
+	return $uuid;
 }
 
 

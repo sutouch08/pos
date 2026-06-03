@@ -585,6 +585,13 @@ async function postData(url, data) {
 }
 
 
+function debounce(fn, delay = 300) {
+  let timer = null;
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), delay);
+  };
+}
 
 async function validateRemote(url, data = {}) {
   try {
@@ -663,4 +670,43 @@ const is_true = (val) => {
 
   const truthy = ["true", "1", "yes", "y", "on"];
   return val === true || val === 1 || truthy.includes(val);
+};
+
+const downloadExcel = (url, data = {}) => {  
+  const token = data.token || generateUID();
+  data.token = token;
+  // Create form
+  const form = document.createElement("form");
+  form.method = "POST";
+  form.action = url;
+  form.style.display = "none"; // keep it invisible
+  form.target = "excelFrame";  // submit to hidden iframe
+
+  // Append inputs
+  Object.entries(data).forEach(([key, value]) => {
+    const input = document.createElement("input");
+    input.type = "hidden";
+    input.name = key;
+    input.value = value;
+    form.appendChild(input);
+  });
+    
+  // Add form to body
+  document.body.appendChild(form);
+  // create hidden iframe
+  let iframe = document.getElementById("excelFrame");
+  if (!iframe) {
+    iframe = document.createElement("iframe");
+    iframe.id = "excelFrame";
+    iframe.name = "excelFrame";
+    iframe.style.display = "none";
+    document.body.appendChild(iframe);
+  }
+
+  getDownload(token);
+  // Submit
+  form.submit();
+
+  // Remove form after submit
+  document.body.removeChild(form);
 };

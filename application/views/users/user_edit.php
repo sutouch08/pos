@@ -1,10 +1,9 @@
 <?php $this->load->view('include/header'); ?>
 <div class="row">
-  <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 padding-5 padding-top-5">
-    <h4 class="title"><?php echo $this->title; ?></h4>
-  </div>
-  <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 padding-5 text-right">
-    <button type="button" class="btn btn-white btn-warning top-btn" onclick="goBack()"><i class="fa fa-arrow-left"></i> Back</button>
+  <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 padding-5 padding-top-5">
+    <h3 class="title">
+      <a href="javascript:goBack()"><i class="fa fa-chevron-left"></i></a>&nbsp; <?php echo $this->title; ?>
+    </h3>
   </div>
 </div><!-- End Row -->
 <hr />
@@ -30,6 +29,9 @@
     <div class="col-lg-3 col-md-3 col-sm-3 col-xs-12">
       <select class="form-control input-sm" id="profile" autocomplete="off">
         <option value="">Please, select profile</option>
+        <?php if ($this->_SuperAdmin) : ?>
+          <option value="-1" <?php echo is_selected('-1', $user->id_profile); ?>>Super Admin</option>
+        <?php endif; ?>
         <?php echo select_profile($user->id_profile); ?>
       </select>
     </div>
@@ -37,10 +39,21 @@
   </div>
 
   <div class="form-group">
+    <label class="col-lg-4-harf col-md-4-harf col-sm-4-harf col-xs-12 control-label no-padding-right">Employee</label>
+    <div class="col-lg-3 col-md-3 col-sm-3 col-xs-12">
+      <select class="form-control input-sm" id="employee" autocomplete="off">
+        <option value="">Please, select employee</option>
+        <?php echo select_employee($user->emp_id); ?>
+      </select>
+    </div>
+    <div class="help-block col-xs-12 col-sm-reset inline red" id="employee-error"></div>
+  </div>
+
+  <div class="form-group">
     <label class="col-lg-4-harf col-md-4-harf col-sm-4-harf col-xs-12 control-label no-padding-right">พนักงานขาย</label>
     <div class="col-lg-3 col-md-3 col-sm-3 col-xs-12">
       <select class="form-control input-sm" id="sale-id" autocomplete="off">
-        <option value="">ไม่ระบุ</option>        
+        <option value="">ไม่ระบุ</option>
         <?php echo select_saleman($user->sale_id); ?>
       </select>
     </div>
@@ -67,19 +80,19 @@
   </div>
 
   <div class="divider-hidden"></div>
+  <div class="divider-hidden"></div>
+  <div class="divider-hidden"></div>
 
-  <div class="form-group">
-    <label class="col-lg-4-harf col-md-4-harf col-sm-4-harf col-xs-12 control-label no-padding-right"></label>
-    <div class="col-lg-3 col-md-3 col-sm-3 col-xs-12">
-      <p class="pull-right">
-        <button type="button" class="btn btn-sm btn-success" onclick="update()"><i class="fa fa-save"></i> Save</button>
-      </p>
+  <?php if($this->pm->can_edit) : ?>
+    <div class="form-group">
+      <label class="col-lg-4-harf col-md-4-harf col-sm-4-harf col-xs-12 control-label no-padding-right"></label>
+      <div class="col-lg-3 col-md-3 col-sm-3 col-xs-12">
+        <button type="button" class="btn btn-white btn-success btn-100 btn-xs-block" onclick="update()"><i class="fa fa-save"></i>&nbsp; Save</button>       
+      </div>      
     </div>
-    <div class="help-block col-xs-12 col-sm-reset inline">
-      &nbsp;
-    </div>
-  </div>
+  <?php endif; ?>
   <input type="hidden" id="user-id" value="<?php echo $user->id; ?>" />
+  <input type="hidden" name="uid" id="uid" value="<?php echo $user->uid; ?>" />
 </form>
 
 <script>

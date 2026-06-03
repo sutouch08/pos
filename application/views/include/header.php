@@ -80,7 +80,7 @@
 
 								<ul class="user-menu dropdown-menu-right dropdown-menu dropdown-yellow dropdown-caret dropdown-close">
 									<li>
-										<a href="JavaScript:void(0)" onclick="changeUserPwd('<?php echo get_cookie('uname'); ?>')">
+										<a href="<?php echo base_url(); ?>user_pwd/change">
 											<i class="ace-icon fa fa-keys"></i>
 											เปลี่ยนรหัสผ่าน
 										</a>
@@ -110,4 +110,4 @@
 		<div class="main-content">
 			<div class="main-content-inner">
 				<div class="page-content">
-					
+					<?php _can_view_page($this->pm->can_view); ?>

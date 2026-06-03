@@ -1,78 +1,94 @@
 function showPwd() {
-  var x = document.getElementById("pwd");
-  var y = document.getElementById("pwd-btn");
+	var x = document.getElementById("pwd");
+	var y = document.getElementById("pwd-btn");
 
-  if(x.type === "password") {
-    x.type = "text";
-    y.classList.remove('fa-eye');
-    y.classList.add('fa-eye-slash');
-  }
-  else {
-    x.type = "password";
-    y.classList.remove('fa-eye-slash');
-    y.classList.add('fa-eye');
-  }
-}
-
-
-function doLogin() {
-	const uname = $('#uname').val();
-	const pwd = $('#pwd').val();
-	const ipwd = $('#ipwd').text();
-	const remember = $('#remember').is(':checked') ? 1 : 0;
-
-	if(uname.length == 0) {
-		$('#uname').focus();
-		return false;
-	}
-
-	if(pwd.length == 0) {
-		$('#pwd').focus();
-		return false;
-	}
-
-	if(pwd != ipwd) {
-		return false;
-	}
-
-	$.ajax({
-		url:BASE_URL + 'users/authentication/validate_credentials',
-		type:'POST',
-		cache:false,
-		data:{
-			'uname' : uname,
-			'pwd' : ipwd,
-			'remember' : remember
-		},
-		success:function(rs) {
-			rs = $.trim(rs);
-
-			if(rs === 'success') {
-				window.location.href = BASE_URL;
-			}
-			else {
-				$('#login-error').text(rs);
-			}
-		}
-	});
-}
-
-
-
-$('#pwd').keyup(function(e) {
-	if(e.keyCode === 13) {
-		doLogin();
+	if (x.type === "password") {
+		x.type = "text";
+		y.classList.remove('fa-eye');
+		y.classList.add('fa-eye-slash');
 	}
 	else {
-		$('#ipwd').text($(this).val());
+		x.type = "password";
+		y.classList.remove('fa-eye-slash');
+		y.classList.add('fa-eye');
+	}
+}
+
+
+const validateLogin = function () {
+	const username = document.getElementById('uname');
+	const password = document.getElementById('pwd');
+
+	username.classList.remove('has-error');
+	password.classList.remove('has-error');
+
+	if (username.value.trim() === '') {
+		username.classList.add('has-error');
+		username.focus();
+		return false;
+	}
+
+	if (password.value.trim() === '') {
+		password.classList.add('has-error');
+		password.focus();
+		return false;
+	}
+
+	return true;
+}
+
+
+async function doLogin() {
+	if (!validateLogin()) {
+		return false;
+	}
+
+	const uname = document.getElementById('uname').value.trim();
+	const pwd = document.getElementById('pwd').value.trim();
+	const remember = document.getElementById('remember').checked ? 1 : 0;
+	const url = `${BASE_URL}users/authentication/validate_credentials`;
+	const data = {
+		uname: uname,
+		pwd: pwd,
+		remember: remember
+	};
+
+	try {
+		const response = await postData(url, data);
+		const res = await response.json();
+
+		if (res.status === 'success') {
+			window.location.href = BASE_URL;
+		} else {
+			$('#login-error').text(res.message);
+		}
+	} catch (error) {
+		console.error('Error during login:', error);
+		$('#login-error').text('An error occurred. Please try again.');
+	}
+}
+
+const unameInput = document.getElementById('uname');
+unameInput.addEventListener('keyup', function (e) {
+	if (e.key === 'Enter') {
+		const pwd = document.getElementById('pwd');
+
+		if(pwd.value.trim() === '') {
+			pwd.focus();
+		} else {
+			doLogin();
+		}		
 	}
 });
 
-$('#btn-login').click(function() {
-  doLogin();
+const pwdInput = document.getElementById('pwd');
+pwdInput.addEventListener('keyup', function (e) {
+	if (e.key === 'Enter') {
+		doLogin();
+	}	
 });
 
-
-$('#uname').change(function() {
-  $('#pwd').focus();
-})
+const loginButton = document.getElementById('btn-login');
+loginButton.addEventListener('click', function () {
+	doLogin();
+});
