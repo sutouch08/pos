@@ -96,6 +96,17 @@ class Profile_model extends CI_Model
   }
 
 
+  public function update_by_uid($uid, array $ds = array())
+  {
+    if( ! empty($ds))
+    {
+      return $this->db->where('uid', $uid)->update($this->tb, $ds);
+    }
+
+    return FALSE;
+  }
+
+
   public function delete($id)
   {
     return $this->db->where('id', $id)->delete($this->tb);
@@ -109,14 +120,18 @@ class Profile_model extends CI_Model
       $this->db->where('id !=', $id);
     }
 
-    $rs = $this->db->where('name', $name)->get($this->tb);
+    return $this->db->where('name', $name)->count_all_results($this->tb) > 0;
+  }
 
-    if($rs->num_rows() > 0)
+
+  public function is_exists_name($name, $uid = NULL)
+  {
+    if( ! empty($uid))
     {
-      return TRUE;
+      $this->db->where('uid !=', $uid);
     }
 
-    return FALSE;
+    return $this->db->where('name', $name)->count_all_results($this->tb) > 0;
   }
 
 

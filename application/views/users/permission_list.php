@@ -1,7 +1,12 @@
 <?php $this->load->view('include/header'); ?>
 <div class="row">
-	<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 padding-5">
+	<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 padding-5 padding-top-5">
 		<h3 class="title"><?php echo $this->title; ?></h3>
+	</div>
+	<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 padding-5 text-right">
+		<?php if ($this->pm->can_add) : ?>
+			<button type="button" class="btn btn-white btn-success top-btn" onclick="addNew()"><i class="fa fa-plus"></i> Add New</button>
+		<?php endif; ?>
 	</div>
 </div><!-- End Row -->
 <hr>
@@ -62,26 +67,37 @@
 		<table class="table table-bordered tableFixHead">
 			<thead>
 				<tr>
-					<th class="fix-width-100"></th>
+					<th class="fix-width-120"></th>
 					<th class="fix-width-50 middle text-center">#</th>
 					<th class="min-width-300">Profile</th>
 					<th class="fix-width-100 text-center">สมาชิก</th>
 				</tr>
 			</thead>
-			<tbody>
+			<tbody id="list-table">
 				<?php if (!empty($data)) : ?>
 					<?php $no = $this->uri->segment($this->segment) + 1; ?>
 					<?php foreach ($data as $rs) : ?>
-						<tr>
+						<tr id="row-<?php echo $rs->uid; ?>">
 							<td class="middle">
+								<button type="button" class="btn btn-minier btn-info" title="View Permission" onclick="viewPermission('<?php echo $rs->uid; ?>')">
+									<i class="fa fa-eye"></i>
+								</button>
 								<?php if ($this->pm->can_edit && $rs->id > 0) : ?>
-									<button type="button" class="btn btn-minier btn-purple" onclick="edit(<?php echo $rs->id; ?>)">
-										<i class="fa fa-lock"></i> กำหนดสิทธิ์
+									<button type="button" class="btn btn-minier btn-purple" title="กำหนดสิทธิ์" onclick="editPermission('<?php echo $rs->uid; ?>')">
+										<i class="fa fa-lock"></i>
+									</button>
+									<button type="button" class="btn btn-minier btn-warning" title="Edit Profile" onclick="editProfile('<?php echo $rs->uid; ?>')">
+										<i class="fa fa-pencil"></i>
+									</button>
+								<?php endif; ?>
+								<?php if ($this->pm->can_delete && $rs->id > 0) : ?>
+									<button type="button" class="btn btn-minier btn-danger" title="Delete Profile" onclick="deleteProfile('<?php echo $rs->uid; ?>', '<?php echo $rs->name; ?>')">
+										<i class="fa fa-trash"></i>
 									</button>
 								<?php endif; ?>
 							</td>
-							<td class="middle text-center"><?php echo $no; ?></td>
-							<td class="middle"><?php echo $rs->name; ?></td>
+							<td class="middle text-center no"><?php echo $no; ?></td>
+							<td class="middle" id="profile-<?php echo $rs->uid; ?>"><?php echo $rs->name; ?></td>
 							<td class="middle text-center"><?php echo number($rs->member); ?></td>
 						</tr>
 						<?php $no++; ?>
@@ -92,6 +108,59 @@
 	</div>
 </div>
 
+<?php if ($this->pm->can_add or $this->pm->can_edit) : ?>
+	<?php $this->load->view('users/profile_modal'); ?>
+<?php endif; ?>
+
+<script id="add-row-template" type="text/x-handlebarsTemplate">
+	<tr id="row-{{uid}}">
+		<td class="middle">
+			<button type="button" class="btn btn-minier btn-info" title="View Permission" onclick="viewPermission('{{uid}}')">
+				<i class="fa fa-eye"></i>
+			</button>
+			<?php if($this->pm->can_edit) : ?>
+				<button type="button" class="btn btn-minier btn-purple" title="กำหนดสิทธิ์" onclick="editPermission('{{uid}}')">
+					<i class="fa fa-lock"></i> 
+				</button>
+				<button type="button" class="btn btn-minier btn-warning" title="Edit Profile" onclick="editProfile('{{uid}}')">
+					<i class="fa fa-pencil"></i>
+				</button>
+			<?php endif; ?>
+			<?php if($this->pm->can_delete) : ?>
+				<button type="button" class="btn btn-minier btn-danger" title="Delete Profile" onclick="deleteProfile('{{uid}}', '{{name}}')">
+					<i class="fa fa-trash"></i>
+				</button>
+			<?php endif; ?>
+		</td>
+		<td class="middle text-center no"></td>
+		<td class="middle" id="profile-{{uid}}">{{name}}</td>
+		<td class="middle text-center">{{member}}</td>
+	</tr>
+</script>
+
+<script id="edit-row-template" type="text/x-handlebarsTemplate">
+	<td class="middle">
+		<button type="button" class="btn btn-minier btn-info" title="View Permission" onclick="viewPermission('{{uid}}')">
+			<i class="fa fa-eye"></i>
+		</button>
+		<?php if($this->pm->can_edit) : ?>
+			<button type="button" class="btn btn-minier btn-purple" title="กำหนดสิทธิ์" onclick="editPermission('{{uid}}')">
+				<i class="fa fa-lock"></i> 
+			</button>
+			<button type="button" class="btn btn-minier btn-warning" title="Edit Profile" onclick="editProfile('{{uid}}')">
+				<i class="fa fa-pencil"></i>
+			</button>
+		<?php endif; ?>
+		<?php if($this->pm->can_delete) : ?>
+			<button type="button" class="btn btn-minier btn-danger" title="Delete Profile" onclick="deleteProfile('{{uid}}', '{{name}}')">
+				<i class="fa fa-trash"></i>
+			</button>
+		<?php endif; ?>
+	</td>
+	<td class="middle text-center no"></td>
+	<td class="middle" id="profile-{{uid}}">{{name}}</td>
+	<td class="middle text-center">{{member}}</td>
+</script>
 
 <script src="<?php echo base_url(); ?>scripts/users/permission.js?v=<?php echo date('Ymd'); ?>"></script>
 

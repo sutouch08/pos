@@ -134,6 +134,9 @@ input::-moz-focus-inner {
   border: 0;
   padding: 0;
 }
+button:focus:not(:focus-visible) {
+  outline: none;
+}
 input {
   line-height: normal;
 }

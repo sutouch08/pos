@@ -1,6 +1,8 @@
 <?php
 class Permission_model extends CI_Model
 {
+  private $tb = "permission";
+
   public function __construct()
   {
     parent::__construct();
@@ -11,7 +13,7 @@ class Permission_model extends CI_Model
   {
     if(!empty($ds))
     {
-      $this->db->insert('permission', $ds);
+      $this->db->insert($this->tb, $ds);
     }
   }
 
@@ -20,7 +22,7 @@ class Permission_model extends CI_Model
   {
     if( ! empty($ds))
     {
-      return $this->db->insert_batch('permission', $ds);
+      return $this->db->insert_batch($this->tb, $ds);
     }
 
     return FALSE;
@@ -29,67 +31,86 @@ class Permission_model extends CI_Model
 
   public function get_permission($menu, $id_profile)
   {
-    if($id_profile == -987654321)
+    if($id_profile == -1)
     {
-      $ds = new stdClass();
-      $ds->can_view = 1;
-      $ds->can_add = 1;
-      $ds->can_edit = 1;
-      $ds->can_delete = 1;
-      $ds->can_approve = 1;
-
-      return $ds;
+      return (object)array(
+        'can_view' => 1,
+        'can_add' => 1,
+        'can_edit' => 1,
+        'can_delete' => 1,
+        'can_approve' => 1
+      );      
     }
         
-    $this->db->where('menu', $menu)->where('id_profile', $id_profile);
-    $rs = $this->db->get('permission');
-    if($rs->num_rows() > 0)
+    $rs = $this->db
+    ->where('menu', $menu)
+    ->where('id_profile', $id_profile)
+    ->get($this->tb);
+    
+    if($rs->num_rows() === 1)
     {
       return $rs->row();
     }
-    else
-    {
-      $ds = new stdClass();
-      $ds->can_view = 0;
-      $ds->can_add = 0;
-      $ds->can_edit = 0;
-      $ds->can_delete = 0;
-      $ds->can_approve = 0;
 
-      return $ds;
-    }
+    return (object)array(
+      'can_view' => 0,
+      'can_add' => 0,
+      'can_edit' => 0,
+      'can_delete' => 0,
+      'can_approve' => 0
+    );    
   }
 
 
 
   public function drop_permission($id)
   {
-    return $this->db->where('id_profile', $id)->delete('permission');    
+    return $this->db->where('id_profile', $id)->delete($this->tb);    
   }
 
 
   public function can_add($menu, $id_profile)
   {
-    $perm = $this->get_permission($menu, $id_profile);
-    return $perm->can_add == 1 ? TRUE : FALSE;
+    $count = $this->db
+    ->where('menu', $menu)
+    ->where('id_profile', $id_profile)
+    ->where('can_add', 1)
+    ->count_all_results($this->tb);
+
+    return $count === 1;
   }
 
   public function can_edit($menu, $id_profile)
   {
-    $perm = $this->get_permission($menu, $id_profile);
-    return $perm->can_edit == 1 ? TRUE : FALSE;
+    $count = $this->db
+    ->where('menu', $menu)
+    ->where('id_profile', $id_profile)
+    ->where('can_edit', 1)
+    ->count_all_results($this->tb);
+
+    return $count === 1;
   }
 
   public function can_delete($menu, $id_profile)
   {
-    $perm = $this->get_permission($menu, $id_profile);
-    return $perm->can_delete == 1 ? TRUE : FALSE;
+    $count = $this->db
+    ->where('menu', $menu)
+    ->where('id_profile', $id_profile)
+    ->where('can_delete', 1)
+    ->count_all_results($this->tb);
+
+    return $count === 1;
   }
 
   public function can_approve($menu, $id_profile)
   {
-    $perm = $this->get_permission($menu, $id_profile);
-    return $perm->can_approve == 1 ? TRUE : FALSE;
+    $count = $this->db
+    ->where('menu', $menu)
+    ->where('id_profile', $id_profile)
+    ->where('can_approve', 1)
+    ->count_all_results($this->tb);
+
+    return $count === 1;
   }
 }
 
